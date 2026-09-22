@@ -10,11 +10,16 @@ import { isNavItemActive, primaryNav, secondaryNav, type NavItem } from "@/lib/n
 import { cn } from "@/lib/utils";
 
 /**
- * Collapsible sidebar: a 60px icon rail or a 236px panel.
+ * The sidebar has two axes, which is why the classes look busy:
  *
- * The collapsed state is persisted in a cookie rather than localStorage so the
- * server renders the correct width on the first paint — reading it on the
- * client would flash the wrong layout on every navigation.
+ *   viewport  — below md there is no sidebar at all (the bottom tab bar takes
+ *               over); from md to lg it is always a 60px icon rail, because a
+ *               236px panel at 768px eats the page; from lg it can be either.
+ *   collapsed — the student's own choice, honoured only from lg up.
+ *
+ * `collapsed` is persisted in a cookie rather than localStorage so the server
+ * renders the correct width on first paint; reading it on the client would
+ * flash the wrong layout on every navigation.
  */
 export function Sidebar({ defaultCollapsed }: { defaultCollapsed: boolean }) {
   const pathname = usePathname();
@@ -26,19 +31,22 @@ export function Sidebar({ defaultCollapsed }: { defaultCollapsed: boolean }) {
     document.cookie = `sf-sidebar=${next ? "collapsed" : "expanded"}; path=/; max-age=31536000; samesite=lax`;
   };
 
+  /** Applied to anything that should only appear in the full panel. */
+  const wideOnly = collapsed ? "hidden" : "hidden lg:block";
+
   return (
     <aside
       className={cn(
-        "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-sidebar-border bg-sidebar lg:flex",
+        "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex",
         "transition-[width] duration-200 ease-out",
-        collapsed ? "w-[60px]" : "w-[236px]",
+        collapsed ? "w-[60px]" : "w-[60px] lg:w-[236px]",
       )}
     >
       {/* brand + collapse */}
       <div
         className={cn(
-          "flex h-14 items-center",
-          collapsed ? "justify-center px-2" : "justify-between px-4",
+          "flex h-14 items-center justify-center px-2",
+          !collapsed && "lg:justify-between lg:px-4",
         )}
       >
         <Link
@@ -47,43 +55,48 @@ export function Sidebar({ defaultCollapsed }: { defaultCollapsed: boolean }) {
           aria-label="StudyFlow home"
         >
           <LogoMark className="size-7" />
-          {!collapsed ? (
-            <span className="text-[15px] font-semibold tracking-[-0.01em] text-ink">
-              StudyFlow
-            </span>
-          ) : null}
-        </Link>
-        {!collapsed ? (
-          <button
-            type="button"
-            onClick={toggle}
-            aria-label="Collapse sidebar"
-            className="rounded-md p-1.5 text-ink-subtle transition-colors hover:bg-surface-raised hover:text-ink"
+          <span
+            className={cn(
+              "text-[15px] font-semibold tracking-[-0.01em] text-ink",
+              wideOnly,
+            )}
           >
-            <PanelLeft aria-hidden="true" className="size-4" />
-          </button>
-        ) : null}
+            StudyFlow
+          </span>
+        </Link>
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label="Collapse sidebar"
+          className={cn(
+            "rounded-md p-1.5 text-ink-subtle transition-colors hover:bg-surface-raised hover:text-ink",
+            wideOnly,
+          )}
+        >
+          <PanelLeft aria-hidden="true" className="size-4" />
+        </button>
       </div>
 
       {/* primary action */}
-      <div className={cn("pb-3", collapsed ? "px-2" : "px-3")}>
+      <div className={cn("px-2 pb-3", !collapsed && "lg:px-3")}>
         <Link
           href="/homework?new=1"
           title="Add homework"
           className={cn(
-            "flex items-center justify-center gap-2 rounded-lg bg-primary font-medium text-primary-foreground",
+            "flex size-11 items-center justify-center gap-2 rounded-lg bg-primary font-medium text-primary-foreground",
             "transition-colors hover:bg-indigo-bright",
-            collapsed ? "size-11" : "h-11 w-full text-[13px]",
+            !collapsed && "lg:h-11 lg:w-full lg:text-[13px]",
           )}
         >
           <Plus aria-hidden="true" className="size-4 shrink-0" />
-          {!collapsed ? "Add homework" : <span className="sr-only">Add homework</span>}
+          <span className={wideOnly}>Add homework</span>
+          <span className={cn("sr-only", !collapsed && "lg:hidden")}>Add homework</span>
         </Link>
       </div>
 
       <nav
         aria-label="Main"
-        className={cn("flex flex-1 flex-col gap-0.5", collapsed ? "px-2" : "px-3")}
+        className={cn("flex flex-1 flex-col gap-0.5 px-2", !collapsed && "lg:px-3")}
       >
         {primaryNav.map((item) => (
           <SidebarLink
@@ -106,19 +119,26 @@ export function Sidebar({ defaultCollapsed }: { defaultCollapsed: boolean }) {
         ))}
       </nav>
 
-      {/* The account menu lives in the top bar; this foot is just the toggle. */}
-      {collapsed ? (
-        <div className="border-t border-sidebar-border p-1.5">
-          <button
-            type="button"
-            onClick={toggle}
-            aria-label="Expand sidebar"
-            className="flex w-full items-center justify-center rounded-md p-2 text-ink-subtle transition-colors hover:bg-surface-raised hover:text-ink"
-          >
-            <PanelLeft aria-hidden="true" className="size-4 rotate-180" />
-          </button>
-        </div>
-      ) : null}
+      {/* The account menu lives in the top bar; this foot is just the toggle,
+          and only while the rail is narrow -- expanded, it sits by the brand. */}
+      <div
+        className={cn(
+          "border-t border-sidebar-border p-1.5",
+          !collapsed && "lg:hidden",
+        )}
+      >
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="flex w-full items-center justify-center rounded-md p-2 text-ink-subtle transition-colors hover:bg-surface-raised hover:text-ink"
+        >
+          <PanelLeft
+            aria-hidden="true"
+            className={cn("size-4", collapsed && "rotate-180")}
+          />
+        </button>
+      </div>
     </aside>
   );
 }
@@ -137,11 +157,11 @@ function SidebarLink({
   return (
     <Link
       href={item.href}
-      title={collapsed ? item.label : undefined}
+      title={item.label}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group flex items-center rounded-lg text-[13px] font-medium transition-colors duration-150",
-        collapsed ? "h-10 w-10 justify-center" : "h-10 gap-3 px-3",
+        "group flex h-10 w-10 items-center justify-center rounded-lg text-[13px] font-medium transition-colors duration-150",
+        !collapsed && "lg:w-full lg:justify-start lg:gap-3 lg:px-3",
         active
           ? "bg-sidebar-accent text-sidebar-accent-foreground"
           : "text-ink-muted hover:bg-surface-raised hover:text-ink",
@@ -154,7 +174,9 @@ function SidebarLink({
           active ? "text-indigo-ink" : "text-ink-subtle group-hover:text-ink-muted",
         )}
       />
-      {!collapsed ? item.label : <span className="sr-only">{item.label}</span>}
+      <span className={collapsed ? "sr-only" : "sr-only lg:not-sr-only"}>
+        {item.label}
+      </span>
     </Link>
   );
 }

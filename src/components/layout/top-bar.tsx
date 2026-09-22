@@ -31,12 +31,12 @@ export function TopBar({
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/80 px-5 backdrop-blur-md lg:px-8">
-        {/* Mobile has no sidebar, so the brand lives here instead. */}
-        <Link href="/dashboard" className="rounded-md lg:hidden">
+      <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/95 px-5 backdrop-blur-md lg:px-8">
+        {/* Below md there is no sidebar, so the brand lives here instead. */}
+        <Link href="/dashboard" className="rounded-md md:hidden">
           <Logo />
         </Link>
-        <span className="hidden shrink-0 text-[15px] font-semibold tracking-[-0.01em] text-ink lg:block">
+        <span className="hidden shrink-0 text-[15px] font-semibold tracking-[-0.01em] text-ink md:block">
           {current.label}
         </span>
 
@@ -67,12 +67,12 @@ export function TopBar({
           <Link
             href="/settings"
             aria-label="Settings"
-            className="rounded-md p-2 text-ink-subtle transition-colors hover:text-ink lg:hidden"
+            className="rounded-md p-2 text-ink-subtle transition-colors hover:text-ink md:hidden"
           >
             <Settings aria-hidden="true" className="size-5" />
           </Link>
 
-          <span className="hidden lg:block">
+          <span className="hidden md:block">
             <AccountMenu account={account} compact />
           </span>
         </div>

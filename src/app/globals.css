@@ -25,23 +25,23 @@
   --radius: 0.875rem;
 
   /* Surfaces. Four steps, each a little lighter than the last. */
-  --background: #0e1015; /* page */
-  --card: #171a21; /* panels */
-  --surface-raised: #1d212a; /* hover, nested rows */
-  --surface-sunken: #131620; /* wells, tracks, inputs */
-  --popover: #1b1f27;
+  --background: #13161c; /* page */
+  --card: #1e2127; /* panels — +5.5 L* over the page, so it reads as a panel */
+  --surface-raised: #282b31; /* hover, nested rows */
+  --surface-sunken: #181b21; /* wells, tracks, inputs */
+  --popover: #23262c;
 
   --foreground: #e7e9ee;
   --card-foreground: #e7e9ee;
   --popover-foreground: #e7e9ee;
 
   --ink: #e7e9ee; /* 15.7:1 on background */
-  --ink-muted: #969db0; /* 6.4:1 on card — body secondary */
-  --ink-subtle: #7d859a; /* 4.7:1 on card — labels, timestamps, meta */
+  --ink-muted: #9aa1b4; /* 6.2:1 on card — body secondary */
+  --ink-subtle: #858da2; /* 4.9:1 on card — labels, timestamps, meta */
 
-  --border: #242935;
-  --border-strong: #303747;
-  --input: #242935;
+  --border: #34373d; /* +10 L* over card: a hairline has to actually read */
+  --border-strong: #46494f;
+  --input: #34373d;
 
   /* Primary: indigo. Actions, the active nav state, the hero panel. */
   --primary: #5464d8;
@@ -79,10 +79,10 @@
   --warn-soft: #33281a;
 
   /* shadcn neutrals */
-  --secondary: #1d212a;
+  --secondary: #282b31;
   --secondary-foreground: #e7e9ee;
-  --muted: #1d212a;
-  --muted-foreground: #969db0;
+  --muted: #282b31;
+  --muted-foreground: #9aa1b4;
   --accent: #1e2440;
   --accent-foreground: #a8b4f5;
   --ring: #5b6ee1;
@@ -95,13 +95,13 @@
   --chart-5: #e2646a;
 
   /* Sidebar sits slightly darker than the page so the rail reads as chrome */
-  --sidebar: #0b0d12;
+  --sidebar: #070a10; /* darkest surface: the rail frames the page */
   --sidebar-foreground: #e7e9ee;
   --sidebar-primary: #5b6ee1;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #1e2440;
   --sidebar-accent-foreground: #a8b4f5;
-  --sidebar-border: #1c212b;
+  --sidebar-border: #21242a;
   --sidebar-ring: #5b6ee1;
 
   /* Elevation. Used sparingly — borders do most of the work. */

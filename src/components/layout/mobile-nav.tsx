@@ -7,8 +7,9 @@ import { isNavItemActive, primaryNav } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 /**
- * Thumb-reachable tab bar. Four items only -- adding a fifth makes each target
- * narrower than the 44px minimum at 320px wide. Settings lives in the top bar.
+ * Thumb-reachable tab bar, below md only -- from md up the icon rail takes
+ * over. Four items only: a fifth makes each target narrower than the 44px
+ * minimum at 320px wide. Settings lives in the top bar.
  */
 export function MobileNav() {
   const pathname = usePathname();
@@ -16,7 +17,7 @@ export function MobileNav() {
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-sidebar/95 backdrop-blur-sm lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-sidebar/95 backdrop-blur-sm md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <ul className="mx-auto flex max-w-lg items-stretch">

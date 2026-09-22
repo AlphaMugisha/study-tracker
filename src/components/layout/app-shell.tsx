@@ -9,9 +9,9 @@ import { cn } from "@/lib/utils";
 
 /**
  * Two designed layouts, not one shrunk layout:
- *   < lg : top bar with the brand + fixed bottom tab bar, single column
- *   >= lg: collapsible sidebar (icon rail or full panel) plus a top bar
- *          carrying the section name, search, the local clock and the account
+ *   < md : top bar with the brand + fixed bottom tab bar, single column
+ *   >= md: a 60px icon rail, expanding to a full panel from lg, plus a top
+ *          bar carrying the section name, search, the clock and the account
  */
 export async function AppShell({ children }: { children: React.ReactNode }) {
   const session = await requireSessionContext();
@@ -31,7 +31,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar timezone={session.profile?.timezone ?? "UTC"} account={account} />
 
-        <main id="main" className="flex-1 pb-24 lg:pb-0">
+        <main id="main" className="flex-1 pb-24 md:pb-0">
           {children}
         </main>
 
