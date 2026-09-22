@@ -1,26 +1,257 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* ---------------------------------------------------------------------------
+   StudyFlow design tokens
+   ---------------------------------------------------------------------------
+   Calm, clean, modern, academic, mature.
+   Warm off-white ground, charcoal ink, muted sage primary, soft lavender
+   secondary, warm cream for neutral/break states.
+
+   Every colour is declared once here as a semantic token. Components must
+   never reference a raw hex value -- that indirection is what will let us add
+   a dark theme later as a single `.dark { }` block.
+
+   Two naming systems coexist on purpose:
+     - shadcn semantics (--background, --primary, --muted, ...) so the ui/
+       primitives work untouched.
+     - StudyFlow semantics (--sage, --lavender, --cream, --ink-*, ...) for the
+       product meaning the shadcn primitives do not cover.
+--------------------------------------------------------------------------- */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Radius: 10px cards / 8px controls / 6px buttons */
+  --radius: 0.625rem;
+
+  /* Surfaces and ink */
+  --background: #faf9f6; /* warm off-white page */
+  --foreground: #1f2328; /* charcoal, 12.9:1 on background */
+  --card: #ffffff;
+  --card-foreground: #1f2328;
+  --popover: #ffffff;
+  --popover-foreground: #1f2328;
+  --surface-sunken: #f3f1eb; /* wells, table headers, timeline gutters */
+
+  --ink: #1f2328;
+  --ink-muted: #5c646f; /* secondary copy, 6.0:1 on background */
+  --ink-subtle: #858d98; /* labels and timestamps, 3.4:1 -- decorative only */
+
+  /* Primary: muted sage. Current activity, primary actions, completed. */
+  --primary: #5e8062;
+  --primary-foreground: #ffffff;
+  --sage: #5e8062;
+  --sage-strong: #45603f; /* text-on-light variant, 6.2:1 on --sage-soft */
+  --sage-soft: #ebf1ea;
+
+  /* Secondary accent: soft lavender. Up next, upcoming, revision blocks.
+     Never used for primary actions. */
+  --lavender: #7b74a8;
+  --lavender-strong: #564e84; /* 6.4:1 on --lavender-soft */
+  --lavender-soft: #efedf7;
+
+  /* Supporting: warm cream. Breaks, free periods, neutral highlights. */
+  --cream: #f4eee1;
+  --cream-strong: #6b5a38; /* 6.3:1 on --cream */
+
+  /* Status */
+  --danger: #a8534a; /* muted red, overdue and destructive */
+  --danger-soft: #fbeeec;
+  --warn: #996d24; /* amber, due today and low-confidence extraction */
+  --warn-soft: #faf2e3;
+
+  /* shadcn neutrals */
+  --secondary: #f3f1eb;
+  --secondary-foreground: #1f2328;
+  --muted: #f3f1eb;
+  --muted-foreground: #5c646f;
+  --accent: #ebf1ea; /* sage-tinted hover surface */
+  --accent-foreground: #45603f;
+  --destructive: #a8534a;
+  --border: #e6e3db;
+  --input: #dedad0;
+  --ring: #5e8062;
+
+  /* Chart slots double as the subject colour palette */
+  --chart-1: #5e8062;
+  --chart-2: #7b74a8;
+  --chart-3: #996d24;
+  --chart-4: #4f7a8b;
+  --chart-5: #a8534a;
+
+  /* Sidebar */
+  --sidebar: #f7f5f0;
+  --sidebar-foreground: #1f2328;
+  --sidebar-primary: #5e8062;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ebf1ea;
+  --sidebar-accent-foreground: #45603f;
+  --sidebar-border: #e6e3db;
+  --sidebar-ring: #5e8062;
+
+  /* Elevation: two steps only. Static cards use `card`; interactive cards
+     step up on hover. Nothing floats higher than `overlay`. */
+  --shadow-card: 0 1px 2px rgba(31, 35, 40, 0.04), 0 1px 3px rgba(31, 35, 40, 0.05);
+  --shadow-card-hover: 0 2px 4px rgba(31, 35, 40, 0.05), 0 6px 16px rgba(31, 35, 40, 0.07);
+  --shadow-overlay: 0 8px 32px rgba(31, 35, 40, 0.12);
+
+  /* Type */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
+
+  /* Motion */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-hover: 150ms;
+  --duration-enter: 220ms;
 }
 
 @theme inline {
+  /* shadcn mappings */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* StudyFlow semantics */
+  --color-surface-sunken: var(--surface-sunken);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-sage: var(--sage);
+  --color-sage-strong: var(--sage-strong);
+  --color-sage-soft: var(--sage-soft);
+  --color-lavender: var(--lavender);
+  --color-lavender-strong: var(--lavender-strong);
+  --color-lavender-soft: var(--lavender-soft);
+  --color-cream: var(--cream);
+  --color-cream-strong: var(--cream-strong);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+
+  /* Elevation */
+  --shadow-card: var(--shadow-card);
+  --shadow-card-hover: var(--shadow-card-hover);
+  --shadow-overlay: var(--shadow-overlay);
+
+  /* Radius scale: sm 6px / md 8px / lg 10px / xl 14px */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Type */
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-sans);
+
+  --text-eyebrow: 0.6875rem; /* 11px -- the only uppercase in the product */
+  --text-eyebrow--line-height: 1rem;
+  --text-eyebrow--letter-spacing: 0.1em;
+  --text-eyebrow--font-weight: 600;
+
+  --text-hero: clamp(2.5rem, 5.5vw, 3.5rem); /* current-activity subject */
+  --text-hero--line-height: 1.04;
+  --text-hero--letter-spacing: -0.03em;
+
+  --text-display: clamp(1.75rem, 3.5vw, 2rem); /* page titles */
+  --text-display--line-height: 1.15;
+  --text-display--letter-spacing: -0.02em;
+
+  /* Motion */
+  --ease-out-soft: var(--ease-out-soft);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  /* Clocks, countdowns and durations must not jitter as digits change. */
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  ::selection {
+    background-color: var(--sage-soft);
+    color: var(--sage-strong);
+  }
+
+  /* Never remove a focus indicator, only restyle it. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  /* Interactive cards only. Static cards do not move. */
+  .card-interactive {
+    transition:
+      transform var(--duration-hover) var(--ease-out-soft),
+      box-shadow var(--duration-hover) var(--ease-out-soft),
+      border-color var(--duration-hover) var(--ease-out-soft);
+  }
+
+  .card-interactive:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .card-interactive:hover {
+    transform: none;
+  }
 }
