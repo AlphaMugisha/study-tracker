@@ -44,7 +44,7 @@ export function Sidebar({ defaultCollapsed }: { defaultCollapsed: boolean }) {
       {/* brand + collapse */}
       <div
         className={cn(
-          "flex h-14 items-center justify-center px-2",
+          "flex h-16 items-center justify-center px-2",
           !collapsed && "md:justify-between md:px-4",
         )}
       >

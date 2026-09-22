@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 
 import { PageContainer } from "@/components/layout/app-shell";
-import { Reveal } from "@/components/shared/reveal";
+import { Reveal, RevealWords } from "@/components/shared/reveal";
+import { Block, BlockHeading, Eyebrow } from "@/components/shared/surface";
 import { CurrentActivityCard } from "@/components/today/current-activity-card";
 import {
   DayStats,
@@ -95,18 +96,18 @@ export default async function TodayPage() {
 
   return (
     <PageContainer>
-      <Reveal>
-        <header className="mb-6 sm:mb-8">
-          {/* The greeting IS the headline, as in the reference -- "Today" as a
-              title told her nothing she didn't already know. */}
-          <h1 className="text-greeting font-semibold text-ink">
-            {greeting(now)}, {firstNameOf(displayName(session))}.
-          </h1>
-          <p className="mt-1.5 text-[15px] text-ink-muted">{formatFullDate(now)}</p>
-        </header>
-      </Reveal>
+      {/* The statement. The greeting is the headline because "Today" as a
+          title tells her something the nav already said. */}
+      <header className="mb-rhythm max-w-[20ch] sm:max-w-none">
+        <Eyebrow tone="accent" className="mb-4">
+          {formatFullDate(now)}
+        </Eyebrow>
+        <h1 className="text-greeting text-balance text-ink">
+          <RevealWords text={`${greeting(now)}, ${firstNameOf(displayName(session))}.`} />
+        </h1>
+      </header>
 
-      <Reveal index={1} className="mb-5 sm:mb-6">
+      <Reveal>
         <DayStats
           stats={[
             { label: "Lessons today", value: String(lessonsToday) },
@@ -124,34 +125,57 @@ export default async function TodayPage() {
       </Reveal>
 
       {/*
-        Main column carries the narrative -- what am I doing, what happens when
-        I get home, what's due. The rail carries the glanceable things. On
-        mobile it all collapses to one column in that same reading order.
+        A single narrative column, the way the reference composes: full-width
+        blocks separated by rhythm, with grids *inside* a block rather than a
+        main-plus-rail split. A rail would come out around 250px at the widths
+        this is actually used at, which is too narrow to carry anything.
       */}
-      <div className="grid items-start gap-5 lg:grid-cols-12 lg:gap-6">
-        <div className="flex flex-col gap-5 lg:col-span-8 lg:gap-6">
-          <Reveal index={2}>
+      <div className="mt-rhythm space-y-rhythm md:space-y-rhythm-lg">
+        <Block aria-label="Right now">
+          <Reveal>
             <CurrentActivityCard state={state} />
           </Reveal>
-          <Reveal index={4}>
-            <HomePlanPreview blocks={plan.blocks} startsAt={plan.startsAt} />
+
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <Reveal index={1}>
+              <UpNextCard next={upNext} />
+            </Reveal>
+            <Reveal index={2}>
+              <RestOfDay entries={restOfDay} />
+            </Reveal>
+          </div>
+        </Block>
+
+        <Block id="evening">
+          <Reveal>
+            <BlockHeading
+              eyebrow="After school"
+              title="When you get home."
+              description="A rough order of work for this evening, laid out from what's still outstanding."
+            />
           </Reveal>
-          <Reveal index={5}>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Reveal index={1}>
+              <HomePlanPreview blocks={plan.blocks} startsAt={plan.startsAt} />
+            </Reveal>
+            <Reveal index={2}>
+              <TodayProgress done={doneToday} total={trackedToday.length} />
+            </Reveal>
+          </div>
+        </Block>
+
+        <Block id="due">
+          <Reveal>
+            <BlockHeading
+              eyebrow="Deadlines"
+              title="What's coming due."
+              count={dueSoon.length}
+            />
+          </Reveal>
+          <Reveal index={1}>
             <DueSoonList assignments={dueSoon} />
           </Reveal>
-        </div>
-
-        <div className="flex flex-col gap-5 lg:col-span-4 lg:gap-6">
-          <Reveal index={3}>
-            <UpNextCard next={upNext} />
-          </Reveal>
-          <Reveal index={5}>
-            <RestOfDay entries={restOfDay} />
-          </Reveal>
-          <Reveal index={6}>
-            <TodayProgress done={doneToday} total={trackedToday.length} />
-          </Reveal>
-        </div>
+        </Block>
       </div>
     </PageContainer>
   );

@@ -71,8 +71,8 @@ export function DaySchedule({
                 className={cn(
                   "rounded-lg border px-4 py-3",
                   isLesson
-                    ? "border-border bg-card shadow-card"
-                    : "border-border/70 bg-surface-sunken/60",
+                    ? "border-border bg-card"
+                    : "border-transparent bg-surface-sunken",
                 )}
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
@@ -122,7 +122,7 @@ export function WeekGrid({
   const days = [1, 2, 3, 4, 5];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
       {days.map((day) => {
         const dayEntries = entries
           .filter((e) => e.dayOfWeek === day)
@@ -133,22 +133,22 @@ export function WeekGrid({
           <section
             key={day}
             className={cn(
-              "rounded-lg border bg-card p-4",
-              isToday ? "border-sage/40 shadow-card" : "border-border",
+              "rounded-xl border bg-card p-4",
+              isToday ? "border-indigo/50" : "border-border",
             )}
           >
             <div className="mb-3 flex items-baseline justify-between">
               <h3
                 className={cn(
                   "text-sm font-semibold",
-                  isToday ? "text-sage-ink" : "text-ink",
+                  isToday ? "text-indigo-ink" : "text-ink",
                 )}
               >
-                <span className="xl:hidden">{DAY_NAMES[day]}</span>
-                <span className="hidden xl:inline">{DAY_SHORT[day]}</span>
+                <span className="lg:hidden">{DAY_NAMES[day]}</span>
+                <span className="hidden lg:inline">{DAY_SHORT[day]}</span>
               </h3>
               {isToday ? (
-                <span className="text-[11px] font-medium text-sage-ink">Today</span>
+                <span className="text-eyebrow uppercase text-indigo-ink">Today</span>
               ) : null}
             </div>
 

@@ -6,9 +6,11 @@ import { Search, Settings } from "lucide-react";
 
 import { AccountMenu, type AccountSummary } from "@/components/layout/account-menu";
 import { CommandPalette, useCommandPalette } from "@/components/layout/command-palette";
+import { useScrolled } from "@/components/layout/use-scrolled";
 import { LiveClock } from "@/components/layout/live-clock";
 import { Logo } from "@/components/layout/logo";
 import { isNavItemActive, primaryNav, secondaryNav } from "@/lib/nav";
+import { cn } from "@/lib/utils";
 
 /**
  * Section name on the left, search in the middle, clock and account on the
@@ -24,6 +26,7 @@ export function TopBar({
 }) {
   const pathname = usePathname();
   const { open, setOpen } = useCommandPalette();
+  const scrolled = useScrolled();
 
   const current =
     [...primaryNav, ...secondaryNav].find((item) => isNavItemActive(pathname, item.href)) ??
@@ -31,14 +34,21 @@ export function TopBar({
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/95 px-5 backdrop-blur-md lg:px-8">
+      {/* Transparent at rest, solid once the page moves under it -- the bar
+          should not draw a line across a page that has not been scrolled. */}
+      <header
+        className={cn(
+          "sticky top-0 z-30 flex h-16 items-center gap-3 px-5 transition-colors duration-300 ease-out-flat md:px-8",
+          scrolled
+            ? "border-b border-border bg-background/90 backdrop-blur-md"
+            : "border-b border-transparent bg-transparent",
+        )}
+      >
         {/* Below md there is no sidebar, so the brand lives here instead. */}
         <Link href="/dashboard" className="rounded-md md:hidden">
           <Logo />
         </Link>
-        <span className="hidden shrink-0 text-[15px] font-semibold tracking-[-0.01em] text-ink md:block">
-          {current.label}
-        </span>
+        <span className="hidden shrink-0 text-section text-ink md:block">{current.label}</span>
 
         <button
           type="button"

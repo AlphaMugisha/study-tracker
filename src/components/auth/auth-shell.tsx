@@ -29,7 +29,7 @@ export function AuthShell({
         initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: reduced ? 0.15 : 0.26, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-[25rem]"
+        className="w-full max-w-[26rem]"
       >
         <div className="mb-8 text-center">
           <Link
@@ -43,10 +43,8 @@ export function AuthShell({
             </span>
           </Link>
 
-          <h1 className="mt-7 text-[1.75rem] font-semibold leading-tight tracking-[-0.02em] text-ink">
-            {title}
-          </h1>
-          <p className="mx-auto mt-2 max-w-[22rem] text-[15px] leading-6 text-ink-muted">
+          <h1 className="mt-9 text-display text-balance text-ink">{title}</h1>
+          <p className="mx-auto mt-3.5 max-w-[24rem] text-[15px] leading-relaxed text-ink-muted">
             {subtitle}
           </p>
         </div>
@@ -64,7 +62,7 @@ export function AuthShell({
 /** The raised surface the inputs live on. */
 export function AuthCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-card shadow-card">
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
       {children}
     </div>
   );

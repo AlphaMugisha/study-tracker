@@ -6,6 +6,7 @@ import { AssignmentDialog } from "@/components/homework/assignment-dialog";
 import { PageContainer } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { Reveal } from "@/components/shared/reveal";
+import { Block, BlockHeading } from "@/components/shared/surface";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
   byUrgency,
@@ -36,13 +37,12 @@ export default async function HomeworkPage({
 
   return (
     <PageContainer>
-      <Reveal>
-        <PageHeader
-          title="Homework"
-          description="Everything due, with what needs attention first."
+      <PageHeader
+          eyebrow="Homework"
+          title="Everything you owe."
+          description="Ordered by what needs attention first, not by when you wrote it down."
           action={<AssignmentDialog subjects={subjects} defaultOpen={openNew} />}
         />
-      </Reveal>
 
       {assignments.length === 0 ? (
         <Reveal index={1}>
@@ -54,7 +54,7 @@ export default async function HomeworkPage({
           />
         </Reveal>
       ) : (
-        <div className="space-y-10">
+        <div className="space-y-rhythm md:space-y-rhythm-lg">
           <Section
             title="Overdue"
             tone="danger"
@@ -111,23 +111,25 @@ function Section({
   if (assignments.length === 0 && !emptyMessage) return null;
 
   return (
-    <Reveal index={index}>
-      <section>
-        <div className="mb-3 flex items-baseline gap-2.5">
-          <h2
-            className={`text-lg font-semibold ${
-              tone === "danger" ? "text-danger" : muted ? "text-ink-muted" : "text-ink"
-            }`}
-          >
-            {title}
-          </h2>
-          <span className="text-[13px] text-ink-subtle" data-numeric>
-            {assignments.length}
-          </span>
-        </div>
+    <Block id={title.toLowerCase().replace(/\s+/g, "-")}>
+      <Reveal index={index}>
+        <BlockHeading
+          title={
+            <span
+              className={
+                tone === "danger" ? "text-danger" : muted ? "text-ink-muted" : undefined
+              }
+            >
+              {title}
+            </span>
+          }
+          count={assignments.length}
+        />
+      </Reveal>
 
+      <Reveal index={index}>
         {assignments.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-border bg-card/60 px-4 py-6 text-center text-sm text-ink-muted">
+          <p className="rounded-xl border border-dashed border-border px-5 py-8 text-center text-sm text-ink-muted">
             {emptyMessage}
           </p>
         ) : (
@@ -137,7 +139,7 @@ function Section({
             ))}
           </div>
         )}
-      </section>
-    </Reveal>
+      </Reveal>
+    </Block>
   );
 }

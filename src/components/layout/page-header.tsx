@@ -1,15 +1,29 @@
+import { Eyebrow } from "@/components/shared/surface";
+import { RevealWords } from "@/components/shared/reveal";
 import { cn } from "@/lib/utils";
 
 type PageHeaderProps = {
-  /** Small line above the title, e.g. the date. Sentence case, not uppercase. */
+  /** Wide-tracked micro-label above the statement. */
   eyebrow?: React.ReactNode;
+  /**
+   * The page's opening statement. Pass a string to get the word-by-word
+   * entrance; pass a node when the headline needs its own markup.
+   */
   title: React.ReactNode;
   description?: React.ReactNode;
-  /** Right-aligned action slot; wraps beneath the title on mobile. */
+  /** Right-aligned action slot; wraps beneath the statement on mobile. */
   action?: React.ReactNode;
   className?: string;
 };
 
+/**
+ * Every page opens the same way: a wide-tracked label, then a statement set in
+ * the largest type the product has, then one line of prose.
+ *
+ * The statement is deliberately a sentence with a full stop rather than a noun
+ * ("Homework") -- a title that only names the page tells the reader something
+ * the nav already told them.
+ */
 export function PageHeader({
   eyebrow,
   title,
@@ -20,17 +34,17 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        "mb-8 flex flex-col gap-4 sm:mb-10 sm:flex-row sm:items-end sm:justify-between",
+        "mb-rhythm flex flex-col gap-6 md:flex-row md:items-end md:justify-between md:gap-10",
         className,
       )}
     >
-      <div className="min-w-0">
-        {eyebrow ? (
-          <p className="mb-1.5 text-sm text-ink-muted">{eyebrow}</p>
-        ) : null}
-        <h1 className="text-display font-semibold text-ink">{title}</h1>
+      <div className="min-w-0 max-w-[22ch] sm:max-w-[18ch] md:max-w-none">
+        {eyebrow ? <Eyebrow tone="accent" className="mb-4">{eyebrow}</Eyebrow> : null}
+        <h1 className="text-statement text-balance text-ink">
+          {typeof title === "string" ? <RevealWords text={title} /> : title}
+        </h1>
         {description ? (
-          <p className="mt-2 max-w-prose text-[15px] leading-6 text-ink-muted">
+          <p className="mt-5 max-w-[48ch] text-[15px] leading-relaxed text-ink-muted">
             {description}
           </p>
         ) : null}
@@ -40,35 +54,4 @@ export function PageHeader({
   );
 }
 
-/** Section heading inside a page. One level down from PageHeader. */
-export function SectionHeader({
-  title,
-  action,
-  className,
-}: {
-  title: React.ReactNode;
-  action?: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={cn("mb-4 flex items-baseline justify-between gap-4", className)}>
-      <h2 className="text-lg font-semibold text-ink">{title}</h2>
-      {action}
-    </div>
-  );
-}
-
-/** The small uppercase label above a card's content. The only uppercase we use. */
-export function Eyebrow({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <p className={cn("text-eyebrow uppercase text-ink-subtle", className)}>
-      {children}
-    </p>
-  );
-}
+export { Eyebrow } from "@/components/shared/surface";

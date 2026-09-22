@@ -61,19 +61,17 @@ export default async function TimetablePage({
 
   return (
     <PageContainer>
-      <Reveal>
-        <PageHeader
-          title="Timetable"
+      <PageHeader
           eyebrow={version.name}
-          description="Lessons, breaks and everything else in your school week."
+          title="Your school week."
+          description="Lessons, breaks and everything else, day by day or all at once."
           action={
-            <div className="inline-flex rounded-md border border-border bg-card p-0.5">
+            <div className="inline-flex rounded-lg border border-border bg-card p-1">
               <ViewTab href="/timetable" active={view === "day"} label="Day" />
               <ViewTab href="/timetable?view=week" active={view === "week"} label="Week" />
             </div>
           }
         />
-      </Reveal>
 
       {view === "day" ? (
         <Reveal index={1}>

@@ -29,7 +29,7 @@ export function MotionDemo() {
               delay: i * 0.06,
               ease: [0.22, 1, 0.36, 1],
             }}
-            className="rounded-lg border border-border bg-card p-4 shadow-card"
+            className="rounded-xl border border-border bg-card p-4"
           >
             <p className="text-eyebrow uppercase text-ink-subtle">{label}</p>
             <p className="mt-2 text-sm text-ink-muted">Section content</p>

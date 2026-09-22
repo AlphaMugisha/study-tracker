@@ -5,6 +5,7 @@ import { PageContainer } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { PriorityBadge, StatusBadge, SubjectDot } from "@/components/shared/badges";
 import { Reveal } from "@/components/shared/reveal";
+import { Block, BlockHeading, Surface } from "@/components/shared/surface";
 import { HomePlanPreview } from "@/components/today/sections";
 import { EmptyState } from "@/components/ui/empty-state";
 import { byUrgency, getAssignments, getRevisionTasks, type RevisionView } from "@/lib/data/tasks";
@@ -35,29 +36,45 @@ export default async function PlanPage() {
 
   return (
     <PageContainer>
-      <Reveal>
-        <PageHeader
-          title="When you get home"
+      <PageHeader
+          eyebrow="Home plan"
+          title="When you get home."
           description={
             schoolEndsMinutes
-              ? "A rough order of work for this evening, built from what's outstanding."
-              : "A rough order of work, built from what's outstanding."
+              ? "A rough order of work for this evening, built from what is still outstanding."
+              : "A rough order of work, built from what is still outstanding."
           }
         />
-      </Reveal>
 
-      <div className="grid gap-4 lg:grid-cols-12 lg:gap-5">
-        <Reveal index={1} className="lg:col-span-7">
-          <HomePlanPreview blocks={plan.blocks} startsAt={plan.startsAt} />
-          <p className="mt-3 text-xs leading-5 text-ink-subtle">
-            This is a preview, not a schedule yet. It lays outstanding work end to end
-            with a break between each. Deadlines, priorities and a proper finish time
-            come when the planner is built.
-          </p>
-        </Reveal>
+      <div className="space-y-rhythm md:space-y-rhythm-lg">
+        <Block id="tonight">
+          <Reveal>
+            <BlockHeading
+              eyebrow="Tonight"
+              title="The order to work in."
+              description="Laid end to end from when school finishes, with a break between each block."
+            />
+          </Reveal>
+          <Reveal>
+            <HomePlanPreview blocks={plan.blocks} startsAt={plan.startsAt} />
+            <p className="mt-3 max-w-[60ch] text-xs leading-5 text-ink-subtle">
+              This is a preview, not a schedule yet. It lays outstanding work end to
+              end with a break between each. Deadlines, priorities and a proper finish
+              time come when the planner is built.
+            </p>
+          </Reveal>
+        </Block>
 
-        <div className="grid gap-4 lg:col-span-5 lg:gap-5">
-          <Reveal index={2}>
+        <Block id="outstanding">
+          <Reveal>
+            <BlockHeading
+              eyebrow="Still to do"
+              title="What the plan is built from."
+              description="Everything outstanding, and the revision you have queued."
+            />
+          </Reveal>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Reveal index={1}>
             <TaskPanel
               title="Homework to do"
               icon={NotebookPen}
@@ -70,7 +87,7 @@ export default async function PlanPage() {
             </TaskPanel>
           </Reveal>
 
-          <Reveal index={3}>
+          <Reveal index={2}>
             <TaskPanel
               title="Revision"
               icon={BookMarked}
@@ -82,7 +99,8 @@ export default async function PlanPage() {
               ))}
             </TaskPanel>
           </Reveal>
-        </div>
+          </div>
+        </Block>
       </div>
     </PageContainer>
   );
@@ -102,9 +120,9 @@ function TaskPanel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-border bg-card p-5 shadow-card">
-      <div className="mb-3 flex items-baseline justify-between">
-        <h2 className="text-base font-semibold text-ink">{title}</h2>
+    <Surface className="flex h-full flex-col">
+      <div className="mb-4 flex items-baseline justify-between">
+        <h3 className="text-section text-ink">{title}</h3>
         <span className="text-[13px] text-ink-subtle" data-numeric>
           {count}
         </span>
@@ -116,9 +134,9 @@ function TaskPanel({
           className="border-0 bg-transparent py-6"
         />
       ) : (
-        <ul className="divide-y divide-border/70">{children}</ul>
+        <ul className="divide-y divide-border">{children}</ul>
       )}
-    </section>
+    </Surface>
   );
 }
 

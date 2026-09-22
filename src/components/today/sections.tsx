@@ -9,6 +9,7 @@ import {
   SubjectDot,
   activityStyle,
 } from "@/components/shared/badges";
+import { Surface } from "@/components/shared/surface";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { AssignmentView } from "@/lib/data/tasks";
@@ -18,10 +19,8 @@ import { formatDuration, type ResolvedEntry } from "@/lib/timetable/types";
 import { cn } from "@/lib/utils";
 
 /**
- * Section heading in the register the reference uses: a real title with a
- * count pill beside it and any action inline on the right, rather than a
- * lone uppercase label. The count is the useful part — it answers "how many"
- * before you read a single row.
+ * A titled card. The title is card-level now -- the section heading above it
+ * is the page's, so this one names the card rather than repeating the section.
  */
 function Panel({
   title,
@@ -30,35 +29,29 @@ function Panel({
   children,
   className,
 }: {
-  title: string;
+  title?: string;
   count?: number;
   action?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }) {
   return (
-    <section
-      className={cn(
-        "flex h-full flex-col rounded-xl border border-border bg-card p-6 shadow-card",
-        className,
-      )}
-    >
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div className="flex items-baseline gap-2">
-          <h2 className="text-base font-semibold text-ink">{title}</h2>
-          {typeof count === "number" ? (
-            <span
-              className="rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-medium text-ink-muted"
-              data-numeric
-            >
-              {count}
-            </span>
-          ) : null}
+    <Surface className={cn("flex h-full flex-col", className)}>
+      {title || action ? (
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex items-baseline gap-2.5">
+            {title ? <h3 className="text-section text-ink">{title}</h3> : null}
+            {typeof count === "number" ? (
+              <span className="text-[13px] font-medium text-ink-subtle" data-numeric>
+                {count}
+              </span>
+            ) : null}
+          </div>
+          {action}
         </div>
-        {action}
-      </div>
+      ) : null}
       {children}
-    </section>
+    </Surface>
   );
 }
 
@@ -106,7 +99,6 @@ export function HomePlanPreview({
 }) {
   return (
     <Panel
-      title="When you get home"
       count={blocks.filter((b) => b.kind !== "break").length}
       action={
         <Button asChild variant="ghost" size="xs">
@@ -171,8 +163,6 @@ export function HomePlanPreview({
 export function DueSoonList({ assignments }: { assignments: AssignmentView[] }) {
   return (
     <Panel
-      title="Due soon"
-      count={assignments.length}
       action={
         <Button asChild variant="ghost" size="xs">
           <Link href="/homework">
@@ -299,25 +289,27 @@ type Stat = { label: string; value: string; tone?: "danger" | "default" };
  */
 export function DayStats({ stats }: { stats: Stat[] }) {
   return (
-    <dl className="flex flex-wrap items-stretch gap-2">
-      {stats.map((stat) => (
-        <div
-          key={stat.label}
-          className="min-w-[9rem] flex-1 rounded-xl border border-border bg-card px-5 py-4"
-        >
-          <dt className="text-eyebrow text-ink-subtle">{stat.label}</dt>
-          <dd
-            className={cn(
-              "mt-1.5 text-[28px] font-semibold tracking-[-0.025em]",
-              stat.tone === "danger" ? "text-danger" : "text-ink",
-            )}
-            data-numeric
-          >
-            {stat.value}
-          </dd>
-        </div>
-      ))}
-    </dl>
+    <Surface inset="flush" className="overflow-hidden">
+      {/* One ruled row rather than three separate boxes: the numbers belong to
+          the same reading, and hairlines between them say so more quietly
+          than three borders would. */}
+      <dl className="grid grid-cols-1 divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        {stats.map((stat) => (
+          <div key={stat.label} className="px-5 py-5 sm:px-6 sm:py-6">
+            <dt className="text-eyebrow uppercase text-ink-subtle">{stat.label}</dt>
+            <dd
+              className={cn(
+                "mt-3 text-[2rem] font-semibold leading-none tracking-[-0.03em]",
+                stat.tone === "danger" ? "text-danger" : "text-ink",
+              )}
+              data-numeric
+            >
+              {stat.value}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </Surface>
   );
 }
 

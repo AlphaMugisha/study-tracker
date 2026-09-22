@@ -27,9 +27,9 @@ function Panel({
 }) {
   return (
     <section
-      className={cn("rounded-lg border border-border bg-card p-5 shadow-card sm:p-6", className)}
+      className={cn("rounded-xl border border-border bg-card p-5 sm:p-6", className)}
     >
-      <h2 className="text-base font-semibold text-ink">{title}</h2>
+      <h2 className="text-section text-ink">{title}</h2>
       {description ? (
         <p className="mt-1 max-w-prose text-[13px] leading-5 text-ink-muted">
           {description}
@@ -46,15 +46,14 @@ export default async function SettingsPage() {
 
   return (
     <PageContainer>
-      <Reveal>
-        <PageHeader
-          title="Settings"
+      <PageHeader
+          eyebrow="Settings"
+          title="Your account."
           description="Your account, and who can see your academic progress."
         />
-      </Reveal>
 
-      <div className="grid gap-4 lg:grid-cols-2 lg:gap-5">
-        <Reveal index={1} className="lg:col-span-2">
+      <div className="grid gap-4 md:grid-cols-2 md:gap-5">
+        <Reveal index={1} className="md:col-span-2">
           <Panel
             title="Your details"
             description="Your timezone is how StudyFlow works out what you're doing right now, so keep it accurate if you travel."
@@ -114,7 +113,7 @@ export default async function SettingsPage() {
           </Panel>
         </Reveal>
 
-        <Reveal index={4} className="lg:col-span-2">
+        <Reveal index={4} className="md:col-span-2">
           <Panel title="Support access">
             <div className="rounded-md border border-border bg-surface-sunken/60 p-4">
               <div className="flex items-start gap-2.5">

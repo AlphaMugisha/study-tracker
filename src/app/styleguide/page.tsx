@@ -244,34 +244,38 @@ export default function StyleguidePage() {
         <Section
           id="type"
           title="Typography"
-          note="One family: Geist Sans, self-hosted. Numerals are tabular wherever a value ticks, so digits do not jitter. Uppercase appears only in the 11px eyebrow label -- nowhere else."
+          note="One family: Geist Sans, self-hosted. Display sizes are set tight on both axes -- line-height below 1 and negative tracking -- because at 40px+ the default leading opens gaps that make a two-line headline read as two separate thoughts. Body type keeps normal leading. Numerals are tabular wherever a value ticks. Uppercase appears only in the eyebrow, where the 0.22em tracking is what makes it read as a label rather than as shouting."
         >
-          <div className="space-y-6 rounded-lg border border-border bg-card p-6 shadow-card">
+          <div className="space-y-6 rounded-xl border border-border bg-card p-6">
             <div>
-              <Eyebrow>Eyebrow · 11 / 600 / 0.1em</Eyebrow>
-              <p className="mt-1 text-xs text-ink-subtle">
+              <Eyebrow tone="accent">Eyebrow · 11 / 600 / 0.22em</Eyebrow>
+              <p className="mt-1.5 text-xs text-ink-subtle">
                 The only uppercase in the product
               </p>
             </div>
             <div>
-              <p className="text-hero font-semibold text-ink">Mathematics</p>
-              <p className="mt-1 text-xs text-ink-subtle">
-                Hero · clamp(40px, 5.5vw, 56px) / 600 / -0.03em · current activity only
+              <p className="text-statement text-ink">Everything you owe.</p>
+              <p className="mt-2 text-xs text-ink-subtle">
+                Statement · clamp(38px, 5.6vw, 64px) / 600 / -0.035em / 0.95 · the one
+                headline per page
               </p>
             </div>
             <div>
-              <p className="text-display font-semibold text-ink">Good morning, Ava</p>
-              <p className="mt-1 text-xs text-ink-subtle">
-                Display · clamp(28px, 3.5vw, 32px) / 600 / -0.02em · page titles
+              <p className="text-hero text-ink">Mathematics</p>
+              <p className="mt-2 text-xs text-ink-subtle">
+                Hero · clamp(34px, 4.2vw, 50px) / 600 / -0.03em / 0.98 · current
+                activity only
               </p>
             </div>
             <div>
-              <p className="text-lg font-semibold text-ink">Up next</p>
-              <p className="mt-1 text-xs text-ink-subtle">Section · 18 / 600</p>
+              <p className="text-display font-semibold text-ink">When you get home.</p>
+              <p className="mt-2 text-xs text-ink-subtle">
+                Display · clamp(26px, 3vw, 34px) / 600 / -0.025em · section headings
+              </p>
             </div>
             <div>
-              <p className="text-base font-semibold text-ink">Quadratic Equations</p>
-              <p className="mt-1 text-xs text-ink-subtle">Card title · 16 / 600</p>
+              <p className="text-section text-ink">Up next</p>
+              <p className="mt-2 text-xs text-ink-subtle">Section · 17 / 600 · card titles</p>
             </div>
             <div>
               <p className="max-w-prose text-[15px] leading-6 text-ink">
@@ -317,7 +321,7 @@ export default function StyleguidePage() {
         <Section
           id="cards"
           title="Cards and elevation"
-          note="A 1px border plus one very soft shadow. Only cards that are actually clickable lift on hover -- static cards stay put, which is what keeps the page calm."
+          note="A 1px rule and a surface step. Nothing casts a shadow: on a dark ground a drop shadow reads as smudge rather than height, so separation is a hairline plus a lighter fill. Cards that are actually interactive brighten their rule and shift their title on hover -- they do not lift."
         >
           <div className="grid gap-4 sm:grid-cols-3">
             <Card>
@@ -325,7 +329,7 @@ export default function StyleguidePage() {
                 <CardTitle>Static card</CardTitle>
               </CardHeader>
               <CardContent className="text-ink-muted">
-                Border, 10px radius, shadow-card. Does not move.
+                Rule plus surface step, 12px radius. Does not move.
               </CardContent>
             </Card>
 
@@ -334,7 +338,7 @@ export default function StyleguidePage() {
                 <CardTitle>Interactive card</CardTitle>
               </CardHeader>
               <CardContent className="text-ink-muted">
-                Hover me: 1px rise, one shadow step, 150ms.
+                Hover me: the rule brightens and the fill lifts a step, 150ms.
               </CardContent>
             </Card>
 
@@ -351,9 +355,9 @@ export default function StyleguidePage() {
 
           <div className="mt-6 grid gap-4 sm:grid-cols-3">
             {[
-              ["shadow-card", "shadow-card"],
-              ["shadow-card-hover", "shadow-card-hover"],
-              ["shadow-overlay", "shadow-overlay"],
+              ["border · page", "bg-background"],
+              ["border · card", "bg-card"],
+              ["border-strong · raised", "bg-surface-raised border-border-strong"],
             ].map(([label, cls]) => (
               <div
                 key={label}
@@ -387,7 +391,7 @@ export default function StyleguidePage() {
           title="Buttons, badges and inputs"
           note="Buttons are 36px by default, 40px for a primary call to action, 32px inline. Never oversized. Focus rings are always visible."
         >
-          <div className="space-y-6 rounded-lg border border-border bg-card p-6 shadow-card">
+          <div className="space-y-6 rounded-xl border border-border bg-card p-6">
             <div className="flex flex-wrap items-center gap-3">
               <Button>Confirm timetable</Button>
               <Button variant="outline">View timetable</Button>

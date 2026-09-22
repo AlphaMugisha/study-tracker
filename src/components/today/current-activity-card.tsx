@@ -254,7 +254,7 @@ function QuietPanel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-border bg-card p-7 shadow-card sm:p-10">
+    <section className="rounded-xl border border-border bg-card p-7 sm:p-10">
       <div className="flex items-center gap-2">
         <Icon aria-hidden="true" className="size-3.5 text-ink-subtle" />
         <Eyebrow>{eyebrow}</Eyebrow>

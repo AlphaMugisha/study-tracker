@@ -52,16 +52,21 @@ export function AssignmentCard({
     <article
       id={assignment.id}
       className={cn(
-        "scroll-mt-24 rounded-lg border bg-card p-4 shadow-card sm:p-5",
-        assignment.overdue ? "border-danger/25" : "border-border",
-        done && "opacity-70",
+        // The card is a `group`: hovering anywhere on it brightens the rule
+        // and shifts the title, the way the reference's project cards behave.
+        "group/task scroll-mt-24 rounded-xl border bg-card p-4 transition-colors duration-150 ease-out-flat sm:p-5",
+        assignment.overdue
+          ? "border-danger/30 hover:border-danger/50"
+          : "border-border hover:border-border-strong",
+        done ? "opacity-60 hover:opacity-100" : "hover:bg-surface-raised",
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h3
             className={cn(
-              "text-[15px] font-semibold text-ink",
+              "text-section text-ink transition-colors duration-150 ease-out-flat",
+              !done && "group-hover/task:text-indigo-ink",
               done && "line-through decoration-ink-subtle",
             )}
           >
