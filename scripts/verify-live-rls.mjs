@@ -102,8 +102,22 @@ async function makeUser(label, role = "student") {
 }
 
 async function cleanup() {
+  // Report failures loudly. Swallowing them once left a test account and its
+  // data behind in a real project without anyone noticing.
+  const stuck = [];
   for (const id of created) {
-    await call(`/auth/v1/admin/users/${id}`, { headers: service, method: "DELETE" }).catch(() => {});
+    try {
+      const r = await call(`/auth/v1/admin/users/${id}`, { headers: service, method: "DELETE" });
+      if (!r.ok) stuck.push(`${id}: HTTP ${r.status} ${JSON.stringify(r.body).slice(0, 200)}`);
+    } catch (e) {
+      stuck.push(`${id}: ${e.message}`);
+    }
+  }
+  if (stuck.length) {
+    console.log(`
+${RED}Could not delete ${stuck.length} test account(s):${RESET}`);
+    for (const s of stuck) console.log(`  ${s}`);
+    results.push({ name: "test accounts cleaned up", passed: false, detail: `${stuck.length} left behind` });
   }
 }
 

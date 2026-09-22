@@ -264,7 +264,10 @@ create table if not exists public.timetable_entries (
     references public.timetable_versions (id, user_id) on delete cascade,
   constraint timetable_entries_subject_fk
     foreign key (subject_id, user_id)
-    references public.subjects (id, user_id) on delete set null
+    -- CASCADE, not SET NULL: `timetable_entries_class_has_subject` forbids a
+    -- class with no subject, so nulling it only swaps one failure for another.
+    -- A lesson is an instance of a subject; delete Maths and its lessons go too.
+    references public.subjects (id, user_id) on delete cascade
 );
 
 -- Nothing in a school day happens twice at once.
@@ -315,7 +318,9 @@ create table if not exists public.assignments (
 
   constraint assignments_subject_fk
     foreign key (subject_id, user_id)
-    references public.subjects (id, user_id) on delete set null,
+    -- SET NULL must name the column: a bare SET NULL on a composite FK nulls
+    -- user_id too, which is NOT NULL. See 0003 for the full story.
+    references public.subjects (id, user_id) on delete set null (subject_id),
   constraint assignments_id_user_key unique (id, user_id)
 );
 
@@ -362,7 +367,9 @@ create table if not exists public.revision_tasks (
 
   constraint revision_tasks_subject_fk
     foreign key (subject_id, user_id)
-    references public.subjects (id, user_id) on delete set null,
+    -- SET NULL must name the column: a bare SET NULL on a composite FK nulls
+    -- user_id too, which is NOT NULL. See 0003 for the full story.
+    references public.subjects (id, user_id) on delete set null (subject_id),
   constraint revision_tasks_id_user_key unique (id, user_id)
 );
 
@@ -404,13 +411,15 @@ create table if not exists public.study_sessions (
 
   constraint study_sessions_subject_fk
     foreign key (subject_id, user_id)
-    references public.subjects (id, user_id) on delete set null,
+    -- SET NULL must name the column: a bare SET NULL on a composite FK nulls
+    -- user_id too, which is NOT NULL. See 0003 for the full story.
+    references public.subjects (id, user_id) on delete set null (subject_id),
   constraint study_sessions_assignment_fk
     foreign key (assignment_id, user_id)
-    references public.assignments (id, user_id) on delete set null,
+    references public.assignments (id, user_id) on delete set null (assignment_id),
   constraint study_sessions_revision_fk
     foreign key (revision_task_id, user_id)
-    references public.revision_tasks (id, user_id) on delete set null
+    references public.revision_tasks (id, user_id) on delete set null (revision_task_id)
 );
 
 create index if not exists study_sessions_user_started_idx

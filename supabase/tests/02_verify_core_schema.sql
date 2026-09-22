@@ -620,6 +620,43 @@ $$;
 
 
 -- ---------------------------------------------------------------------------
+-- G. Deletion cascades cleanly (regression: composite FK SET NULL)
+-- ---------------------------------------------------------------------------
+-- A bare SET NULL on a composite FK nulls every referencing column, including
+-- the NOT NULL user_id -- which made deleting a subject, or an account,
+-- impossible. Found live, fixed in 0003.
+do $$
+declare
+  ava constant uuid := 'a0000000-0000-4000-8000-000000000001';
+  ok boolean; d text; n int;
+begin
+  -- deleting a subject keeps the homework, drops only the label
+  begin
+    delete from public.subjects where id = '11111111-0000-4000-8000-000000000003';
+    select count(*) into n from public.assignments where user_id = ava;
+    ok := true; d := 'subject deleted, ' || n || ' assignment(s) survived';
+  exception when others then
+    ok := false; d := 'FAILED: ' || sqlerrm;
+  end;
+  perform pg_temp.rec('cascade', 'deleting a subject does not break its dependants', ok, d);
+
+  -- deleting the account removes everything it owns, with no constraint error
+  begin
+    delete from auth.users where id = ava;
+    select count(*) into n from public.assignments where user_id = ava;
+    ok := n = 0; d := 'residual rows: ' || n;
+  exception when others then
+    ok := false; d := 'FAILED: ' || sqlerrm;
+  end;
+  perform pg_temp.rec('cascade', 'deleting an account cascades through every table', ok, d);
+
+  select count(*) into n from public.timetable_entries where user_id = ava;
+  perform pg_temp.rec('cascade', 'no orphaned timetable entries remain', n = 0, 'rows: ' || n);
+end
+$$;
+
+
+-- ---------------------------------------------------------------------------
 -- Report
 -- ---------------------------------------------------------------------------
 \echo ''
