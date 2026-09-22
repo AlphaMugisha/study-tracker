@@ -91,7 +91,7 @@ export default async function TimetablePage({
                     className={cn(
                       "rounded-md border px-3.5 py-2 text-[13px] font-medium transition-colors",
                       active
-                        ? "border-sage/40 bg-sage-soft text-sage-strong"
+                        ? "border-indigo/50 bg-indigo-soft text-indigo-ink"
                         : "border-border bg-card text-ink-muted hover:text-ink",
                     )}
                   >
@@ -133,7 +133,7 @@ function ViewTab({
       aria-current={active ? "page" : undefined}
       className={cn(
         "rounded-sm px-3 py-1.5 text-[13px] font-medium transition-colors",
-        active ? "bg-surface-sunken text-ink" : "text-ink-muted hover:text-ink",
+        active ? "bg-surface-raised text-ink" : "text-ink-muted hover:text-ink",
       )}
     >
       {label}

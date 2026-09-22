@@ -51,7 +51,7 @@ export function LoginForm({ next }: { next: string }) {
             <div className="text-right">
               <Link
                 href="/forgot-password"
-                className="rounded-sm text-[13px] text-ink-muted underline-offset-4 transition-colors hover:text-sage-strong hover:underline"
+                className="rounded-sm text-[13px] text-ink-muted underline-offset-4 transition-colors hover:text-indigo-ink hover:underline"
               >
                 Forgot password?
               </Link>

@@ -4,6 +4,7 @@ import { PageContainer } from "@/components/layout/app-shell";
 import { Reveal } from "@/components/shared/reveal";
 import { CurrentActivityCard } from "@/components/today/current-activity-card";
 import {
+  DayStats,
   DueSoonList,
   HomePlanPreview,
   TodayProgress,
@@ -15,7 +16,7 @@ import { byUrgency, getAssignments, getRevisionTasks, groupAssignments } from "@
 import { firstNameOf, formatFullDate, greeting } from "@/lib/format";
 import { buildHomePlanPreview } from "@/lib/temporary/home-plan-preview";
 import { resolveTemporary } from "@/lib/timetable/resolve-temporary";
-import { toDayOfWeek } from "@/lib/timetable/types";
+import { formatDuration, toDayOfWeek } from "@/lib/timetable/types";
 
 export const metadata: Metadata = { title: "Today" };
 
@@ -64,43 +65,67 @@ export default async function TodayPage() {
         ? state.next
         : null;
 
+  const lessonsToday = todaysEntries.filter((e) => e.activityType === "class").length;
+  const workMinutes = plan.blocks
+    .filter((b) => b.kind !== "break")
+    .reduce((total, b) => total + b.minutes, 0);
+
   return (
     <PageContainer>
       <Reveal>
-        <header className="mb-8 sm:mb-10">
-          <p className="text-sm text-ink-muted">
-            {greeting(now)}, {firstNameOf(displayName(session))}
-          </p>
-          <h1 className="mt-1 text-display font-semibold text-ink">Today</h1>
+        <header className="mb-6 sm:mb-8">
+          {/* The greeting IS the headline, as in the reference -- "Today" as a
+              title told her nothing she didn't already know. */}
+          <h1 className="text-greeting font-semibold text-ink">
+            {greeting(now)}, {firstNameOf(displayName(session))}.
+          </h1>
           <p className="mt-1.5 text-[15px] text-ink-muted">{formatFullDate(now)}</p>
         </header>
       </Reveal>
 
+      <Reveal index={1} className="mb-5 sm:mb-6">
+        <DayStats
+          stats={[
+            { label: "Lessons today", value: String(lessonsToday) },
+            {
+              label: "Due soon",
+              value: String(dueSoon.length),
+              tone: groups.overdue.length > 0 ? "danger" : "default",
+            },
+            {
+              label: "Work tonight",
+              value: workMinutes > 0 ? formatDuration(workMinutes) : "None",
+            },
+          ]}
+        />
+      </Reveal>
+
       {/*
-        Mobile order is the reading order that matters: what am I doing, what's
-        next, what happens at home, what's due, how am I going. On desktop the
-        first two pair up and the rest falls into a 12-column grid.
+        Main column carries the narrative -- what am I doing, what happens when
+        I get home, what's due. The rail carries the glanceable things. On
+        mobile it all collapses to one column in that same reading order.
       */}
-      <div className="grid gap-4 lg:grid-cols-12 lg:gap-5">
-        <Reveal index={1} className="lg:col-span-8">
-          <CurrentActivityCard state={state} />
-        </Reveal>
+      <div className="grid items-start gap-4 lg:grid-cols-12 lg:gap-5">
+        <div className="flex flex-col gap-4 lg:col-span-8 lg:gap-5">
+          <Reveal index={2}>
+            <CurrentActivityCard state={state} />
+          </Reveal>
+          <Reveal index={4}>
+            <HomePlanPreview blocks={plan.blocks} startsAt={plan.startsAt} />
+          </Reveal>
+          <Reveal index={6}>
+            <DueSoonList assignments={dueSoon} />
+          </Reveal>
+        </div>
 
-        <Reveal index={2} className="lg:col-span-4">
-          <UpNextCard next={upNext} />
-        </Reveal>
-
-        <Reveal index={3} className="lg:col-span-7">
-          <HomePlanPreview blocks={plan.blocks} startsAt={plan.startsAt} />
-        </Reveal>
-
-        <Reveal index={4} className="lg:col-span-5">
-          <DueSoonList assignments={dueSoon} />
-        </Reveal>
-
-        <Reveal index={5} className="lg:col-span-4">
-          <TodayProgress done={doneToday} total={trackedToday.length} />
-        </Reveal>
+        <div className="flex flex-col gap-4 lg:col-span-4 lg:sticky lg:top-[4.75rem] lg:gap-5">
+          <Reveal index={3}>
+            <UpNextCard next={upNext} />
+          </Reveal>
+          <Reveal index={5}>
+            <TodayProgress done={doneToday} total={trackedToday.length} />
+          </Reveal>
+        </div>
       </div>
     </PageContainer>
   );

@@ -16,7 +16,7 @@ export function MobileNav() {
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur-sm lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-sidebar/95 backdrop-blur-sm lg:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <ul className="mx-auto flex max-w-lg items-stretch">
@@ -32,7 +32,7 @@ export function MobileNav() {
                 className={cn(
                   "flex min-h-14 flex-col items-center justify-center gap-1 px-1 py-2",
                   "text-[11px] font-medium transition-colors duration-150",
-                  active ? "text-sage-strong" : "text-ink-subtle",
+                  active ? "text-indigo-ink" : "text-ink-subtle",
                 )}
               >
                 <Icon aria-hidden="true" className="size-5" />

@@ -93,7 +93,7 @@ export function UpNextCard({ next }: { next: ResolvedEntry | null }) {
 const PLAN_TONE = {
   homework: { dot: "bg-sage", label: "text-ink" },
   revision: { dot: "bg-lavender", label: "text-ink" },
-  break: { dot: "bg-cream-strong/40", label: "text-ink-muted" },
+  break: { dot: "bg-cream-ink/40", label: "text-ink-muted" },
 } as const;
 
 export function HomePlanPreview({
@@ -225,6 +225,39 @@ export function DueSoonList({ assignments }: { assignments: AssignmentView[] }) 
         </ul>
       )}
     </Panel>
+  );
+}
+
+// --- Day stats --------------------------------------------------------------
+
+type Stat = { label: string; value: string; tone?: "danger" | "default" };
+
+/**
+ * A few real numbers under the greeting. The reference puts a status strip
+ * here; ours only shows things the database actually knows -- no streaks, no
+ * levels, nothing invented.
+ */
+export function DayStats({ stats }: { stats: Stat[] }) {
+  return (
+    <dl className="flex flex-wrap items-stretch gap-2">
+      {stats.map((stat) => (
+        <div
+          key={stat.label}
+          className="min-w-[7.5rem] flex-1 rounded-lg border border-border bg-card px-4 py-3 sm:flex-none"
+        >
+          <dt className="text-eyebrow text-ink-subtle">{stat.label}</dt>
+          <dd
+            className={cn(
+              "mt-1 text-[22px] font-semibold tracking-[-0.02em]",
+              stat.tone === "danger" ? "text-danger" : "text-ink",
+            )}
+            data-numeric
+          >
+            {stat.value}
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 

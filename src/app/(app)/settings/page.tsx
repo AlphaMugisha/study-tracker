@@ -78,7 +78,7 @@ export default async function SettingsPage() {
               <div>
                 <dt className="text-[13px] text-ink-muted">Role</dt>
                 <dd className="mt-1.5">
-                  <Badge className="bg-sage-soft capitalize text-sage-strong">
+                  <Badge className="bg-sage-soft capitalize text-sage-ink">
                     {profile?.role ?? "student"}
                   </Badge>
                 </dd>
@@ -120,7 +120,7 @@ export default async function SettingsPage() {
               <div className="flex items-start gap-2.5">
                 <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-sage" />
                 <div>
-                  <Eyebrow className="text-sage-strong">Nobody has access</Eyebrow>
+                  <Eyebrow className="text-sage-ink">Nobody has access</Eyebrow>
                   <p className="mt-1.5 max-w-prose text-[13px] leading-5 text-ink-muted">
                     A support account can only see your academic progress if you
                     approve a request, and you can revoke it at any time. When

@@ -25,37 +25,53 @@ function initials(name: string): string {
   return parts.map((p) => p[0]?.toUpperCase() ?? "").join("") || "?";
 }
 
+/**
+ * `compact` renders just the avatar, for the top bar. The full form -- avatar,
+ * name, role, chevron -- is for a sidebar foot.
+ */
 export function AccountMenu({
   account,
   className,
+  compact = false,
 }: {
   account: AccountSummary;
   className?: string;
+  compact?: boolean;
 }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
+        aria-label={compact ? `Account: ${account.name}` : undefined}
         className={cn(
-          "flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left",
-          "transition-colors hover:bg-sidebar-accent/60",
+          "flex items-center rounded-md text-left transition-colors",
+          compact
+            ? "size-9 shrink-0 justify-center hover:bg-surface-raised"
+            : "w-full gap-2.5 px-2 py-2 hover:bg-sidebar-accent/60",
           className,
         )}
       >
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-sage-soft text-[11px] font-semibold text-sage-strong">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-indigo-soft text-[11px] font-semibold text-indigo-ink ring-1 ring-border-strong">
           {initials(account.name)}
         </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-[13px] font-medium text-ink">
-            {account.name}
-          </span>
-          <span className="block truncate text-[11px] capitalize text-ink-subtle">
-            {account.role}
-          </span>
-        </span>
-        <ChevronsUpDown aria-hidden="true" className="size-3.5 shrink-0 text-ink-subtle" />
+        {!compact ? (
+          <>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[13px] font-medium text-ink">
+                {account.name}
+              </span>
+              <span className="block truncate text-[11px] capitalize text-ink-subtle">
+                {account.role}
+              </span>
+            </span>
+            <ChevronsUpDown
+              aria-hidden="true"
+              className="size-3.5 shrink-0 text-ink-subtle"
+            />
+          </>
+        ) : null}
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" side="top" className="w-56">
+      <DropdownMenuContent align="end" side={compact ? "bottom" : "top"} className="w-56">
         <DropdownMenuLabel className="font-normal">
           <span className="block text-[13px] font-medium text-ink">{account.name}</span>
           <span className="block truncate text-xs text-ink-muted">{account.email}</span>

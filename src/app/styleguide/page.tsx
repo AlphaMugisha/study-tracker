@@ -79,10 +79,10 @@ export default function StyleguidePage() {
             StudyFlow design system
           </h1>
           <p className="mt-3 max-w-2xl text-[15px] leading-7 text-ink-muted">
-            Calm, clean, modern, academic, mature. Warm off-white ground, charcoal
-            ink, muted sage for what is happening now, soft lavender for what is
-            coming, warm cream for breaks. Restrained borders, two shadow steps,
-            almost no motion.
+            Calm, clean, modern, academic, mature. A near-black ground with
+            layered surfaces, indigo as the single accent, and sage, lavender and
+            cream reserved for activity types. Depth comes from surface steps and
+            borders rather than shadows, and there is almost no motion.
           </p>
           <Button asChild variant="outline" size="sm" className="mt-5">
             <Link href="/dashboard">
@@ -98,9 +98,14 @@ export default function StyleguidePage() {
           note="Every value is a semantic token in globals.css. Colour never carries meaning on its own -- it always has a text or icon partner. Contrast ratios are against the surface each pairing actually sits on."
         >
           <h3 className="mb-3 text-sm font-medium text-ink">Surfaces and ink</h3>
-          <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             <Swatch name="Page" varName="--background" className="bg-background" />
             <Swatch name="Card" varName="--card" className="bg-card" />
+            <Swatch
+              name="Raised"
+              varName="--surface-raised"
+              className="bg-surface-raised"
+            />
             <Swatch
               name="Sunken"
               varName="--surface-sunken"
@@ -110,58 +115,78 @@ export default function StyleguidePage() {
               name="Ink"
               varName="--ink"
               className="bg-ink"
-              textClassName="text-white"
-              contrast="12.9:1 on page"
+              textClassName="text-background"
+              contrast="15.7:1 on page"
             />
             <Swatch
               name="Ink muted"
               varName="--ink-muted"
               className="bg-ink-muted"
-              textClassName="text-white"
-              contrast="6.0:1 on page"
+              textClassName="text-background"
+              contrast="6.4:1 on card"
             />
           </div>
 
-          <h3 className="mb-3 text-sm font-medium text-ink">Accents</h3>
+          <h3 className="mb-3 text-sm font-medium text-ink">Indigo — the accent</h3>
+          <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <Swatch
+              name="Primary"
+              varName="--primary"
+              className="bg-primary"
+              textClassName="text-primary-foreground"
+              contrast="5.0:1 w/ white"
+            />
+            <Swatch
+              name="Indigo"
+              varName="--indigo"
+              className="bg-indigo"
+              textClassName="text-white"
+            />
+            <Swatch
+              name="Indigo soft"
+              varName="--indigo-soft"
+              className="bg-indigo-soft"
+              textClassName="text-indigo-ink"
+              contrast="7.6:1 w/ ink"
+            />
+            <Swatch
+              name="Indigo ink"
+              varName="--indigo-ink"
+              className="bg-indigo-ink"
+              textClassName="text-background"
+              contrast="8.7:1 on card"
+            />
+          </div>
+
+          <h3 className="mb-3 text-sm font-medium text-ink">Activity accents</h3>
           <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <Swatch
-              name="Sage"
-              varName="--sage"
-              className="bg-sage"
-              textClassName="text-white"
-              contrast="4.6:1 w/ white"
-            />
-            <Swatch
-              name="Sage strong"
-              varName="--sage-strong"
-              className="bg-sage-strong"
-              textClassName="text-white"
-            />
+            <Swatch name="Sage" varName="--sage" className="bg-sage" textClassName="text-background" />
             <Swatch
               name="Sage soft"
               varName="--sage-soft"
               className="bg-sage-soft"
-              textClassName="text-sage-strong"
-              contrast="6.2:1 w/ strong"
+              textClassName="text-sage-ink"
+              contrast="7.7:1 w/ ink"
             />
             <Swatch
               name="Lavender"
               varName="--lavender"
               className="bg-lavender"
-              textClassName="text-white"
-            />
-            <Swatch
-              name="Lavender strong"
-              varName="--lavender-strong"
-              className="bg-lavender-strong"
-              textClassName="text-white"
+              textClassName="text-background"
             />
             <Swatch
               name="Lavender soft"
               varName="--lavender-soft"
               className="bg-lavender-soft"
-              textClassName="text-lavender-strong"
-              contrast="6.4:1 w/ strong"
+              textClassName="text-lavender-ink"
+              contrast="7.8:1 w/ ink"
+            />
+            <Swatch
+              name="Cream"
+              varName="--cream"
+              className="bg-cream"
+              textClassName="text-cream-ink"
+              contrast="8.7:1 w/ ink"
             />
           </div>
 
@@ -172,51 +197,45 @@ export default function StyleguidePage() {
               varName="--hero"
               className="bg-hero"
               textClassName="text-hero-foreground"
-              contrast="7.2:1 w/ white"
+              contrast="5.0:1 w/ white"
             />
             <Swatch
               name="Hero rest"
               varName="--hero-rest"
               className="bg-hero-rest"
               textClassName="text-hero-rest-foreground"
-              contrast="7.0:1"
+              contrast="9.7:1"
             />
           </div>
 
-          <h3 className="mb-3 text-sm font-medium text-ink">Supporting and status</h3>
+          <h3 className="mb-3 text-sm font-medium text-ink">Status</h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            <Swatch
-              name="Cream"
-              varName="--cream"
-              className="bg-cream"
-              textClassName="text-cream-strong"
-              contrast="6.3:1 w/ strong"
-            />
             <Swatch
               name="Danger"
               varName="--danger"
               className="bg-danger"
-              textClassName="text-white"
+              textClassName="text-background"
+              contrast="5.2:1 on card"
             />
             <Swatch
               name="Danger soft"
               varName="--danger-soft"
               className="bg-danger-soft"
               textClassName="text-danger"
-              contrast="6.1:1"
+              contrast="4.7:1"
             />
             <Swatch
               name="Warn"
               varName="--warn"
               className="bg-warn"
-              textClassName="text-white"
+              textClassName="text-background"
             />
             <Swatch
               name="Warn soft"
               varName="--warn-soft"
               className="bg-warn-soft"
               textClassName="text-warn"
-              contrast="5.5:1"
+              contrast="6.8:1"
             />
           </div>
         </Section>
@@ -282,7 +301,7 @@ export default function StyleguidePage() {
         <Section
           id="current-activity"
           title="Current Activity Card"
-          note="The real component, fed a fabricated TimetableState. Rendering the actual card here rather than a copy means the styleguide cannot drift from the product. It is the one element in StudyFlow drawn as a solid panel of colour: everything else is a white card on the warm ground, so this reads as the page's subject rather than one of its parts."
+          note="The real component, fed a fabricated TimetableState. Rendering the actual card here rather than a copy means the styleguide cannot drift from the product. It is the one element in StudyFlow drawn as a solid panel of colour: everything else is a raised card on the dark ground, so this reads as the page's subject rather than one of its parts."
         >
           <div className="space-y-4">
             <CurrentActivityCard state={DEMO_IN_CLASS} />
@@ -395,10 +414,10 @@ export default function StyleguidePage() {
               <Badge variant="secondary">Not started</Badge>
               <Badge variant="outline">Biology</Badge>
               <Badge variant="destructive">Overdue</Badge>
-              <Badge className="bg-lavender-soft text-lavender-strong">In progress</Badge>
-              <Badge className="bg-sage-soft text-sage-strong">Completed</Badge>
+              <Badge className="bg-lavender-soft text-lavender-ink">In progress</Badge>
+              <Badge className="bg-sage-soft text-sage-ink">Completed</Badge>
               <Badge className="bg-warn-soft text-warn">Due today</Badge>
-              <Badge className="bg-cream text-cream-strong">Break</Badge>
+              <Badge className="bg-cream text-cream-ink">Break</Badge>
             </div>
 
             <Separator />

@@ -141,14 +141,14 @@ export function WeekGrid({
               <h3
                 className={cn(
                   "text-sm font-semibold",
-                  isToday ? "text-sage-strong" : "text-ink",
+                  isToday ? "text-sage-ink" : "text-ink",
                 )}
               >
                 <span className="xl:hidden">{DAY_NAMES[day]}</span>
                 <span className="hidden xl:inline">{DAY_SHORT[day]}</span>
               </h3>
               {isToday ? (
-                <span className="text-[11px] font-medium text-sage-strong">Today</span>
+                <span className="text-[11px] font-medium text-sage-ink">Today</span>
               ) : null}
             </div>
 

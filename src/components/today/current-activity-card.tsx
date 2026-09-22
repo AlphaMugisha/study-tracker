@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * The signature card, and the only element on Today rendered as a solid panel
- * of colour. Everything else is a white card on the warm ground; this one is
+ * of colour. Everything else is a raised card on the dark ground; this one is
  * the page's subject rather than one of its parts.
  *
  * It renders a `TimetableState` and nothing else, so when Phase 3B swaps the
@@ -136,7 +136,7 @@ function LivePanel({
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1",
                   "text-eyebrow uppercase",
-                  resting ? "bg-black/8" : "bg-white/15",
+                  resting ? "bg-white/10" : "bg-white/15",
                 )}
               >
                 <Icon aria-hidden="true" className="size-3" />
@@ -169,7 +169,7 @@ function LivePanel({
                 className={cn(
                   "mt-5 inline-flex items-center gap-2 rounded-full px-3 py-1.5",
                   "text-[12px] font-medium uppercase tracking-[0.06em]",
-                  resting ? "bg-black/8" : "bg-white/12",
+                  resting ? "bg-white/10" : "bg-white/12",
                 )}
               >
                 Then {next.label} at <span data-numeric>{next.startLabel}</span>
@@ -208,13 +208,13 @@ function LivePanel({
       <div
         className={cn(
           "flex flex-wrap items-center gap-x-4 gap-y-2 border-t px-6 py-3.5 sm:px-8",
-          resting ? "border-black/10" : "border-hero-line",
+          resting ? "border-white/10" : "border-hero-line",
         )}
       >
         <div
           className={cn(
             "h-1.5 min-w-[8rem] flex-1 overflow-hidden rounded-full",
-            resting ? "bg-black/10" : "bg-hero-fill",
+            resting ? "bg-white/10" : "bg-hero-fill",
           )}
           role="progressbar"
           aria-valuenow={percent}
@@ -225,7 +225,7 @@ function LivePanel({
           <div
             className={cn(
               "h-full rounded-full transition-[width] duration-700 ease-linear",
-              resting ? "bg-hero-rest-foreground/60" : "bg-white",
+              resting ? "bg-hero-rest-foreground/70" : "bg-white",
             )}
             style={{ width: `${percent}%` }}
           />

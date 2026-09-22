@@ -3,113 +3,106 @@
 @import "shadcn/tailwind.css";
 
 /* ---------------------------------------------------------------------------
-   StudyFlow design tokens
+   StudyFlow design tokens — dark
    ---------------------------------------------------------------------------
-   Calm, clean, modern, academic, mature.
-   Warm off-white ground, charcoal ink, muted sage primary, soft lavender
-   secondary, warm cream for neutral/break states.
+   Deep blue-charcoal ground, near-white ink, indigo accent. Dark surfaces are
+   separated by borders rather than shadows: a drop shadow on a dark ground
+   reads as mud, so elevation here is a lighter surface plus a hairline.
 
-   Every colour is declared once here as a semantic token. Components must
-   never reference a raw hex value -- that indirection is what will let us add
-   a dark theme later as a single `.dark { }` block.
-
-   Two naming systems coexist on purpose:
-     - shadcn semantics (--background, --primary, --muted, ...) so the ui/
-       primitives work untouched.
-     - StudyFlow semantics (--sage, --lavender, --cream, --ink-*, ...) for the
-       product meaning the shadcn primitives do not cover.
+   Every colour is declared once. Components reference semantic tokens, never
+   raw hex, which is what made flipping the whole product from light to dark a
+   change to this file rather than to every component.
 --------------------------------------------------------------------------- */
 
 :root {
-  /* Radius: 10px cards / 8px controls / 6px buttons */
-  --radius: 0.625rem;
+  /* Radius: cards 14px, controls 10px, buttons 8px. Softer than the light
+     system was — on a dark ground, tighter corners read as harsh. */
+  --radius: 0.875rem;
 
-  /* Surfaces and ink */
-  --background: #faf9f6; /* warm off-white page */
-  --foreground: #1f2328; /* charcoal, 12.9:1 on background */
-  --card: #ffffff;
-  --card-foreground: #1f2328;
-  --popover: #ffffff;
-  --popover-foreground: #1f2328;
-  --surface-sunken: #f3f1eb; /* wells, table headers, timeline gutters */
+  /* Surfaces. Four steps, each a little lighter than the last. */
+  --background: #0e1015; /* page */
+  --card: #171a21; /* panels */
+  --surface-raised: #1d212a; /* hover, nested rows */
+  --surface-sunken: #131620; /* wells, tracks, inputs */
+  --popover: #1b1f27;
 
-  --ink: #1f2328;
-  --ink-muted: #5c646f; /* secondary copy, 6.0:1 on background */
-  --ink-subtle: #858d98; /* labels and timestamps, 3.4:1 -- decorative only */
+  --foreground: #e7e9ee;
+  --card-foreground: #e7e9ee;
+  --popover-foreground: #e7e9ee;
 
-  /* Primary: muted sage. Current activity, primary actions, completed. */
-  --primary: #5e8062;
+  --ink: #e7e9ee; /* 15.7:1 on background */
+  --ink-muted: #969db0; /* 6.4:1 on card — body secondary */
+  --ink-subtle: #7d859a; /* 4.7:1 on card — labels, timestamps, meta */
+
+  --border: #242935;
+  --border-strong: #303747;
+  --input: #242935;
+
+  /* Primary: indigo. Actions, the active nav state, the hero panel. */
+  --primary: #5464d8;
   --primary-foreground: #ffffff;
-  --sage: #5e8062;
-  --sage-strong: #45603f; /* text-on-light variant, 6.2:1 on --sage-soft */
-  --sage-soft: #ebf1ea;
+  --indigo: #5b6ee1;
+  --indigo-bright: #6474e2; /* hover for primary */
+  --indigo-soft: #1e2440; /* tinted surface for selected states */
+  --indigo-ink: #a8b4f5; /* indigo text that stays legible on dark */
 
-  /* Secondary accent: soft lavender. Up next, upcoming, revision blocks.
-     Never used for primary actions. */
-  --lavender: #7b74a8;
-  --lavender-strong: #564e84; /* 6.4:1 on --lavender-soft */
-  --lavender-soft: #efedf7;
-
-  /* Supporting: warm cream. Breaks, free periods, neutral highlights. */
-  --cream: #f4eee1;
-  --cream-strong: #6b5a38; /* 6.3:1 on --cream */
-
-  /* Hero panel. The Current Activity Card is a solid panel of colour rather
-     than another white card -- it is the one element on Today that should
-     read as the page's subject rather than one of its parts. Deep sage keeps
-     white text at ~7.2:1. */
-  --hero: #44603f;
+  /* The hero panel. The one element filled with solid colour. */
+  --hero: #5464d8;
   --hero-foreground: #ffffff;
-  --hero-muted: rgba(255, 255, 255, 0.74);
-  --hero-subtle: rgba(255, 255, 255, 0.54);
-  --hero-line: rgba(255, 255, 255, 0.18);
-  --hero-fill: rgba(255, 255, 255, 0.16);
+  --hero-line: rgba(255, 255, 255, 0.2);
+  --hero-fill: rgba(255, 255, 255, 0.18);
 
-  /* Break variant: the same panel treatment, warm instead of green, so a
-     break still reads as "this is what is happening now". */
-  --hero-rest: #efe4cd;
-  --hero-rest-foreground: #5a4a2c;
+  /* Break / rest variant of the hero, so a break still reads as "now". */
+  --hero-rest: #2b3444;
+  --hero-rest-foreground: #dbe3f2;
+
+  /* Supporting accents */
+  --sage: #57b98a; /* done, on track */
+  --sage-soft: #16302a;
+  --sage-ink: #6fd3a2;
+  --lavender: #9b8cf0; /* upcoming, revision */
+  --lavender-soft: #221f3a;
+  --lavender-ink: #b7abff;
+  --cream: #2e2a22; /* breaks, neutral highlight */
+  --cream-ink: #d8c9a6;
 
   /* Status */
-  --danger: #a8534a; /* muted red, overdue and destructive */
-  --danger-soft: #fbeeec;
-  --warn: #996d24; /* amber, due today and low-confidence extraction */
-  --warn-soft: #faf2e3;
+  --danger: #e2646a;
+  --danger-soft: #331d22;
+  --destructive: #e2646a;
+  --warn: #dfa94e;
+  --warn-soft: #33281a;
 
   /* shadcn neutrals */
-  --secondary: #f3f1eb;
-  --secondary-foreground: #1f2328;
-  --muted: #f3f1eb;
-  --muted-foreground: #5c646f;
-  --accent: #ebf1ea; /* sage-tinted hover surface */
-  --accent-foreground: #45603f;
-  --destructive: #a8534a;
-  --border: #e6e3db;
-  --input: #dedad0;
-  --ring: #5e8062;
+  --secondary: #1d212a;
+  --secondary-foreground: #e7e9ee;
+  --muted: #1d212a;
+  --muted-foreground: #969db0;
+  --accent: #1e2440;
+  --accent-foreground: #a8b4f5;
+  --ring: #5b6ee1;
 
-  /* Chart slots double as the subject colour palette */
-  --chart-1: #5e8062;
-  --chart-2: #7b74a8;
-  --chart-3: #996d24;
-  --chart-4: #4f7a8b;
-  --chart-5: #a8534a;
+  /* Subject colour slots */
+  --chart-1: #5b6ee1;
+  --chart-2: #9b8cf0;
+  --chart-3: #dfa94e;
+  --chart-4: #4ea8c9;
+  --chart-5: #e2646a;
 
-  /* Sidebar */
-  --sidebar: #f7f5f0;
-  --sidebar-foreground: #1f2328;
-  --sidebar-primary: #5e8062;
+  /* Sidebar sits slightly darker than the page so the rail reads as chrome */
+  --sidebar: #0b0d12;
+  --sidebar-foreground: #e7e9ee;
+  --sidebar-primary: #5b6ee1;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #ebf1ea;
-  --sidebar-accent-foreground: #45603f;
-  --sidebar-border: #e6e3db;
-  --sidebar-ring: #5e8062;
+  --sidebar-accent: #1e2440;
+  --sidebar-accent-foreground: #a8b4f5;
+  --sidebar-border: #1c212b;
+  --sidebar-ring: #5b6ee1;
 
-  /* Elevation: two steps only. Static cards use `card`; interactive cards
-     step up on hover. Nothing floats higher than `overlay`. */
-  --shadow-card: 0 1px 2px rgba(31, 35, 40, 0.04), 0 1px 3px rgba(31, 35, 40, 0.05);
-  --shadow-card-hover: 0 2px 4px rgba(31, 35, 40, 0.05), 0 6px 16px rgba(31, 35, 40, 0.07);
-  --shadow-overlay: 0 8px 32px rgba(31, 35, 40, 0.12);
+  /* Elevation. Used sparingly — borders do most of the work. */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.55);
 
   /* Type */
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
@@ -157,26 +150,30 @@
   --color-sidebar-ring: var(--sidebar-ring);
 
   /* StudyFlow semantics */
+  --color-surface-raised: var(--surface-raised);
   --color-surface-sunken: var(--surface-sunken);
+  --color-border-strong: var(--border-strong);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
   --color-ink-subtle: var(--ink-subtle);
-  --color-sage: var(--sage);
-  --color-sage-strong: var(--sage-strong);
-  --color-sage-soft: var(--sage-soft);
-  --color-lavender: var(--lavender);
-  --color-lavender-strong: var(--lavender-strong);
-  --color-lavender-soft: var(--lavender-soft);
-  --color-cream: var(--cream);
-  --color-cream-strong: var(--cream-strong);
+  --color-indigo: var(--indigo);
+  --color-indigo-bright: var(--indigo-bright);
+  --color-indigo-soft: var(--indigo-soft);
+  --color-indigo-ink: var(--indigo-ink);
   --color-hero: var(--hero);
   --color-hero-foreground: var(--hero-foreground);
-  --color-hero-muted: var(--hero-muted);
-  --color-hero-subtle: var(--hero-subtle);
   --color-hero-line: var(--hero-line);
   --color-hero-fill: var(--hero-fill);
   --color-hero-rest: var(--hero-rest);
   --color-hero-rest-foreground: var(--hero-rest-foreground);
+  --color-sage: var(--sage);
+  --color-sage-soft: var(--sage-soft);
+  --color-sage-ink: var(--sage-ink);
+  --color-lavender: var(--lavender);
+  --color-lavender-soft: var(--lavender-soft);
+  --color-lavender-ink: var(--lavender-ink);
+  --color-cream: var(--cream);
+  --color-cream-ink: var(--cream-ink);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
   --color-warn: var(--warn);
@@ -187,11 +184,11 @@
   --shadow-card-hover: var(--shadow-card-hover);
   --shadow-overlay: var(--shadow-overlay);
 
-  /* Radius scale: sm 6px / md 8px / lg 10px / xl 14px */
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  /* Radius: sm 8px / md 11px / lg 14px / xl 20px */
+  --radius-sm: calc(var(--radius) * 0.57);
+  --radius-md: calc(var(--radius) * 0.79);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-xl: calc(var(--radius) * 1.43);
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
@@ -201,25 +198,30 @@
   --font-mono: var(--font-mono);
   --font-heading: var(--font-sans);
 
-  --text-eyebrow: 0.6875rem; /* 11px -- the only uppercase in the product */
+  --text-eyebrow: 0.6875rem;
   --text-eyebrow--line-height: 1rem;
-  --text-eyebrow--letter-spacing: 0.1em;
+  --text-eyebrow--letter-spacing: 0.08em;
   --text-eyebrow--font-weight: 600;
 
-  --text-hero: clamp(2.5rem, 5.5vw, 3.5rem); /* current-activity subject */
-  --text-hero--line-height: 1.04;
-  --text-hero--letter-spacing: -0.03em;
+  /* The greeting. Larger and tighter than a normal page title. */
+  --text-greeting: clamp(1.9rem, 4vw, 2.6rem);
+  --text-greeting--line-height: 1.08;
+  --text-greeting--letter-spacing: -0.03em;
 
-  --text-count: clamp(3.25rem, 7vw, 4.75rem); /* the hero countdown */
-  --text-count--line-height: 0.92;
-  --text-count--letter-spacing: -0.04em;
-  --text-count--font-weight: 600;
+  /* The hero countdown. */
+  --text-count: clamp(3rem, 6.5vw, 4.25rem);
+  --text-count--line-height: 0.9;
+  --text-count--letter-spacing: -0.045em;
+  --text-count--font-weight: 700;
 
-  --text-display: clamp(1.75rem, 3.5vw, 2rem); /* page titles */
+  --text-hero: clamp(1.75rem, 3.6vw, 2.35rem);
+  --text-hero--line-height: 1.1;
+  --text-hero--letter-spacing: -0.025em;
+
+  --text-display: clamp(1.6rem, 3vw, 1.9rem);
   --text-display--line-height: 1.15;
   --text-display--letter-spacing: -0.02em;
 
-  /* Motion */
   --ease-out-soft: var(--ease-out-soft);
 }
 
@@ -230,6 +232,7 @@
 
   html {
     @apply font-sans;
+    color-scheme: dark;
     -webkit-text-size-adjust: 100%;
   }
 
@@ -244,29 +247,44 @@
   }
 
   ::selection {
-    background-color: var(--sage-soft);
-    color: var(--sage-strong);
+    background-color: var(--indigo);
+    color: #ffffff;
   }
 
-  /* Never remove a focus indicator, only restyle it. */
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
+
+  /* Dark scrollbars; the default light ones tear a hole in the page. */
+  * {
+    scrollbar-color: var(--border-strong) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
 }
 
 @layer utilities {
-  /* Interactive cards only. Static cards do not move. */
   .card-interactive {
     transition:
-      transform var(--duration-hover) var(--ease-out-soft),
-      box-shadow var(--duration-hover) var(--ease-out-soft),
+      background-color var(--duration-hover) var(--ease-out-soft),
       border-color var(--duration-hover) var(--ease-out-soft);
   }
 
   .card-interactive:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-card-hover);
+    background-color: var(--surface-raised);
+    border-color: var(--border-strong);
   }
 }
 
@@ -278,9 +296,5 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
-  }
-
-  .card-interactive:hover {
-    transform: none;
   }
 }

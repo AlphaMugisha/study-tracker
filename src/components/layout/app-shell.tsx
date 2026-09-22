@@ -1,3 +1,5 @@
+import { cookies } from "next/headers";
+
 import type { AccountSummary } from "@/components/layout/account-menu";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -8,11 +10,13 @@ import { cn } from "@/lib/utils";
 /**
  * Two designed layouts, not one shrunk layout:
  *   < lg : top bar with the brand + fixed bottom tab bar, single column
- *   >= lg: persistent sidebar with the account menu at its foot, and a slim
- *          top bar carrying the section name and the local clock
+ *   >= lg: collapsible sidebar (icon rail or full panel) plus a top bar
+ *          carrying the section name, search, the local clock and the account
  */
 export async function AppShell({ children }: { children: React.ReactNode }) {
   const session = await requireSessionContext();
+  // Read on the server so the first paint is already the right width.
+  const collapsed = (await cookies()).get("sf-sidebar")?.value === "collapsed";
 
   const account: AccountSummary = {
     name: displayName(session),
@@ -22,10 +26,10 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-dvh bg-background">
-      <Sidebar account={account} />
+      <Sidebar defaultCollapsed={collapsed} />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar timezone={session.profile?.timezone ?? "UTC"} />
+        <TopBar timezone={session.profile?.timezone ?? "UTC"} account={account} />
 
         <main id="main" className="flex-1 pb-24 lg:pb-0">
           {children}

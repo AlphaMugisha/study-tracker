@@ -78,7 +78,7 @@ export function FormAlert({
         "flex gap-2.5 rounded-md border px-3.5 py-3 text-[13px] leading-5",
         variant === "error"
           ? "border-danger/20 bg-danger-soft text-danger"
-          : "border-sage/20 bg-sage-soft text-sage-strong",
+          : "border-sage/20 bg-sage-soft text-sage-ink",
       )}
     >
       <Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0" />

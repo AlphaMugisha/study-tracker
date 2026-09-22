@@ -61,7 +61,7 @@ export function AuthShell({
   );
 }
 
-/** The white surface the inputs live on. */
+/** The raised surface the inputs live on. */
 export function AuthCard({ children }: { children: React.ReactNode }) {
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card shadow-card">
@@ -71,12 +71,12 @@ export function AuthCard({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Cream-tinted strip at the foot of the card for the cross-link between
- * sign in and sign up. This is the "supporting" colour doing quiet work.
+ * A recessed strip at the foot of the card for the cross-link between sign in
+ * and sign up -- separated by depth rather than by another rule.
  */
 export function AuthCardFooter({ children }: { children: React.ReactNode }) {
   return (
-    <div className="border-t border-border bg-cream/60 px-7 py-4 text-center text-sm text-ink-muted">
+    <div className="border-t border-border bg-surface-sunken px-7 py-4 text-center text-sm text-ink-muted">
       {children}
     </div>
   );
@@ -86,7 +86,7 @@ export function AuthLink({ href, children }: { href: string; children: React.Rea
   return (
     <Link
       href={href}
-      className="rounded-sm font-medium text-sage-strong underline-offset-4 transition-colors hover:text-ink hover:underline"
+      className="rounded-sm font-medium text-indigo-ink underline-offset-4 transition-colors hover:text-ink hover:underline"
     >
       {children}
     </Link>

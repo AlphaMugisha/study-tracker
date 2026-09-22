@@ -17,25 +17,25 @@ const ACTIVITY_STYLE: Record<
 > = {
   class: {
     label: "Lesson",
-    chip: "bg-sage-soft text-sage-strong",
+    chip: "bg-sage-soft text-sage-ink",
     rail: "bg-sage",
     icon: BookOpen,
   },
   break: {
     label: "Break",
-    chip: "bg-cream text-cream-strong",
-    rail: "bg-cream-strong/40",
+    chip: "bg-cream text-cream-ink",
+    rail: "bg-cream-ink/40",
     icon: Coffee,
   },
   free: {
     label: "Free",
-    chip: "bg-lavender-soft text-lavender-strong",
+    chip: "bg-lavender-soft text-lavender-ink",
     rail: "bg-lavender/50",
     icon: GraduationCap,
   },
   study: {
     label: "Study",
-    chip: "bg-lavender-soft text-lavender-strong",
+    chip: "bg-lavender-soft text-lavender-ink",
     rail: "bg-lavender/50",
     icon: GraduationCap,
   },
@@ -118,8 +118,8 @@ export function PriorityBadge({ priority }: { priority: TaskPriority }) {
 
 const STATUS_STYLE: Record<TaskStatus, { label: string; className: string }> = {
   not_started: { label: "Not started", className: "bg-surface-sunken text-ink-muted" },
-  in_progress: { label: "In progress", className: "bg-lavender-soft text-lavender-strong" },
-  completed: { label: "Completed", className: "bg-sage-soft text-sage-strong" },
+  in_progress: { label: "In progress", className: "bg-lavender-soft text-lavender-ink" },
+  completed: { label: "Completed", className: "bg-sage-soft text-sage-ink" },
 };
 
 export function StatusBadge({ status }: { status: TaskStatus }) {
