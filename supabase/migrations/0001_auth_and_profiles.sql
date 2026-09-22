@@ -93,6 +93,10 @@ grant update (full_name, timezone) on public.profiles to authenticated;
 -- ----------------------------------------------------------------------------
 -- 5. Keep updated_at honest
 -- ----------------------------------------------------------------------------
+-- now() is the TRANSACTION timestamp, not the statement clock. That is
+-- deliberate: every row touched by one request shares a single timestamp,
+-- which is what you want when reconstructing what changed together. Use
+-- clock_timestamp() only if you ever need sub-transaction ordering.
 
 create or replace function public.set_updated_at()
 returns trigger

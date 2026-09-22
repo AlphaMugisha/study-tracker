@@ -62,7 +62,25 @@ editing `.env.local`.
 If it is on, add `http://localhost:3000/auth/callback` under
 **Authentication → URL Configuration → Redirect URLs**.
 
-### 5. Run it
+### 5. (Optional) Verify the migration locally first
+
+If you have a local PostgreSQL, you can prove the migration is valid and that
+its security behaviour is what we claim, before touching Supabase:
+
+```bash
+PSQL='/c/Program Files/PostgreSQL/16/bin/psql.exe' PGPASSWORD=postgres   npm run db:verify:local
+```
+
+It creates a throwaway database, applies a shim that reproduces the parts of
+Supabase the migration depends on (`auth.users`, `auth.uid()`, and the default
+`anon`/`authenticated` grants), runs the migration twice to check idempotency,
+then runs 33 behavioural checks and drops the database again. Existing
+databases are never touched.
+
+This is a useful pre-flight, not a substitute for running the migration on the
+real project.
+
+### 6. Run it
 
 ```bash
 npm install

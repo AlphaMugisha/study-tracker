@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:verify:local": "bash supabase/tests/run-local-verification.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
