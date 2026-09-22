@@ -81,11 +81,21 @@ async function api(path, init = {}) {
   return body;
 }
 
+/**
+ * PostgREST rejects a bulk insert whose objects have differing key sets
+ * ("All object keys must match"), so fill every row out to the union of keys.
+ * Explicit null lets the column default apply where the value is absent.
+ */
+function squareOff(rows) {
+  const keys = [...new Set(rows.flatMap((r) => Object.keys(r)))];
+  return rows.map((r) => Object.fromEntries(keys.map((k) => [k, r[k] ?? null])));
+}
+
 const insert = (table, rows) =>
   api(`/rest/v1/${table}`, {
     method: "POST",
     headers: { Prefer: "return=representation" },
-    body: JSON.stringify(rows),
+    body: JSON.stringify(squareOff(rows)),
   });
 
 // --- dates -----------------------------------------------------------------
