@@ -18,7 +18,15 @@ import type { Subject } from "@/types/database";
 
 export const metadata: Metadata = { title: "Homework" };
 
-export default async function HomeworkPage() {
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+export default async function HomeworkPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const params = await searchParams;
+  const openNew = params.new === "1";
   const now = new Date();
   const [assignments, subjects] = await Promise.all([getAssignments(now), getSubjects()]);
   const groups = groupAssignments(assignments, now);
@@ -32,7 +40,7 @@ export default async function HomeworkPage() {
         <PageHeader
           title="Homework"
           description="Everything due, with what needs attention first."
-          action={<AssignmentDialog subjects={subjects} />}
+          action={<AssignmentDialog subjects={subjects} defaultOpen={openNew} />}
         />
       </Reveal>
 

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Plus } from "lucide-react";
 
 import { AccountMenu, type AccountSummary } from "@/components/layout/account-menu";
 import { Logo } from "@/components/layout/logo";
@@ -50,13 +51,31 @@ export function Sidebar({ account }: { account: AccountSummary }) {
 
   return (
     <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
-      <div className="px-5 py-6">
+      <div className="px-5 pb-4 pt-5">
         <Link href="/dashboard" className="rounded-md">
           <Logo />
         </Link>
       </div>
 
-      <nav aria-label="Main" className="flex flex-1 flex-col gap-1 px-3">
+      {/* One primary action, always reachable. `?new=1` opens the homework
+          dialog on arrival so this is a single click from anywhere. */}
+      <div className="px-3 pb-4">
+        <Link
+          href="/homework?new=1"
+          className={cn(
+            "flex h-9 w-full items-center justify-center gap-1.5 rounded-md",
+            "bg-primary text-[13px] font-medium text-primary-foreground",
+            "transition-colors hover:bg-primary/90",
+          )}
+        >
+          <Plus aria-hidden="true" className="size-4" />
+          Add homework
+        </Link>
+      </div>
+
+      <p className="px-3 pb-1.5 text-eyebrow uppercase text-ink-subtle">Your day</p>
+
+      <nav aria-label="Main" className="flex flex-1 flex-col gap-0.5 px-3">
         {primaryNav.map((item) => (
           <SidebarLink
             key={item.href}

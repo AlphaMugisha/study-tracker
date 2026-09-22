@@ -54,6 +54,22 @@
   --cream: #f4eee1;
   --cream-strong: #6b5a38; /* 6.3:1 on --cream */
 
+  /* Hero panel. The Current Activity Card is a solid panel of colour rather
+     than another white card -- it is the one element on Today that should
+     read as the page's subject rather than one of its parts. Deep sage keeps
+     white text at ~7.2:1. */
+  --hero: #44603f;
+  --hero-foreground: #ffffff;
+  --hero-muted: rgba(255, 255, 255, 0.74);
+  --hero-subtle: rgba(255, 255, 255, 0.54);
+  --hero-line: rgba(255, 255, 255, 0.18);
+  --hero-fill: rgba(255, 255, 255, 0.16);
+
+  /* Break variant: the same panel treatment, warm instead of green, so a
+     break still reads as "this is what is happening now". */
+  --hero-rest: #efe4cd;
+  --hero-rest-foreground: #5a4a2c;
+
   /* Status */
   --danger: #a8534a; /* muted red, overdue and destructive */
   --danger-soft: #fbeeec;
@@ -153,6 +169,14 @@
   --color-lavender-soft: var(--lavender-soft);
   --color-cream: var(--cream);
   --color-cream-strong: var(--cream-strong);
+  --color-hero: var(--hero);
+  --color-hero-foreground: var(--hero-foreground);
+  --color-hero-muted: var(--hero-muted);
+  --color-hero-subtle: var(--hero-subtle);
+  --color-hero-line: var(--hero-line);
+  --color-hero-fill: var(--hero-fill);
+  --color-hero-rest: var(--hero-rest);
+  --color-hero-rest-foreground: var(--hero-rest-foreground);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
   --color-warn: var(--warn);
@@ -185,6 +209,11 @@
   --text-hero: clamp(2.5rem, 5.5vw, 3.5rem); /* current-activity subject */
   --text-hero--line-height: 1.04;
   --text-hero--letter-spacing: -0.03em;
+
+  --text-count: clamp(3.25rem, 7vw, 4.75rem); /* the hero countdown */
+  --text-count--line-height: 0.92;
+  --text-count--letter-spacing: -0.04em;
+  --text-count--font-weight: 600;
 
   --text-display: clamp(1.75rem, 3.5vw, 2rem); /* page titles */
   --text-display--line-height: 1.15;

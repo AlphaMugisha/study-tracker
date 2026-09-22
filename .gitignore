@@ -42,3 +42,5 @@ next-env.d.ts
 
 # keep the template in version control
 !.env.example
+referto.mp4
+*.mp4

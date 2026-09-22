@@ -38,14 +38,17 @@ export function AssignmentDialog({
   subjects,
   assignment,
   trigger,
+  defaultOpen = false,
 }: {
   subjects: Subject[];
   /** Absent means create. */
   assignment?: Assignment;
   trigger?: React.ReactNode;
+  /** Set by /homework?new=1 so the sidebar action is one click from anywhere. */
+  defaultOpen?: boolean;
 }) {
   const isEdit = Boolean(assignment);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
 
   // Wrapping the server action rather than watching its result in an effect:
   // this runs on the client once the action resolves, so the dialog closes on

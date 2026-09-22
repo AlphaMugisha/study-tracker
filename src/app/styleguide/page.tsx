@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, Coffee } from "lucide-react";
+import { ArrowRight, BookOpen } from "lucide-react";
 
 import { MotionDemo } from "@/app/styleguide/motion-demo";
+import { CurrentActivityCard } from "@/components/today/current-activity-card";
+import { DEMO_AFTER_SCHOOL, DEMO_IN_CLASS, DEMO_ON_BREAK } from "@/lib/timetable/demo-states";
 import { Eyebrow } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -163,6 +165,24 @@ export default function StyleguidePage() {
             />
           </div>
 
+          <h3 className="mb-3 text-sm font-medium text-ink">Hero panel</h3>
+          <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <Swatch
+              name="Hero"
+              varName="--hero"
+              className="bg-hero"
+              textClassName="text-hero-foreground"
+              contrast="7.2:1 w/ white"
+            />
+            <Swatch
+              name="Hero rest"
+              varName="--hero-rest"
+              className="bg-hero-rest"
+              textClassName="text-hero-rest-foreground"
+              contrast="7.0:1"
+            />
+          </div>
+
           <h3 className="mb-3 text-sm font-medium text-ink">Supporting and status</h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <Swatch
@@ -261,90 +281,15 @@ export default function StyleguidePage() {
         {/* ------------------------------------------------------------ */}
         <Section
           id="current-activity"
-          title="Current Activity Card — direction preview"
-          note="Static mock, no logic. This exists so the visual direction of the signature card can be approved now; the real component with the live engine arrives in Phase 5."
+          title="Current Activity Card"
+          note="The real component, fed a fabricated TimetableState. Rendering the actual card here rather than a copy means the styleguide cannot drift from the product. It is the one element in StudyFlow drawn as a solid panel of colour: everything else is a white card on the warm ground, so this reads as the page's subject rather than one of its parts."
         >
-          <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-            <div className="rounded-lg border border-border bg-card p-6 shadow-card sm:p-8">
-              <div className="flex items-center gap-2">
-                <span className="size-1.5 rounded-full bg-sage" aria-hidden="true" />
-                <Eyebrow className="text-sage-strong">Currently</Eyebrow>
-              </div>
-
-              <p className="mt-4 text-hero font-semibold text-ink">Mathematics</p>
-              <p className="mt-1 text-[15px] text-ink-muted">Quadratic Equations</p>
-
-              <div
-                className="mt-6 flex flex-wrap items-baseline gap-x-4 gap-y-1"
-                data-numeric
-              >
-                <span className="text-xl font-medium text-ink">09:00 — 10:00</span>
-                <span className="text-xl font-semibold text-sage-strong">
-                  32 minutes remaining
-                </span>
-              </div>
-
-              <div className="mt-5">
-                <div
-                  className="h-2 w-full overflow-hidden rounded-full bg-surface-sunken"
-                  role="progressbar"
-                  aria-valuenow={47}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-label="Lesson progress"
-                >
-                  <div className="h-full w-[47%] rounded-full bg-sage" />
-                </div>
-                <div
-                  className="mt-2 flex justify-between text-xs text-ink-subtle"
-                  data-numeric
-                >
-                  <span>28 min elapsed</span>
-                  <span>60 min lesson</span>
-                </div>
-              </div>
-
-              <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
-                <p className="text-sm text-ink-muted">
-                  Next:{" "}
-                  <span className="font-medium text-ink">English</span>
-                  <span className="text-ink-subtle"> · 10:00</span>
-                </p>
-                <Button variant="outline" size="sm" asChild>
-                  <Link href="/timetable">View timetable</Link>
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid gap-4 content-start">
-              <div className="rounded-lg border border-border bg-card p-5 shadow-card">
-                <Eyebrow className="text-lavender-strong">Up next</Eyebrow>
-                <p className="mt-2.5 text-lg font-semibold text-ink">English</p>
-                <p className="mt-0.5 text-sm text-ink-muted" data-numeric>
-                  10:00 — 11:00
-                </p>
-              </div>
-
-              <div className="rounded-lg border border-border bg-cream p-5">
-                <div className="flex items-center gap-2">
-                  <Coffee aria-hidden="true" className="size-3.5 text-cream-strong" />
-                  <Eyebrow className="text-cream-strong">Break variant</Eyebrow>
-                </div>
-                <p className="mt-2.5 text-lg font-semibold text-ink">Break</p>
-                <p className="mt-0.5 text-sm text-cream-strong" data-numeric>
-                  10:00 — 10:30 · 20 minutes remaining
-                </p>
-              </div>
-
-              <div className="rounded-lg border border-border bg-card p-5 shadow-card">
-                <Eyebrow>School day complete</Eyebrow>
-                <p className="mt-2.5 text-lg font-semibold text-ink">
-                  School is done for today.
-                </p>
-                <p className="mt-1 text-sm text-ink-muted">
-                  Your plan for home starts at 16:30.
-                </p>
-              </div>
+          <div className="space-y-4">
+            <CurrentActivityCard state={DEMO_IN_CLASS} />
+            <CurrentActivityCard state={DEMO_ON_BREAK} />
+            <div className="grid gap-4 lg:grid-cols-2">
+              <CurrentActivityCard state={DEMO_AFTER_SCHOOL} />
+              <CurrentActivityCard state={{ kind: "no_timetable" }} />
             </div>
           </div>
         </Section>

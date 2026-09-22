@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { ArrowRight, Coffee, NotebookPen } from "lucide-react";
+import { ArrowRight, NotebookPen } from "lucide-react";
 
-import { Eyebrow } from "@/components/layout/page-header";
+import { ProgressRing } from "@/components/shared/progress-ring";
 import {
   ActivityChip,
   OverdueBadge,
@@ -16,23 +16,44 @@ import type { PlanPreviewBlock } from "@/lib/temporary/home-plan-preview";
 import { formatDuration, type ResolvedEntry } from "@/lib/timetable/types";
 import { cn } from "@/lib/utils";
 
+/**
+ * Section heading in the register the reference uses: a real title with a
+ * count pill beside it and any action inline on the right, rather than a
+ * lone uppercase label. The count is the useful part — it answers "how many"
+ * before you read a single row.
+ */
 function Panel({
-  eyebrow,
+  title,
+  count,
   action,
   children,
   className,
 }: {
-  eyebrow: string;
+  title: string;
+  count?: number;
   action?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }) {
   return (
     <section
-      className={cn("rounded-lg border border-border bg-card p-5 shadow-card", className)}
+      className={cn(
+        "flex h-full flex-col rounded-xl border border-border bg-card p-5 shadow-card",
+        className,
+      )}
     >
       <div className="mb-4 flex items-center justify-between gap-3">
-        <Eyebrow>{eyebrow}</Eyebrow>
+        <div className="flex items-baseline gap-2">
+          <h2 className="text-[15px] font-semibold text-ink">{title}</h2>
+          {typeof count === "number" ? (
+            <span
+              className="rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-medium text-ink-muted"
+              data-numeric
+            >
+              {count}
+            </span>
+          ) : null}
+        </div>
         {action}
       </div>
       {children}
@@ -44,7 +65,7 @@ function Panel({
 
 export function UpNextCard({ next }: { next: ResolvedEntry | null }) {
   return (
-    <Panel eyebrow="Up next">
+    <Panel title="Up next">
       {next ? (
         <>
           <p className="text-lg font-semibold text-ink">{next.label}</p>
@@ -84,7 +105,8 @@ export function HomePlanPreview({
 }) {
   return (
     <Panel
-      eyebrow="When you get home"
+      title="When you get home"
+      count={blocks.filter((b) => b.kind !== "break").length}
       action={
         <Button asChild variant="ghost" size="xs">
           <Link href="/plan">
@@ -148,7 +170,8 @@ export function HomePlanPreview({
 export function DueSoonList({ assignments }: { assignments: AssignmentView[] }) {
   return (
     <Panel
-      eyebrow="Due soon"
+      title="Due soon"
+      count={assignments.length}
       action={
         <Button asChild variant="ghost" size="xs">
           <Link href="/homework">
@@ -214,27 +237,20 @@ export function TodayProgress({
   done: number;
   total: number;
 }) {
-  const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+  const complete = total > 0 && done === total;
 
   return (
-    <Panel eyebrow="Today's progress">
-      <div className="flex items-baseline justify-between">
-        <p className="text-2xl font-semibold text-ink" data-numeric>
-          {done} <span className="text-ink-subtle">/ {total}</span>
-        </p>
-        <p className="text-sm text-ink-muted">
-          {total === 0 ? "nothing tracked" : "tasks completed"}
+    <Panel title="Today's progress">
+      <div className="flex flex-1 flex-col items-center justify-center py-2">
+        <ProgressRing value={done} total={total} />
+        <p className="mt-4 text-center text-[13px] text-ink-muted">
+          {total === 0
+            ? "Nothing tracked for today."
+            : complete
+              ? "Everything done. Go and rest."
+              : `${total - done} still to do`}
         </p>
       </div>
-      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-surface-sunken">
-        <div className="h-full rounded-full bg-sage" style={{ width: `${pct}%` }} />
-      </div>
-      {total > 0 && done === total ? (
-        <p className="mt-3 flex items-center gap-1.5 text-xs text-sage-strong">
-          <Coffee aria-hidden="true" className="size-3.5" />
-          Everything done. Go and rest.
-        </p>
-      ) : null}
     </Panel>
   );
 }
