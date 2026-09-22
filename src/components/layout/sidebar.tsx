@@ -13,9 +13,8 @@ import { cn } from "@/lib/utils";
  * The sidebar has two axes, which is why the classes look busy:
  *
  *   viewport  — below md there is no sidebar at all (the bottom tab bar takes
- *               over); from md to lg it is always a 60px icon rail, because a
- *               236px panel at 768px eats the page; from lg it can be either.
- *   collapsed — the student's own choice, honoured only from lg up.
+ *               over); from md up it is a full 240px panel with labels.
+ *   collapsed — the student's own choice, a 60px icon rail, honoured from md.
  *
  * `collapsed` is persisted in a cookie rather than localStorage so the server
  * renders the correct width on first paint; reading it on the client would
@@ -32,21 +31,21 @@ export function Sidebar({ defaultCollapsed }: { defaultCollapsed: boolean }) {
   };
 
   /** Applied to anything that should only appear in the full panel. */
-  const wideOnly = collapsed ? "hidden" : "hidden lg:block";
+  const wideOnly = collapsed ? "hidden" : "hidden md:block";
 
   return (
     <aside
       className={cn(
-        "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex",
+        "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-border bg-sidebar md:flex",
         "transition-[width] duration-200 ease-out",
-        collapsed ? "w-[60px]" : "w-[60px] lg:w-[236px]",
+        collapsed ? "w-[60px]" : "w-[60px] md:w-[240px]",
       )}
     >
       {/* brand + collapse */}
       <div
         className={cn(
           "flex h-14 items-center justify-center px-2",
-          !collapsed && "lg:justify-between lg:px-4",
+          !collapsed && "md:justify-between md:px-4",
         )}
       >
         <Link
@@ -78,25 +77,25 @@ export function Sidebar({ defaultCollapsed }: { defaultCollapsed: boolean }) {
       </div>
 
       {/* primary action */}
-      <div className={cn("px-2 pb-3", !collapsed && "lg:px-3")}>
+      <div className={cn("px-2 pb-3", !collapsed && "md:px-3")}>
         <Link
           href="/homework?new=1"
           title="Add homework"
           className={cn(
             "flex size-11 items-center justify-center gap-2 rounded-lg bg-primary font-medium text-primary-foreground",
             "transition-colors hover:bg-indigo-bright",
-            !collapsed && "lg:h-11 lg:w-full lg:text-[13px]",
+            !collapsed && "md:h-11 md:w-full md:text-[13px]",
           )}
         >
           <Plus aria-hidden="true" className="size-4 shrink-0" />
           <span className={wideOnly}>Add homework</span>
-          <span className={cn("sr-only", !collapsed && "lg:hidden")}>Add homework</span>
+          <span className={cn("sr-only", !collapsed && "md:hidden")}>Add homework</span>
         </Link>
       </div>
 
       <nav
         aria-label="Main"
-        className={cn("flex flex-1 flex-col gap-0.5 px-2", !collapsed && "lg:px-3")}
+        className={cn("flex flex-1 flex-col gap-0.5 px-2", !collapsed && "md:px-3")}
       >
         {primaryNav.map((item) => (
           <SidebarLink
@@ -124,7 +123,7 @@ export function Sidebar({ defaultCollapsed }: { defaultCollapsed: boolean }) {
       <div
         className={cn(
           "border-t border-sidebar-border p-1.5",
-          !collapsed && "lg:hidden",
+          !collapsed && "md:hidden",
         )}
       >
         <button
@@ -161,7 +160,7 @@ function SidebarLink({
       aria-current={active ? "page" : undefined}
       className={cn(
         "group flex h-10 w-10 items-center justify-center rounded-lg text-[13px] font-medium transition-colors duration-150",
-        !collapsed && "lg:w-full lg:justify-start lg:gap-3 lg:px-3",
+        !collapsed && "md:w-full md:justify-start md:gap-3 md:px-3",
         active
           ? "bg-sidebar-accent text-sidebar-accent-foreground"
           : "text-ink-muted hover:bg-surface-raised hover:text-ink",
@@ -174,7 +173,7 @@ function SidebarLink({
           active ? "text-indigo-ink" : "text-ink-subtle group-hover:text-ink-muted",
         )}
       />
-      <span className={collapsed ? "sr-only" : "sr-only lg:not-sr-only"}>
+      <span className={collapsed ? "sr-only" : "sr-only md:not-sr-only"}>
         {item.label}
       </span>
     </Link>
