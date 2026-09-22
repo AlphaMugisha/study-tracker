@@ -2,6 +2,11 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* StudyFlow is dark-only. Without this, shadcn's `dark:` utilities would key
+   off the OS preference and the product would render two different ways
+   depending on a setting that has nothing to do with it. */
+@custom-variant dark (&);
+
 /* ---------------------------------------------------------------------------
    StudyFlow design tokens — dark
    ---------------------------------------------------------------------------
