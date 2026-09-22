@@ -36,13 +36,21 @@ run -d postgres -q -c "create database $DB;"
 echo "→ applying Supabase shim"
 run -d "$DB" -v ON_ERROR_STOP=1 -q -f supabase/tests/00_supabase_shim.sql
 
-echo "→ applying migration (run 1)"
-run -d "$DB" -v ON_ERROR_STOP=1 -q -f supabase/migrations/0001_auth_and_profiles.sql
+echo "→ applying migrations (run 1)"
+for m in supabase/migrations/*.sql; do
+  echo "   $m"
+  run -d "$DB" -v ON_ERROR_STOP=1 -q -f "$m"
+done
 
-echo "→ applying migration again (idempotency check)"
-run -d "$DB" -v ON_ERROR_STOP=1 -q -f supabase/migrations/0001_auth_and_profiles.sql
+echo "→ applying migrations again (idempotency check)"
+for m in supabase/migrations/*.sql; do
+  run -d "$DB" -v ON_ERROR_STOP=1 -q -f "$m"
+done
 
-echo "→ running verification suite"
-run -d "$DB" -v ON_ERROR_STOP=1 -P pager=off -f supabase/tests/01_verify_profiles.sql
+echo "→ running verification suites"
+for t in supabase/tests/0[0-9]_verify_*.sql; do
+  echo "   $t"
+  run -d "$DB" -v ON_ERROR_STOP=1 -P pager=off -f "$t"
+done
 
 echo "✓ all checks passed"

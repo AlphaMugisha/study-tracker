@@ -10,10 +10,14 @@ moment she opens it:
 
 ## Status
 
-**Phase 1 — accounts.** Sign up, sign in, sign out, session persistence and
-route guarding, on Supabase Auth. The feature pages (`/timetable`,
-`/homework`, `/plan`, `/settings`) are still labelled placeholders, and
-`/dashboard` is a placeholder that only proves authentication works.
+**Phase 2 — database.** The full academic schema, RLS, and the admin/student
+authorisation model, on top of the Phase 1 account system. The feature pages
+(`/timetable`, `/homework`, `/plan`, `/settings`) are still labelled
+placeholders — Phase 2 built the database those features will use, not the
+features themselves.
+
+See [docs/DATABASE.md](docs/DATABASE.md) for the schema, the RLS model, the
+admin authorisation handshake and the seed data.
 
 ## Setup
 
@@ -110,7 +114,10 @@ npm run dev
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint |
 | `npm run db:check` | Verify the app can reach Supabase and the schema is in place |
-| `npm run db:verify:local` | Run the migration + 33 checks against a local Postgres |
+| `npm run db:verify:local` | Apply all migrations + 91 checks against a local Postgres |
+| `npm run db:verify:live` | End-to-end RLS checks against the real project, over HTTP |
+| `npm run seed -- --email you@example.com --reset` | Demo dataset for one account |
+| `npm run role -- --list` | List accounts and roles |
 
 ## Routes
 
