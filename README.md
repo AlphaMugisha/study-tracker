@@ -34,11 +34,20 @@ creates a profile for every new account.
 
 ### 3. Configure the environment
 
+`.env.local` already exists with blank slots (it is gitignored). Fill in from
+**Project Settings → API**, then verify the wiring:
+
 ```bash
-cp .env.example .env.local
+npm run db:check
 ```
 
-Fill in from **Project Settings → API**:
+That uses the anon key only — exactly what the browser gets — so a pass means
+the real app will work. It is read-only: it creates and changes nothing. It
+confirms the URL and key are a matching pair, the project is reachable, the
+`profiles` table and `is_admin()` exist, `anon` is correctly locked out, and
+reports whether email confirmation is on.
+
+The two values you need:
 
 | Variable | Where | Required |
 |---|---|---|
@@ -100,6 +109,8 @@ npm run dev
 | `npm run start` | Serve the build |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint |
+| `npm run db:check` | Verify the app can reach Supabase and the schema is in place |
+| `npm run db:verify:local` | Run the migration + 33 checks against a local Postgres |
 
 ## Routes
 
