@@ -217,6 +217,7 @@ try {
     ["/dashboard", ["Quadratic equations practice"]],
     // The shell itself: sidebar, search affordance and the day stats strip.
     ["/dashboard", ["Collapse sidebar", "Ctrl K", "Lessons today", "Work tonight"]],
+    ["/dashboard", ["Rest of today"]],
     ["/timetable", ["Timetable", "Mathematics", "Break", "07:30"]],
     ["/timetable?view=week", ["Monday", "Friday"]],
     ["/homework", ["Homework", "Overdue", "Quadratic equations practice", "Add homework"]],

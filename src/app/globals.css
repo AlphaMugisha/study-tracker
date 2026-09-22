@@ -209,21 +209,21 @@
   --text-eyebrow--font-weight: 600;
 
   /* The greeting. Larger and tighter than a normal page title. */
-  --text-greeting: clamp(1.9rem, 4vw, 2.6rem);
+  --text-greeting: clamp(2.1rem, 4.2vw, 3.1rem);
   --text-greeting--line-height: 1.08;
   --text-greeting--letter-spacing: -0.03em;
 
   /* The hero countdown. */
-  --text-count: clamp(3rem, 6.5vw, 4.25rem);
+  --text-count: clamp(3.25rem, 7vw, 5rem);
   --text-count--line-height: 0.9;
   --text-count--letter-spacing: -0.045em;
   --text-count--font-weight: 700;
 
-  --text-hero: clamp(1.75rem, 3.6vw, 2.35rem);
+  --text-hero: clamp(1.95rem, 3.8vw, 2.75rem);
   --text-hero--line-height: 1.1;
   --text-hero--letter-spacing: -0.025em;
 
-  --text-display: clamp(1.6rem, 3vw, 1.9rem);
+  --text-display: clamp(1.75rem, 3.2vw, 2.2rem);
   --text-display--line-height: 1.15;
   --text-display--letter-spacing: -0.02em;
 

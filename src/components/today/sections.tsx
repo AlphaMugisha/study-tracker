@@ -7,6 +7,7 @@ import {
   OverdueBadge,
   PriorityBadge,
   SubjectDot,
+  activityStyle,
 } from "@/components/shared/badges";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -38,13 +39,13 @@ function Panel({
   return (
     <section
       className={cn(
-        "flex h-full flex-col rounded-xl border border-border bg-card p-5 shadow-card",
+        "flex h-full flex-col rounded-xl border border-border bg-card p-6 shadow-card",
         className,
       )}
     >
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-baseline gap-2">
-          <h2 className="text-[15px] font-semibold text-ink">{title}</h2>
+          <h2 className="text-base font-semibold text-ink">{title}</h2>
           {typeof count === "number" ? (
             <span
               className="rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-medium text-ink-muted"
@@ -228,6 +229,65 @@ export function DueSoonList({ assignments }: { assignments: AssignmentView[] }) 
   );
 }
 
+// --- Rest of today ----------------------------------------------------------
+
+/**
+ * Everything still to come on the timetable today. "Up next" answers the very
+ * next thing; this answers "and then what?", which is the question that made
+ * the right-hand rail feel half-empty without it.
+ */
+export function RestOfDay({ entries }: { entries: ResolvedEntry[] }) {
+  return (
+    <Panel title="Rest of today" count={entries.length}>
+      {entries.length === 0 ? (
+        <p className="text-sm text-ink-muted">
+          Nothing else timetabled. The rest of the day is yours.
+        </p>
+      ) : (
+        <ol className="-my-1 divide-y divide-border/60">
+          {entries.map((entry) => {
+            const style = activityStyle(entry.activityType);
+            const isLesson = entry.activityType === "class";
+
+            return (
+              <li key={entry.id} className="flex items-baseline gap-3 py-2.5">
+                <span
+                  className="w-11 shrink-0 text-[13px] font-medium text-ink-muted"
+                  data-numeric
+                >
+                  {entry.startLabel}
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={cn("size-1.5 shrink-0 rounded-full", style.rail)}
+                />
+                <span className="min-w-0 flex-1">
+                  <span
+                    className={cn(
+                      "block truncate text-sm",
+                      isLesson ? "font-medium text-ink" : "text-ink-muted",
+                    )}
+                  >
+                    {entry.label}
+                  </span>
+                  {entry.room ? (
+                    <span className="block truncate text-xs text-ink-subtle">
+                      {entry.room}
+                    </span>
+                  ) : null}
+                </span>
+                <span className="shrink-0 text-xs text-ink-subtle" data-numeric>
+                  {formatDuration(entry.durationMinutes)}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </Panel>
+  );
+}
+
 // --- Day stats --------------------------------------------------------------
 
 type Stat = { label: string; value: string; tone?: "danger" | "default" };
@@ -243,12 +303,12 @@ export function DayStats({ stats }: { stats: Stat[] }) {
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className="min-w-[7.5rem] flex-1 rounded-lg border border-border bg-card px-4 py-3 sm:flex-none"
+          className="min-w-[9rem] flex-1 rounded-xl border border-border bg-card px-5 py-4"
         >
           <dt className="text-eyebrow text-ink-subtle">{stat.label}</dt>
           <dd
             className={cn(
-              "mt-1 text-[22px] font-semibold tracking-[-0.02em]",
+              "mt-1.5 text-[28px] font-semibold tracking-[-0.025em]",
               stat.tone === "danger" ? "text-danger" : "text-ink",
             )}
             data-numeric

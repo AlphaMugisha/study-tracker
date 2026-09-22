@@ -127,7 +127,7 @@ function LivePanel({
         resting ? "bg-hero-rest text-hero-rest-foreground" : "bg-hero text-hero-foreground",
       )}
     >
-      <div className="p-6 sm:p-8">
+      <div className="p-7 sm:p-10">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between sm:gap-10">
           {/* what */}
           <div className="min-w-0 flex-1">
@@ -207,7 +207,7 @@ function LivePanel({
       {/* progress strip along the foot of the panel */}
       <div
         className={cn(
-          "flex flex-wrap items-center gap-x-4 gap-y-2 border-t px-6 py-3.5 sm:px-8",
+          "flex flex-wrap items-center gap-x-4 gap-y-2 border-t px-7 py-4 sm:px-10",
           resting ? "border-white/10" : "border-hero-line",
         )}
       >
@@ -254,7 +254,7 @@ function QuietPanel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-border bg-card p-6 shadow-card sm:p-8">
+    <section className="rounded-xl border border-border bg-card p-7 shadow-card sm:p-10">
       <div className="flex items-center gap-2">
         <Icon aria-hidden="true" className="size-3.5 text-ink-subtle" />
         <Eyebrow>{eyebrow}</Eyebrow>

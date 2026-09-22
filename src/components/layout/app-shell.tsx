@@ -42,8 +42,9 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Page gutter and max width. 1200px keeps the dashboard grid from stretching
- * so wide that "currently" and "up next" lose their relationship.
+ * Page gutter and max width. The cap steps up on big screens rather than
+ * holding at 1200px -- on a 1080p or wider monitor that left a third of the
+ * window empty on either side.
  */
 export function PageContainer({
   children,
@@ -55,7 +56,7 @@ export function PageContainer({
   return (
     <div
       className={cn(
-        "mx-auto w-full max-w-[1200px] px-5 py-6 sm:px-8 lg:px-10 lg:py-9",
+        "mx-auto w-full max-w-[1440px] px-5 py-7 sm:px-8 lg:px-12 lg:py-10 2xl:max-w-[1680px]",
         className,
       )}
     >

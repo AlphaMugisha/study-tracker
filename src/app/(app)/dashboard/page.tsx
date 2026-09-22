@@ -7,6 +7,7 @@ import {
   DayStats,
   DueSoonList,
   HomePlanPreview,
+  RestOfDay,
   TodayProgress,
   UpNextCard,
 } from "@/components/today/sections";
@@ -65,6 +66,28 @@ export default async function TodayPage() {
         ? state.next
         : null;
 
+  /**
+   * "Rest of today" is measured from the same point the current-activity card
+   * is showing, not from the wall clock -- while the temporary resolver can
+   * park that card mid-lesson via `demoFallback`, reading the clock here would
+   * make the two cards disagree about what time it is.
+   */
+  const restFromMinutes =
+    state.kind === "in_activity"
+      ? state.current.endMinutes
+      : state.kind === "gap"
+        ? state.next.startMinutes
+        : state.kind === "before_school"
+          ? 0
+          : null;
+
+  const restOfDay =
+    restFromMinutes === null
+      ? []
+      : todaysEntries
+          .filter((e) => e.startMinutes >= restFromMinutes)
+          .sort((a, b) => a.startMinutes - b.startMinutes);
+
   const lessonsToday = todaysEntries.filter((e) => e.activityType === "class").length;
   const workMinutes = plan.blocks
     .filter((b) => b.kind !== "break")
@@ -105,24 +128,27 @@ export default async function TodayPage() {
         I get home, what's due. The rail carries the glanceable things. On
         mobile it all collapses to one column in that same reading order.
       */}
-      <div className="grid items-start gap-4 lg:grid-cols-12 lg:gap-5">
-        <div className="flex flex-col gap-4 lg:col-span-8 lg:gap-5">
+      <div className="grid items-start gap-5 lg:grid-cols-12 lg:gap-6">
+        <div className="flex flex-col gap-5 lg:col-span-8 lg:gap-6">
           <Reveal index={2}>
             <CurrentActivityCard state={state} />
           </Reveal>
           <Reveal index={4}>
             <HomePlanPreview blocks={plan.blocks} startsAt={plan.startsAt} />
           </Reveal>
-          <Reveal index={6}>
+          <Reveal index={5}>
             <DueSoonList assignments={dueSoon} />
           </Reveal>
         </div>
 
-        <div className="flex flex-col gap-4 lg:col-span-4 lg:sticky lg:top-[4.75rem] lg:gap-5">
+        <div className="flex flex-col gap-5 lg:col-span-4 lg:gap-6">
           <Reveal index={3}>
             <UpNextCard next={upNext} />
           </Reveal>
           <Reveal index={5}>
+            <RestOfDay entries={restOfDay} />
+          </Reveal>
+          <Reveal index={6}>
             <TodayProgress done={doneToday} total={trackedToday.length} />
           </Reveal>
         </div>
