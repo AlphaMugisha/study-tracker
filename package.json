@@ -10,7 +10,8 @@
     "lint:fix": "eslint --fix",
     "typecheck": "tsc --noEmit",
     "db:verify:local": "bash supabase/tests/run-local-verification.sh",
-    "db:check": "node --env-file-if-exists=.env.local scripts/check-db.mjs"
+    "db:check": "node --env-file-if-exists=.env.local scripts/check-db.mjs",
+    "role": "node --env-file-if-exists=.env.local scripts/set-role.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
