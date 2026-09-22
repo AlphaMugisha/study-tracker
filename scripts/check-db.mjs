@@ -116,17 +116,31 @@ try {
   process.exit(1);
 }
 
+/**
+ * Prove GoTrue accepts our key, without creating anything: post a
+ * deliberately invalid signup. A 400/422 means the key was accepted and the
+ * payload was rejected; a 401 means the key itself is bad.
+ *
+ * Probing the bare /rest/v1/ root is NOT a useful test -- it answers 401 for
+ * publishable keys even when the API is working perfectly. The profiles probe
+ * in section 3 is the real REST check.
+ */
 try {
-  const { res, ms } = await req("/rest/v1/");
-  if (res.status === 401 || res.status === 403) {
-    fail("REST API accepts the anon key", `HTTP ${res.status} — key rejected`);
-  } else if (res.ok) {
-    pass("REST API accepts the anon key", `${res.status} in ${ms}ms`);
+  const { res, ms } = await req("/auth/v1/signup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: "not-an-email", password: "x" }),
+  });
+
+  if (res.status === 401) {
+    fail("Auth accepts the publishable key", "HTTP 401 — key rejected");
+  } else if (res.status === 400 || res.status === 422) {
+    pass("Auth accepts the publishable key", `rejected a bad payload with ${res.status} in ${ms}ms`);
   } else {
-    warn("REST API responded unexpectedly", `HTTP ${res.status}`);
+    warn("signup probe returned an unexpected status", `HTTP ${res.status}`);
   }
 } catch (error) {
-  fail("REST API reachable", error.message);
+  fail("Auth endpoint reachable", error.message);
 }
 
 // ---------------------------------------------------------------------------
