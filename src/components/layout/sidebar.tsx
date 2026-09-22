@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { AccountMenu, type AccountSummary } from "@/components/layout/account-menu";
 import { Logo } from "@/components/layout/logo";
-import { isNavItemActive, primaryNav, secondaryNav, type NavItem } from "@/lib/nav";
+import { isNavItemActive, primaryNav, type NavItem } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
@@ -15,13 +16,22 @@ function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
       href={item.href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium",
+        "group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium",
         "transition-colors duration-150",
         active
           ? "bg-sidebar-accent text-sidebar-accent-foreground"
           : "text-ink-muted hover:bg-sidebar-accent/60 hover:text-ink",
       )}
     >
+      {/* A 2px rail rather than a filled pill: quieter, and it survives on a
+          tinted sidebar where a fill would fight the background. */}
+      <span
+        aria-hidden="true"
+        className={cn(
+          "absolute left-0 h-4 w-0.5 rounded-r-full bg-sage transition-opacity duration-150",
+          active ? "opacity-100" : "opacity-0",
+        )}
+      />
       <Icon
         aria-hidden="true"
         className={cn(
@@ -35,7 +45,7 @@ function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
 }
 
 /** Desktop navigation. Hidden below `lg`, where the tab bar takes over. */
-export function Sidebar() {
+export function Sidebar({ account }: { account: AccountSummary }) {
   const pathname = usePathname();
 
   return (
@@ -56,15 +66,9 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <nav aria-label="Account" className="flex flex-col gap-1 px-3 pb-6">
-        {secondaryNav.map((item) => (
-          <SidebarLink
-            key={item.href}
-            item={item}
-            active={isNavItemActive(pathname, item.href)}
-          />
-        ))}
-      </nav>
+      <div className="border-t border-sidebar-border p-3">
+        <AccountMenu account={account} />
+      </div>
     </aside>
   );
 }

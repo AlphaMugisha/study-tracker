@@ -1,80 +1,107 @@
 import type { Metadata } from "next";
-import { AlertCircle } from "lucide-react";
 
-import { SignOutButton } from "@/components/auth/sign-out-button";
 import { PageContainer } from "@/components/layout/app-shell";
-import { Eyebrow, PageHeader } from "@/components/layout/page-header";
-import { Badge } from "@/components/ui/badge";
-import { requireSessionContext, displayName, firstName } from "@/lib/auth";
+import { Reveal } from "@/components/shared/reveal";
+import { CurrentActivityCard } from "@/components/today/current-activity-card";
+import {
+  DueSoonList,
+  HomePlanPreview,
+  TodayProgress,
+  UpNextCard,
+} from "@/components/today/sections";
+import { requireSessionContext, displayName } from "@/lib/auth";
+import { getActiveTimetable } from "@/lib/data/timetable";
+import { byUrgency, getAssignments, getRevisionTasks, groupAssignments } from "@/lib/data/tasks";
+import { firstNameOf, formatFullDate, greeting } from "@/lib/format";
+import { buildHomePlanPreview } from "@/lib/temporary/home-plan-preview";
+import { resolveTemporary } from "@/lib/timetable/resolve-temporary";
+import { toDayOfWeek } from "@/lib/timetable/types";
 
 export const metadata: Metadata = { title: "Today" };
 
-/**
- * Phase 1 placeholder. Its only job is to prove the session survives a
- * refresh and that the profile row was created. The real Today dashboard --
- * current activity, up next, home plan -- is Phases 5 to 7.
- */
-export default async function DashboardPage() {
+export default async function TodayPage() {
   const session = await requireSessionContext();
-  const { user, profile } = session;
+  const now = new Date();
+
+  const [{ entries }, assignments, revision] = await Promise.all([
+    getActiveTimetable(),
+    getAssignments(now),
+    getRevisionTasks(),
+  ]);
+
+  /**
+   * TEMPORARY: Phase 3B replaces this single call with `resolveNow()`, which
+   * resolves in the student's timezone and drives a live countdown. The page
+   * below does not change — it already renders a `TimetableState`.
+   *
+   * `demoFallback` keeps the card populated outside school hours so the
+   * interface can be reviewed at any time of day.
+   */
+  const state = resolveTemporary(entries, now, { demoFallback: true });
+
+  const today = toDayOfWeek(now);
+  const todaysEntries = entries.filter((e) => e.dayOfWeek === today);
+  const schoolEndsMinutes =
+    todaysEntries.length > 0
+      ? Math.max(...todaysEntries.map((e) => e.endMinutes))
+      : null;
+
+  const plan = buildHomePlanPreview({ schoolEndsMinutes, assignments, revision });
+  const groups = groupAssignments(assignments, now);
+  const dueSoon = [...groups.overdue, ...groups.dueSoon].sort(byUrgency).slice(0, 5);
+
+  const trackedToday = assignments.filter(
+    (a) => a.due_date === now.toISOString().slice(0, 10) || a.overdue,
+  );
+  const doneToday = trackedToday.filter((a) => a.status === "completed").length;
+
+  // `next` exists in several states, not just mid-lesson — before school it is
+  // the first entry, and in a gap it is what the gap leads to.
+  const upNext =
+    state.kind === "in_activity"
+      ? state.next
+      : state.kind === "before_school" || state.kind === "gap"
+        ? state.next
+        : null;
 
   return (
     <PageContainer>
-      <PageHeader
-        eyebrow={`Signed in as ${user.email}`}
-        title={`Welcome to StudyFlow, ${firstName(session)}`}
-        description="Your account is set up. The real dashboard is still to come."
-        action={<SignOutButton />}
-      />
+      <Reveal>
+        <header className="mb-8 sm:mb-10">
+          <p className="text-sm text-ink-muted">
+            {greeting(now)}, {firstNameOf(displayName(session))}
+          </p>
+          <h1 className="mt-1 text-display font-semibold text-ink">Today</h1>
+          <p className="mt-1.5 text-[15px] text-ink-muted">{formatFullDate(now)}</p>
+        </header>
+      </Reveal>
 
-      <div className="max-w-xl rounded-lg border border-border bg-card p-6 shadow-card">
-        <Eyebrow>Account</Eyebrow>
+      {/*
+        Mobile order is the reading order that matters: what am I doing, what's
+        next, what happens at home, what's due, how am I going. On desktop the
+        first two pair up and the rest falls into a 12-column grid.
+      */}
+      <div className="grid gap-4 lg:grid-cols-12 lg:gap-5">
+        <Reveal index={1} className="lg:col-span-8">
+          <CurrentActivityCard state={state} />
+        </Reveal>
 
-        <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div>
-            <dt className="text-[13px] text-ink-muted">Name</dt>
-            <dd className="mt-0.5 text-[15px] font-medium text-ink">
-              {displayName(session)}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-[13px] text-ink-muted">Email</dt>
-            <dd className="mt-0.5 text-[15px] font-medium text-ink">{user.email}</dd>
-          </div>
-          <div>
-            <dt className="text-[13px] text-ink-muted">Role</dt>
-            <dd className="mt-1">
-              <Badge className="bg-sage-soft text-sage-strong capitalize">
-                {profile?.role ?? "unknown"}
-              </Badge>
-            </dd>
-          </div>
-          <div>
-            <dt className="text-[13px] text-ink-muted">Timezone</dt>
-            <dd className="mt-0.5 text-[15px] font-medium text-ink">
-              {profile?.timezone ?? "—"}
-            </dd>
-          </div>
-        </dl>
+        <Reveal index={2} className="lg:col-span-4">
+          <UpNextCard next={upNext} />
+        </Reveal>
 
-        {!profile ? (
-          <div className="mt-5 flex gap-2.5 rounded-md border border-warn/25 bg-warn-soft px-3.5 py-3 text-[13px] leading-5 text-warn">
-            <AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-            <div>
-              <p className="font-medium">No profile row for this account.</p>
-              <p className="mt-0.5">
-                Run <code className="font-mono">supabase/migrations/0001_auth_and_profiles.sql</code>{" "}
-                against your project. It installs the trigger that creates
-                profiles, and backfills any account made before it ran.
-              </p>
-            </div>
-          </div>
-        ) : null}
+        <Reveal index={3} className="lg:col-span-7">
+          <HomePlanPreview blocks={plan.blocks} startsAt={plan.startsAt} />
+        </Reveal>
+
+        <Reveal index={4} className="lg:col-span-5">
+          <DueSoonList assignments={dueSoon} />
+        </Reveal>
+
+        <Reveal index={5} className="lg:col-span-4">
+          <TodayProgress done={doneToday} total={trackedToday.length} />
+        </Reveal>
       </div>
-
-      <p className="mt-6 text-sm text-ink-subtle">
-        Placeholder for Phase 1 · the Today dashboard is built in Phases 5–7.
-      </p>
     </PageContainer>
   );
 }
