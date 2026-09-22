@@ -1,11 +1,44 @@
 /**
- * Supabase-generated database types.
+ * Database types.
  *
- * Placeholder until Phase 2 creates the schema. Regenerate with:
+ * Hand-written for now, matching supabase/migrations/. Once the schema grows
+ * in Phase 2 this should be generated instead:
  *   npx supabase gen types typescript --project-id <id> > src/types/database.ts
- *
- * Typed as a permissive shape so the Supabase clients compile today without
- * pretending to know tables that do not exist yet.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Database = any;
+
+export type UserRole = "student" | "admin";
+
+export type Profile = {
+  id: string;
+  full_name: string;
+  role: UserRole;
+  timezone: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Database = {
+  public: {
+    Tables: {
+      profiles: {
+        Row: Profile;
+        /** Inserts happen via the on_auth_user_created trigger, not the client. */
+        Insert: Pick<Profile, "id"> & Partial<Omit<Profile, "id">>;
+        /** Only full_name and timezone are grantable to `authenticated`. */
+        Update: Partial<Pick<Profile, "full_name" | "timezone">>;
+        Relationships: [];
+      };
+    };
+    Views: Record<never, never>;
+    Functions: {
+      is_admin: {
+        Args: Record<never, never>;
+        Returns: boolean;
+      };
+    };
+    Enums: {
+      user_role: UserRole;
+    };
+    CompositeTypes: Record<never, never>;
+  };
+};
