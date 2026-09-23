@@ -366,6 +366,31 @@
   .float-a, .float-b, .float-c { animation: none; }
 }
 
+/* ---------------------------------------------------------------------------
+   Card entrance
+   ---------------------------------------------------------------------------
+   A CSS keyframe rather than a motion component, because these run on list
+   items whose count varies — wrapping each in a client component to animate it
+   would ship a component per row for a 16px rise.
+
+   `backwards` matters: with a stagger delay the card would otherwise be drawn
+   in its final position for the length of the delay, then jump back to the
+   start and animate. Filling backwards holds the from-state during the delay.
+--------------------------------------------------------------------------- */
+
+@keyframes sf-rise {
+  from { opacity: 0; transform: translate3d(0, 16px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@utility sf-rise {
+  animation: sf-rise 0.5s var(--ease-out-soft) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sf-rise { animation: none; }
+}
+
 @layer base {
   /* Display type is large enough that one long word can exceed a narrow card.
      Allow a break rather than letting the panel scroll sideways. */

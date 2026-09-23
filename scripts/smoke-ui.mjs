@@ -224,6 +224,8 @@ try {
     ["/plan", ["When you get home", "Physics formula recall"]],
     // The planner: a single answer, a timeline, and session controls.
     ["/plan", ["Start with", "The order to work in", "Start this"]],
+    // Plan blocks render as hoverable cards in a container-query grid.
+    ["/plan", ["@container", "group/block", "sf-rise"]],
     // Subject management and the planning window.
     ["/settings", ["Subjects", "Add a subject", "Finish work by", "Wind-down after school"]],
     // The consent panel: who can see your work, and how to stop them.

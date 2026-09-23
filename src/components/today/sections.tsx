@@ -9,6 +9,7 @@ import {
   SubjectDot,
   activityStyle,
 } from "@/components/shared/badges";
+import { PlanBlockCard } from "@/components/plan/plan-block-card";
 import { Surface } from "@/components/shared/surface";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -107,12 +108,6 @@ export function UpNextCard({ next }: { next: ResolvedEntry | null }) {
 
 // --- When you get home ------------------------------------------------------
 
-const PLAN_TONE = {
-  homework: { dot: "bg-lesson", label: "text-ink" },
-  revision: { dot: "bg-revise", label: "text-ink" },
-  break: { dot: "bg-pause", label: "text-ink-muted" },
-} as const;
-
 export function HomePlanPreview({ plan }: { plan: EveningPlan }) {
   const work = plan.blocks.filter((b) => b.kind !== "break");
 
@@ -134,43 +129,20 @@ export function HomePlanPreview({ plan }: { plan: EveningPlan }) {
         </p>
       ) : (
         <>
-          <ol className="-my-1 space-y-0.5">
-            {plan.blocks.map((block) => {
-              const tone = PLAN_TONE[block.kind];
-              return (
-                <li key={block.id} className="flex items-baseline gap-4 py-3">
-                  <span
-                    className="w-14 shrink-0 text-[0.95rem] font-medium text-ink-muted"
-                    data-numeric
-                  >
-                    {block.startLabel}
-                  </span>
-                  <span
-                    aria-hidden="true"
-                    className={cn("mt-2 size-2 shrink-0 rounded-full", tone.dot)}
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className={cn("block truncate text-body font-medium", tone.label)}>
-                      {block.label}
-                      {block.part ? (
-                        <span className="ml-2 text-[0.85rem] font-normal text-ink-subtle">
-                          {block.part.index}/{block.part.total}
-                        </span>
-                      ) : null}
-                    </span>
-                    {block.detail ? (
-                      <span className="block truncate text-[0.9rem] text-ink-subtle">
-                        {block.detail}
-                      </span>
-                    ) : null}
-                  </span>
-                  <span className="shrink-0 text-[0.9rem] text-ink-subtle" data-numeric>
-                    {block.minutes} min
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
+          {/*
+            A container query, not a viewport one. This card lives in a grid
+            column whose width depends on the breakpoint AND on the sidebar,
+            so it is anywhere from ~400px to ~600px wide. `md:` would tell us
+            about the window, which is not the space these cards have to fit
+            into. `@container` asks the card itself.
+          */}
+          <div className="@container">
+            <ol className="grid grid-cols-1 gap-3 @md:grid-cols-2 @3xl:grid-cols-3">
+              {plan.blocks.map((block, i) => (
+                <PlanBlockCard key={block.id} block={block} index={i} />
+              ))}
+            </ol>
+          </div>
 
           <p className="mt-6 border-t border-border pt-5 text-[0.9rem] text-ink-subtle">
             <span data-numeric>{plan.startsAt}</span> to{" "}
