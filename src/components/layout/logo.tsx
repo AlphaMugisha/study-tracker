@@ -12,7 +12,7 @@ export function LogoMark({ className }: { className?: string }) {
       aria-hidden="true"
       className={cn("size-7 shrink-0", className)}
     >
-      <rect width="28" height="28" rx="8" fill="var(--sage)" />
+      <rect width="28" height="28" rx="8" fill="var(--lesson)" />
       <path
         d="M7 18.5h4.5V13H16V7.5h5"
         fill="none"
@@ -21,7 +21,7 @@ export function LogoMark({ className }: { className?: string }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx="21" cy="7.5" r="2.5" fill="var(--lavender-soft)" />
+      <circle cx="21" cy="7.5" r="2.5" fill="var(--revise-soft)" />
     </svg>
   );
 }

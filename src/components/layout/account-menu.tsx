@@ -50,7 +50,7 @@ export function AccountMenu({
           className,
         )}
       >
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-indigo-soft text-[11px] font-semibold text-indigo-ink ring-1 ring-border-strong">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[11px] font-semibold text-brand-ink ring-1 ring-border-strong">
           {initials(account.name)}
         </span>
         {!compact ? (

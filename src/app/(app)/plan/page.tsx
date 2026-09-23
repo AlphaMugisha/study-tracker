@@ -51,6 +51,7 @@ export default async function PlanPage() {
           <Reveal>
             <BlockHeading
               eyebrow="Tonight"
+              tone="revise"
               title="The order to work in."
               description="Laid end to end from when school finishes, with a break between each block."
             />
@@ -69,6 +70,7 @@ export default async function PlanPage() {
           <Reveal>
             <BlockHeading
               eyebrow="Still to do"
+              tone="lesson"
               title="What the plan is built from."
               description="Everything outstanding, and the revision you have queued."
             />

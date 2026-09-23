@@ -134,21 +134,21 @@ export function WeekGrid({
             key={day}
             className={cn(
               "rounded-xl border bg-card p-4",
-              isToday ? "border-indigo/50" : "border-border",
+              isToday ? "border-brand/50" : "border-border",
             )}
           >
             <div className="mb-3 flex items-baseline justify-between">
               <h3
                 className={cn(
                   "text-sm font-semibold",
-                  isToday ? "text-indigo-ink" : "text-ink",
+                  isToday ? "text-brand-ink" : "text-ink",
                 )}
               >
                 <span className="lg:hidden">{DAY_NAMES[day]}</span>
                 <span className="hidden lg:inline">{DAY_SHORT[day]}</span>
               </h3>
               {isToday ? (
-                <span className="text-eyebrow uppercase text-indigo-ink">Today</span>
+                <span className="text-eyebrow uppercase text-brand-ink">Today</span>
               ) : null}
             </div>
 

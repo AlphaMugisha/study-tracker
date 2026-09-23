@@ -97,9 +97,9 @@ export function UpNextCard({ next }: { next: ResolvedEntry | null }) {
 // --- When you get home ------------------------------------------------------
 
 const PLAN_TONE = {
-  homework: { dot: "bg-sage", label: "text-ink" },
-  revision: { dot: "bg-lavender", label: "text-ink" },
-  break: { dot: "bg-cream-ink/40", label: "text-ink-muted" },
+  homework: { dot: "bg-lesson", label: "text-ink" },
+  revision: { dot: "bg-revise", label: "text-ink" },
+  break: { dot: "bg-pause", label: "text-ink-muted" },
 } as const;
 
 export function HomePlanPreview({
@@ -201,7 +201,7 @@ export function DueSoonList({ assignments }: { assignments: AssignmentView[] }) 
               >
                 <SubjectDot colorToken={a.subject?.color_token ?? null} className="mt-2 size-2.5" />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-body font-medium text-ink transition-colors duration-150 ease-out-flat group-hover/row:text-indigo-ink">
+                  <span className="block truncate text-body font-medium text-ink transition-colors duration-150 ease-out-flat group-hover/row:text-brand-ink">
                     {a.title}
                   </span>
                   <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.9rem] text-ink-subtle">
@@ -293,7 +293,19 @@ export function RestOfDay({ entries }: { entries: ResolvedEntry[] }) {
 
 // --- Day stats --------------------------------------------------------------
 
-type Stat = { label: string; value: string; tone?: "danger" | "default" };
+type StatTone = "brand" | "lesson" | "revise" | "pause" | "danger" | "default";
+type Stat = { label: string; value: string; tone?: StatTone };
+
+/** Each statistic carries its own colour, so the row reads as three facts
+ *  rather than one block of text. */
+const STAT_TONE: Record<StatTone, string> = {
+  brand: "text-brand-ink",
+  lesson: "text-lesson-ink",
+  revise: "text-revise-ink",
+  pause: "text-pause-ink",
+  danger: "text-danger",
+  default: "text-ink",
+};
 
 /**
  * A few real numbers under the greeting. The reference puts a status strip
@@ -319,7 +331,7 @@ export function DayStats({ stats }: { stats: Stat[] }) {
                 // to the widest: at ~560px of content the three columns are
                 // 188px each, and a duration set any larger overflows.
                 "mt-5 text-[clamp(2.25rem,4vw,4rem)] font-semibold leading-[0.95] tracking-[-0.04em]",
-                stat.tone === "danger" ? "text-danger" : "text-ink",
+                STAT_TONE[stat.tone ?? "default"],
               )}
               data-numeric
             >

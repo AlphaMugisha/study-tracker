@@ -85,7 +85,7 @@ export function CurrentActivityCard({ state }: { state: TimetableState }) {
       return (
         <section className="rounded-xl border border-dashed border-border p-7 sm:p-10">
           <div className="flex items-center gap-2.5">
-            <CalendarPlus aria-hidden="true" className="size-3.5 text-indigo-ink" />
+            <CalendarPlus aria-hidden="true" className="size-3.5 text-brand-ink" />
             <Eyebrow tone="accent">Currently</Eyebrow>
           </div>
           <h2 className="mt-6 text-headline text-balance text-ink">No timetable yet.</h2>
@@ -123,9 +123,11 @@ function LivePanel({
       className={cn(
         "group/hero relative overflow-hidden rounded-2xl shadow-hero",
         "transition-shadow duration-500 ease-out-flat",
+        // Green-to-blue rather than one flat fill: the shift across the panel
+        // is what stops a large block of colour reading as inert.
         resting
-          ? "bg-hero-rest text-hero-rest-foreground shadow-card"
-          : "bg-hero text-hero-foreground",
+          ? "bg-linear-to-br from-hero-rest-from to-hero-rest-to text-hero-rest-foreground shadow-card"
+          : "bg-linear-to-br from-hero-from via-hero to-hero-to text-hero-foreground",
       )}
     >
       <div className="flex min-h-[22rem] flex-col justify-center p-7 sm:p-12 md:min-h-[24rem] lg:p-16">
@@ -249,7 +251,7 @@ function QuietPanel({
   return (
     <section className="rounded-xl border border-border bg-card p-7 sm:p-10">
       <div className="flex items-center gap-2.5">
-        <Icon aria-hidden="true" className="size-3.5 text-indigo-ink" />
+        <Icon aria-hidden="true" className="size-3.5 text-brand-ink" />
         <Eyebrow tone="accent">{eyebrow}</Eyebrow>
       </div>
       <h2 className="mt-6 text-headline text-balance text-ink">{title}</h2>

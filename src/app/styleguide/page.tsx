@@ -80,9 +80,10 @@ export default function StyleguidePage() {
           </h1>
           <p className="mt-3 max-w-2xl text-[15px] leading-7 text-ink-muted">
             Calm, clean, modern, academic, mature. A near-black ground with
-            layered surfaces, indigo as the single accent, and sage, lavender and
-            cream reserved for activity types. Depth comes from surface steps and
-            borders rather than shadows, and there is almost no motion.
+            layered surfaces on a blue-green ground, with five accent families
+            that each carry a meaning rather than a mood: emerald for actions,
+            blue for lessons, violet for revision, amber for breaks, rose for
+            anything overdue. Depth is a layered shadow plus a lit top edge.
           </p>
           <Button asChild variant="outline" size="sm" className="mt-5">
             <Link href="/dashboard">
@@ -127,82 +128,97 @@ export default function StyleguidePage() {
             />
           </div>
 
-          <h3 className="mb-3 text-sm font-medium text-ink">Indigo — the accent</h3>
+          <h3 className="mb-3 text-sm font-medium text-ink">
+            Accents — named for meaning, not hue
+          </h3>
           <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <Swatch
-              name="Primary"
-              varName="--primary"
-              className="bg-primary"
+              name="Brand"
+              varName="--brand"
+              className="bg-brand"
               textClassName="text-primary-foreground"
-              contrast="5.0:1 w/ white"
+              contrast="8.4:1 w/ dark label"
             />
             <Swatch
-              name="Indigo"
-              varName="--indigo"
-              className="bg-indigo"
-              textClassName="text-white"
-            />
-            <Swatch
-              name="Indigo soft"
-              varName="--indigo-soft"
-              className="bg-indigo-soft"
-              textClassName="text-indigo-ink"
-              contrast="7.6:1 w/ ink"
-            />
-            <Swatch
-              name="Indigo ink"
-              varName="--indigo-ink"
-              className="bg-indigo-ink"
+              name="Lesson"
+              varName="--lesson"
+              className="bg-lesson"
               textClassName="text-background"
-              contrast="8.7:1 on card"
+            />
+            <Swatch
+              name="Revise"
+              varName="--revise"
+              className="bg-revise"
+              textClassName="text-background"
+            />
+            <Swatch
+              name="Pause"
+              varName="--pause"
+              className="bg-pause"
+              textClassName="text-background"
+            />
+            <Swatch
+              name="Danger"
+              varName="--danger"
+              className="bg-danger"
+              textClassName="text-background"
             />
           </div>
 
-          <h3 className="mb-3 text-sm font-medium text-ink">Activity accents</h3>
-          <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <Swatch name="Sage" varName="--sage" className="bg-sage" textClassName="text-background" />
+          <h3 className="mb-3 text-sm font-medium text-ink">
+            Soft surfaces and their ink
+          </h3>
+          <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <Swatch
-              name="Sage soft"
-              varName="--sage-soft"
-              className="bg-sage-soft"
-              textClassName="text-sage-ink"
-              contrast="7.7:1 w/ ink"
+              name="Brand soft"
+              varName="--brand-soft"
+              className="bg-brand-soft"
+              textClassName="text-brand-ink"
+              contrast="11.6:1 w/ ink"
             />
             <Swatch
-              name="Lavender"
-              varName="--lavender"
-              className="bg-lavender"
-              textClassName="text-background"
+              name="Lesson soft"
+              varName="--lesson-soft"
+              className="bg-lesson-soft"
+              textClassName="text-lesson-ink"
+              contrast="7.2:1 w/ ink"
             />
             <Swatch
-              name="Lavender soft"
-              varName="--lavender-soft"
-              className="bg-lavender-soft"
-              textClassName="text-lavender-ink"
-              contrast="7.8:1 w/ ink"
+              name="Revise soft"
+              varName="--revise-soft"
+              className="bg-revise-soft"
+              textClassName="text-revise-ink"
+              contrast="7.9:1 w/ ink"
             />
             <Swatch
-              name="Cream"
-              varName="--cream"
-              className="bg-cream"
-              textClassName="text-cream-ink"
-              contrast="8.7:1 w/ ink"
+              name="Pause soft"
+              varName="--pause-soft"
+              className="bg-pause-soft"
+              textClassName="text-pause-ink"
+              contrast="9.4:1 w/ ink"
+            />
+            <Swatch
+              name="Danger soft"
+              varName="--danger-soft"
+              className="bg-danger-soft"
+              textClassName="text-danger"
+              contrast="8.3:1"
             />
           </div>
 
           <h3 className="mb-3 text-sm font-medium text-ink">Hero panel</h3>
           <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <Swatch
-              name="Hero"
-              varName="--hero"
-              className="bg-hero"
+              name="Hero gradient"
+              varName="--hero-from → --hero-to"
+              className="bg-linear-to-br from-hero-from to-hero-to"
               textClassName="text-hero-foreground"
-              contrast="5.0:1 w/ white"
+              contrast="5.5:1 at its worst point"
             />
             <Swatch
               name="Hero rest"
-              varName="--hero-rest"
-              className="bg-hero-rest"
+              varName="--hero-rest-from → to"
+              className="bg-linear-to-br from-hero-rest-from to-hero-rest-to"
               textClassName="text-hero-rest-foreground"
               contrast="9.7:1"
             />
@@ -418,10 +434,10 @@ export default function StyleguidePage() {
               <Badge variant="secondary">Not started</Badge>
               <Badge variant="outline">Biology</Badge>
               <Badge variant="destructive">Overdue</Badge>
-              <Badge className="bg-lavender-soft text-lavender-ink">In progress</Badge>
-              <Badge className="bg-sage-soft text-sage-ink">Completed</Badge>
+              <Badge className="bg-revise-soft text-revise-ink">In progress</Badge>
+              <Badge className="bg-lesson-soft text-lesson-ink">Completed</Badge>
               <Badge className="bg-warn-soft text-warn">Due today</Badge>
-              <Badge className="bg-cream text-cream-ink">Break</Badge>
+              <Badge className="bg-pause text-pause-ink">Break</Badge>
             </div>
 
             <Separator />
@@ -470,7 +486,7 @@ export default function StyleguidePage() {
             {[4, 8, 12, 16, 20, 24, 32, 40, 48].map((n) => (
               <div key={n} className="flex items-center gap-4">
                 <code className="w-12 shrink-0 text-[11px] text-ink-subtle">{n}px</code>
-                <div className="h-3 rounded-sm bg-sage-soft" style={{ width: n * 4 }} />
+                <div className="h-3 rounded-sm bg-lesson-soft" style={{ width: n * 4 }} />
               </div>
             ))}
           </div>

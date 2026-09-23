@@ -84,7 +84,7 @@ export function AuthLink({ href, children }: { href: string; children: React.Rea
   return (
     <Link
       href={href}
-      className="rounded-sm font-medium text-indigo-ink underline-offset-4 transition-colors hover:text-ink hover:underline"
+      className="rounded-sm font-medium text-brand-ink underline-offset-4 transition-colors hover:text-ink hover:underline"
     >
       {children}
     </Link>

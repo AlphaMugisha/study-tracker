@@ -111,15 +111,16 @@ export default async function TodayPage() {
       <Reveal>
         <DayStats
           stats={[
-            { label: "Lessons today", value: String(lessonsToday) },
+            { label: "Lessons today", value: String(lessonsToday), tone: "lesson" as const },
             {
               label: "Due soon",
               value: String(dueSoon.length),
-              tone: groups.overdue.length > 0 ? "danger" : "default",
+              tone: groups.overdue.length > 0 ? ("danger" as const) : ("pause" as const),
             },
             {
               label: "Work tonight",
               value: workMinutes > 0 ? formatDurationCompact(workMinutes) : "None",
+              tone: "brand" as const,
             },
           ]}
         />
@@ -151,6 +152,7 @@ export default async function TodayPage() {
           <Reveal>
             <BlockHeading
               eyebrow="After school"
+              tone="revise"
               title="When you get home."
               description="A rough order of work for this evening, laid out from what's still outstanding."
             />
@@ -169,6 +171,7 @@ export default async function TodayPage() {
           <Reveal>
             <BlockHeading
               eyebrow="Deadlines"
+              tone="pause"
               title="What's coming due."
               count={dueSoon.length}
             />

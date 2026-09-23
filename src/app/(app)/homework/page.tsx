@@ -114,6 +114,7 @@ function Section({
     <Block id={title.toLowerCase().replace(/\s+/g, "-")}>
       <Reveal index={index}>
         <BlockHeading
+          tone={tone === "danger" ? "danger" : muted ? "subtle" : "lesson"}
           title={
             <span
               className={

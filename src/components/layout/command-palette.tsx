@@ -167,7 +167,7 @@ export function CommandPalette({
                       aria-hidden="true"
                       className={cn(
                         "size-4 shrink-0",
-                        index === activeIndex ? "text-indigo-ink" : "text-ink-subtle",
+                        index === activeIndex ? "text-brand-ink" : "text-ink-subtle",
                       )}
                     />
                     <span className="min-w-0 flex-1">

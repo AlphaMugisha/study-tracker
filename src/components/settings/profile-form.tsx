@@ -33,7 +33,7 @@ export function ProfileForm({
     <form action={action} className="grid max-w-md gap-4" noValidate>
       {state.formError ? <FormAlert>{state.formError}</FormAlert> : null}
       {state.ok ? (
-        <p className="flex items-center gap-2 text-[13px] text-sage-ink">
+        <p className="flex items-center gap-2 text-[13px] text-lesson-ink">
           <CheckCircle2 aria-hidden="true" className="size-4" />
           Saved.
         </p>

@@ -82,8 +82,8 @@ export function Sidebar({ defaultCollapsed }: { defaultCollapsed: boolean }) {
           href="/homework?new=1"
           title="Add homework"
           className={cn(
-            "flex size-12 items-center justify-center gap-2.5 rounded-xl bg-primary font-medium text-primary-foreground shadow-card",
-            "transition-all duration-200 ease-out-flat hover:-translate-y-0.5 hover:bg-indigo-bright hover:shadow-card-hover",
+            "flex size-12 items-center justify-center gap-2.5 rounded-xl bg-primary font-medium text-primary-foreground shadow-[0_2px_10px_-2px_var(--brand-glow)]",
+            "transition-all duration-200 ease-out-flat hover:-translate-y-0.5 hover:bg-brand-bright hover:shadow-[0_12px_28px_-6px_var(--brand-glow)]",
             !collapsed && "md:h-13 md:w-full md:text-[0.95rem]",
           )}
         >
@@ -170,7 +170,7 @@ function SidebarLink({
         aria-hidden="true"
         className={cn(
           "size-[21px] shrink-0 transition-colors duration-150",
-          active ? "text-indigo-ink" : "text-ink-subtle group-hover:text-ink-muted",
+          active ? "text-brand-ink" : "text-ink-subtle group-hover:text-ink-muted",
         )}
       />
       <span className={collapsed ? "sr-only" : "sr-only md:not-sr-only"}>

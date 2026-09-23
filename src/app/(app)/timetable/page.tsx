@@ -90,14 +90,14 @@ export default async function TimetablePage({
                     className={cn(
                       "rounded-md border px-3.5 py-2 text-[13px] font-medium transition-colors",
                       active
-                        ? "border-indigo/50 bg-indigo-soft text-indigo-ink"
+                        ? "border-brand/50 bg-brand-soft text-brand-ink"
                         : "border-border bg-card text-ink-muted hover:text-ink",
                     )}
                   >
                     <span className="sm:hidden">{DAY_SHORT[day]}</span>
                     <span className="hidden sm:inline">{DAY_NAMES[day]}</span>
                     {day === todayIndex ? (
-                      <span className="ml-1.5 text-[11px] text-indigo-ink">•</span>
+                      <span className="ml-1.5 text-[11px] text-brand-ink">•</span>
                     ) : null}
                   </Link>
                 );

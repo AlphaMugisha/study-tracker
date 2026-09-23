@@ -82,23 +82,30 @@ export function Surface({
  * lets it read as a label instead of as shouting, and it is the only uppercase
  * in the product.
  */
+export type Accent = "brand" | "lesson" | "revise" | "pause" | "danger" | "subtle";
+
+const ACCENT_TEXT: Record<Accent, string> = {
+  brand: "text-brand-ink",
+  lesson: "text-lesson-ink",
+  revise: "text-revise-ink",
+  pause: "text-pause-ink",
+  danger: "text-danger",
+  subtle: "text-ink-subtle",
+};
+
 export function Eyebrow({
   children,
   tone = "subtle",
   className,
 }: {
   children: React.ReactNode;
-  tone?: "subtle" | "accent";
+  /** `accent` is an alias for brand, kept so existing callers still read well. */
+  tone?: Accent | "accent";
   className?: string;
 }) {
+  const key: Accent = tone === "accent" ? "brand" : tone;
   return (
-    <p
-      className={cn(
-        "text-eyebrow uppercase",
-        tone === "accent" ? "text-indigo-ink" : "text-ink-subtle",
-        className,
-      )}
-    >
+    <p className={cn("text-eyebrow uppercase", ACCENT_TEXT[key], className)}>
       {children}
     </p>
   );
@@ -124,6 +131,7 @@ export function Block({
 /** Eyebrow + display heading + optional description and action. */
 export function BlockHeading({
   eyebrow,
+  tone = "brand",
   title,
   description,
   action,
@@ -131,6 +139,9 @@ export function BlockHeading({
   className,
 }: {
   eyebrow?: React.ReactNode;
+  /** Colour of the eyebrow. Varying it per section gives the page colour
+   *  down its length rather than one accent repeated. */
+  tone?: Accent;
   title: React.ReactNode;
   description?: React.ReactNode;
   action?: React.ReactNode;
@@ -145,7 +156,7 @@ export function BlockHeading({
       )}
     >
       <div className="min-w-0">
-        {eyebrow ? <Eyebrow tone="accent" className="mb-4">{eyebrow}</Eyebrow> : null}
+        {eyebrow ? <Eyebrow tone={tone} className="mb-4">{eyebrow}</Eyebrow> : null}
         <h2 className="flex items-baseline gap-4 text-display font-semibold text-balance text-ink">
           {title}
           {typeof count === "number" ? (

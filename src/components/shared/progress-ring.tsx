@@ -48,7 +48,7 @@ export function ProgressRing({
             cy={size / 2}
             r={radius}
             fill="none"
-            stroke="var(--sage)"
+            stroke="var(--brand)"
             strokeWidth={stroke}
             strokeLinecap="round"
             strokeDasharray={`${dash} ${circumference - dash}`}

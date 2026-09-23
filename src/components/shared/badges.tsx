@@ -17,32 +17,32 @@ const ACTIVITY_STYLE: Record<
 > = {
   class: {
     label: "Lesson",
-    chip: "bg-sage-soft text-sage-ink",
-    rail: "bg-sage",
+    chip: "bg-lesson-soft text-lesson-ink",
+    rail: "bg-lesson",
     icon: BookOpen,
   },
   break: {
     label: "Break",
-    chip: "bg-cream text-cream-ink",
-    rail: "bg-cream-ink/40",
+    chip: "bg-pause-soft text-pause-ink",
+    rail: "bg-pause",
     icon: Coffee,
   },
   free: {
     label: "Free",
-    chip: "bg-lavender-soft text-lavender-ink",
-    rail: "bg-lavender/50",
-    icon: GraduationCap,
+    chip: "bg-pause-soft text-pause-ink",
+    rail: "bg-pause/70",
+    icon: Coffee,
   },
   study: {
     label: "Study",
-    chip: "bg-lavender-soft text-lavender-ink",
-    rail: "bg-lavender/50",
+    chip: "bg-revise-soft text-revise-ink",
+    rail: "bg-revise",
     icon: GraduationCap,
   },
   other: {
     label: "Activity",
-    chip: "bg-surface-sunken text-ink-muted",
-    rail: "bg-ink-subtle/40",
+    chip: "bg-brand-soft text-brand-ink",
+    rail: "bg-brand",
     icon: Trophy,
   },
 };
@@ -100,7 +100,7 @@ export function SubjectDot({
 
 const PRIORITY_STYLE: Record<TaskPriority, { label: string; className: string }> = {
   high: { label: "High", className: "bg-danger-soft text-danger" },
-  medium: { label: "Medium", className: "bg-warn-soft text-warn" },
+  medium: { label: "Medium", className: "bg-pause-soft text-pause-ink" },
   low: { label: "Low", className: "bg-surface-sunken text-ink-muted" },
 };
 
@@ -118,8 +118,8 @@ export function PriorityBadge({ priority }: { priority: TaskPriority }) {
 
 const STATUS_STYLE: Record<TaskStatus, { label: string; className: string }> = {
   not_started: { label: "Not started", className: "bg-surface-sunken text-ink-muted" },
-  in_progress: { label: "In progress", className: "bg-lavender-soft text-lavender-ink" },
-  completed: { label: "Completed", className: "bg-sage-soft text-sage-ink" },
+  in_progress: { label: "In progress", className: "bg-lesson-soft text-lesson-ink" },
+  completed: { label: "Completed", className: "bg-brand-soft text-brand-ink" },
 };
 
 export function StatusBadge({ status }: { status: TaskStatus }) {

@@ -66,7 +66,7 @@ export function AssignmentCard({
           <h3
             className={cn(
               "text-section text-ink transition-colors duration-150 ease-out-flat",
-              !done && "group-hover/task:text-indigo-ink",
+              !done && "group-hover/task:text-brand-ink",
               done && "line-through decoration-ink-subtle",
             )}
           >
