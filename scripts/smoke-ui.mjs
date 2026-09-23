@@ -222,6 +222,10 @@ try {
     ["/timetable?view=week", ["Monday", "Friday"]],
     ["/homework", ["Homework", "Overdue", "Quadratic equations practice", "Add homework"]],
     ["/plan", ["When you get home", "Physics formula recall"]],
+    // The planner: a single answer, a timeline, and session controls.
+    ["/plan", ["Start with", "The order to work in", "Start this"]],
+    // Subject management and the planning window.
+    ["/settings", ["Subjects", "Add a subject", "Finish work by", "Wind-down after school"]],
     ["/settings", ["Settings", "Smoke Tester", "Support access", "Sign out"]],
   ];
 

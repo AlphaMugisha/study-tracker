@@ -5,11 +5,13 @@ import { KeyRound, LogOut, ShieldCheck } from "lucide-react";
 import { PageContainer } from "@/components/layout/app-shell";
 import { Eyebrow, PageHeader } from "@/components/layout/page-header";
 import { ProfileForm } from "@/components/settings/profile-form";
+import { SubjectManager } from "@/components/settings/subject-manager";
 import { Reveal } from "@/components/shared/reveal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/lib/actions/auth";
 import { displayName, requireSessionContext } from "@/lib/auth";
+import { getSubjects } from "@/lib/data/timetable";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -27,11 +29,11 @@ function Panel({
 }) {
   return (
     <section
-      className={cn("rounded-xl border border-border bg-card p-5 sm:p-6", className)}
+      className={cn("rounded-xl border border-border bg-card p-7 shadow-card sm:p-9", className)}
     >
       <h2 className="text-section text-ink">{title}</h2>
       {description ? (
-        <p className="mt-1 max-w-prose text-[13px] leading-5 text-ink-muted">
+        <p className="mt-2.5 max-w-[52ch] text-[0.95rem] leading-relaxed text-ink-muted">
           {description}
         </p>
       ) : null}
@@ -41,7 +43,7 @@ function Panel({
 }
 
 export default async function SettingsPage() {
-  const session = await requireSessionContext();
+  const [session, subjects] = await Promise.all([requireSessionContext(), getSubjects()]);
   const { user, profile } = session;
 
   return (
@@ -61,7 +63,18 @@ export default async function SettingsPage() {
             <ProfileForm
               fullName={displayName(session)}
               timezone={profile?.timezone ?? "UTC"}
+              studyUntil={profile?.study_until ?? "21:00"}
+              settleMinutes={profile?.settle_minutes ?? 30}
             />
+          </Panel>
+        </Reveal>
+
+        <Reveal index={1} className="md:col-span-2">
+          <Panel
+            title="Subjects"
+            description="What you study. Subjects colour your homework, timetable and plan."
+          >
+            <SubjectManager subjects={subjects} />
           </Panel>
         </Reveal>
 

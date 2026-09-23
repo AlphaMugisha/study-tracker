@@ -9,7 +9,7 @@ idempotent, and is verified by `supabase/tests/`.
 
 | Table | Purpose |
 |---|---|
-| `profiles` | One row per account. Name, role, timezone. |
+| `profiles` | One row per account. Name, role, timezone, and the evening planning window (`study_until`, `settle_minutes`). |
 | `subjects` | The student's school subjects. |
 | `timetable_versions` | A timetable as confirmed at a point in time. Versioned so a re-upload never destroys a working one. |
 | `timetable_entries` | Individual slots in the school day — lessons, breaks, free periods, other activities. |
@@ -49,6 +49,24 @@ This makes cross-user contamination impossible at the storage layer, not just
 unlikely at the policy layer.
 
 ---
+
+## The planning window
+
+`profiles.study_until` and `profiles.settle_minutes` (added in 0004) are what
+let the planner answer "what should I start with" honestly.
+
+Without them the evening had no end, so the old preview laid work out from
+school-end onwards indefinitely and silently truncated at four tasks. With a
+cutoff, anything that will not fit before `study_until` is reported as
+deferred instead — "these three won't fit before 21:00" is the single most
+useful thing the planner can say, and it was structurally unable to say it.
+
+Both are constrained (`study_until` between 12:00 and 23:59; `settle_minutes`
+0–240) because a cutoff of 03:00 is a typo, not a plan.
+
+Note the **column grant**: `profiles` grants UPDATE on named columns only, so
+that a student cannot PATCH their own `role`. A new column is therefore not
+writable until it is named in that grant — 0004 restates the full list.
 
 ## Constraints worth knowing
 

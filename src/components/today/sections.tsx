@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { AssignmentView } from "@/lib/data/tasks";
 import { formatDueLabel, formatOverdueLabel } from "@/lib/format";
-import type { PlanPreviewBlock } from "@/lib/temporary/home-plan-preview";
+import type { EveningPlan } from "@/lib/planner/build-plan";
 import { formatDuration, type ResolvedEntry } from "@/lib/timetable/types";
 import { cn } from "@/lib/utils";
 
@@ -102,17 +102,13 @@ const PLAN_TONE = {
   break: { dot: "bg-pause", label: "text-ink-muted" },
 } as const;
 
-export function HomePlanPreview({
-  blocks,
-  startsAt,
-}: {
-  blocks: PlanPreviewBlock[];
-  startsAt: string | null;
-}) {
+export function HomePlanPreview({ plan }: { plan: EveningPlan }) {
+  const work = plan.blocks.filter((b) => b.kind !== "break");
+
   return (
     <Panel
       size="md"
-      count={blocks.filter((b) => b.kind !== "break").length}
+      count={work.length}
       action={
         <Button asChild variant="ghost" size="sm">
           <Link href="/plan">
@@ -121,14 +117,14 @@ export function HomePlanPreview({
         </Button>
       }
     >
-      {blocks.length === 0 ? (
-        <p className="text-sm text-ink-muted">
+      {work.length === 0 ? (
+        <p className="flex flex-1 items-center text-body text-ink-muted">
           Nothing outstanding. Your evening is your own.
         </p>
       ) : (
         <>
-          <ol className="space-y-0.5">
-            {blocks.map((block) => {
+          <ol className="-my-1 space-y-0.5">
+            {plan.blocks.map((block) => {
               const tone = PLAN_TONE[block.kind];
               return (
                 <li key={block.id} className="flex items-baseline gap-4 py-3">
@@ -145,6 +141,11 @@ export function HomePlanPreview({
                   <span className="min-w-0 flex-1">
                     <span className={cn("block truncate text-body font-medium", tone.label)}>
                       {block.label}
+                      {block.part ? (
+                        <span className="ml-2 text-[0.85rem] font-normal text-ink-subtle">
+                          {block.part.index}/{block.part.total}
+                        </span>
+                      ) : null}
                     </span>
                     {block.detail ? (
                       <span className="block truncate text-[0.9rem] text-ink-subtle">
@@ -159,12 +160,19 @@ export function HomePlanPreview({
               );
             })}
           </ol>
-          {startsAt ? (
-            <p className="mt-6 border-t border-border pt-5 text-[0.9rem] text-ink-subtle">
-              A rough order, starting <span data-numeric>{startsAt}</span>. You can move
-              things around.
-            </p>
-          ) : null}
+
+          <p className="mt-6 border-t border-border pt-5 text-[0.9rem] text-ink-subtle">
+            <span data-numeric>{plan.startsAt}</span> to{" "}
+            <span data-numeric>{plan.endsBy}</span>
+            {plan.deferred.length > 0 ? (
+              <>
+                {" · "}
+                <span className="font-medium text-pause-ink">
+                  {plan.deferred.length} will not fit
+                </span>
+              </>
+            ) : null}
+          </p>
         </>
       )}
     </Panel>

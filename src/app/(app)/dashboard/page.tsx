@@ -16,7 +16,7 @@ import { requireSessionContext, displayName } from "@/lib/auth";
 import { getActiveTimetable } from "@/lib/data/timetable";
 import { byUrgency, getAssignments, getRevisionTasks, groupAssignments } from "@/lib/data/tasks";
 import { firstNameOf, formatFullDate, greeting } from "@/lib/format";
-import { buildHomePlanPreview } from "@/lib/temporary/home-plan-preview";
+import { buildEveningPlan, timeToMinutesSafe } from "@/lib/planner/build-plan";
 import { resolveTemporary } from "@/lib/timetable/resolve-temporary";
 import { formatDurationCompact, toDayOfWeek } from "@/lib/timetable/types";
 
@@ -49,7 +49,14 @@ export default async function TodayPage() {
       ? Math.max(...todaysEntries.map((e) => e.endMinutes))
       : null;
 
-  const plan = buildHomePlanPreview({ schoolEndsMinutes, assignments, revision });
+  const plan = buildEveningPlan({
+    schoolEndsMinutes,
+    settleMinutes: session.profile?.settle_minutes ?? 30,
+    studyUntilMinutes: timeToMinutesSafe(session.profile?.study_until, 21 * 60),
+    assignments,
+    revision,
+    nowMinutes: now.getHours() * 60 + now.getMinutes(),
+  });
   const groups = groupAssignments(assignments, now);
   const dueSoon = [...groups.overdue, ...groups.dueSoon].sort(byUrgency).slice(0, 5);
 
@@ -90,9 +97,7 @@ export default async function TodayPage() {
           .sort((a, b) => a.startMinutes - b.startMinutes);
 
   const lessonsToday = todaysEntries.filter((e) => e.activityType === "class").length;
-  const workMinutes = plan.blocks
-    .filter((b) => b.kind !== "break")
-    .reduce((total, b) => total + b.minutes, 0);
+  const workMinutes = plan.workMinutes;
 
   return (
     <PageContainer>
@@ -154,12 +159,16 @@ export default async function TodayPage() {
               eyebrow="After school"
               tone="revise"
               title="When you get home."
-              description="A rough order of work for this evening, laid out from what's still outstanding."
+              description={
+                plan.startWith
+                  ? `Start with ${plan.startWith.label}, and finish by ${plan.endsBy}.`
+                  : "Nothing outstanding. The evening is yours."
+              }
             />
           </Reveal>
           <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
             <Reveal index={1}>
-              <HomePlanPreview blocks={plan.blocks} startsAt={plan.startsAt} />
+              <HomePlanPreview plan={plan} />
             </Reveal>
             <Reveal index={2}>
               <TodayProgress done={doneToday} total={trackedToday.length} />

@@ -57,6 +57,11 @@ export type Profile = {
   full_name: string;
   role: UserRole;
   timezone: string;
+  /** Local time the student stops working. The planner treats it as a hard
+   *  cutoff and defers anything that will not fit before it. */
+  study_until: string;
+  /** Minutes between the school day ending and work starting. */
+  settle_minutes: number;
   created_at: string;
   updated_at: string;
 };
@@ -214,8 +219,12 @@ export type Database = {
       profiles: Table<
         Profile,
         Pick<Profile, "id"> & Partial<Profile>,
-        /** Only these two columns are grantable to `authenticated`. */
-        Partial<Pick<Profile, "full_name" | "timezone">>
+        /**
+         * Only these columns are grantable to `authenticated` — the list must
+         * stay in step with the column grant in 0004. `role` is absent on
+         * purpose: the database refuses that write regardless.
+         */
+        Partial<Pick<Profile, "full_name" | "timezone" | "study_until" | "settle_minutes">>
       >;
       subjects: Table<Subject>;
       timetable_versions: Table<TimetableVersion>;

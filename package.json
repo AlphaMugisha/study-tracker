@@ -14,7 +14,8 @@
     "role": "node --env-file-if-exists=.env.local scripts/set-role.mjs",
     "seed": "node --env-file-if-exists=.env.local scripts/seed-demo.mjs",
     "db:verify:live": "node --env-file-if-exists=.env.local scripts/verify-live-rls.mjs",
-    "smoke:ui": "node --env-file-if-exists=.env.local scripts/smoke-ui.mjs"
+    "smoke:ui": "node --env-file-if-exists=.env.local scripts/smoke-ui.mjs",
+    "test:planner": "node --import ./scripts/alias-hook.mjs --test scripts/test-planner.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
