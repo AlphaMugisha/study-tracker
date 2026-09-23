@@ -17,8 +17,13 @@ import {
   signUpSchema,
 } from "@/lib/validation/auth";
 
+/**
+ * Shown when Supabase env vars are missing. Deliberately environment-neutral:
+ * the same string is served from a Vercel deployment, where ".env.local" and
+ * "restart the dev server" would be advice the reader cannot act on.
+ */
 const NOT_CONFIGURED =
-  "StudyFlow is not connected to its database yet. Add your Supabase keys to .env.local and restart the dev server.";
+  "StudyFlow is not connected to its database yet. Its Supabase keys are missing or invalid.";
 
 function text(formData: FormData, key: string): string {
   const value = formData.get(key);

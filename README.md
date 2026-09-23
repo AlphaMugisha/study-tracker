@@ -17,6 +17,7 @@ placeholders — Phase 2 built the database those features will use, not the
 features themselves.
 
 See [docs/DATABASE.md](docs/DATABASE.md) for the schema, the RLS model, the
+- [Deploying to Vercel](docs/DEPLOY.md) — env vars, and the Supabase redirect allowlist that silently breaks auth if missed.
 admin authorisation handshake and the seed data.
 
 ## Setup
