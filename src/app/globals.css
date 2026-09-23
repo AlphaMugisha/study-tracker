@@ -10,8 +10,8 @@
 /* ---------------------------------------------------------------------------
    StudyFlow design tokens — dark
    ---------------------------------------------------------------------------
-   Deep blue-green ground, near-white ink, an emerald brand accent and four
-   further families that each carry a meaning. Dark surfaces are
+   Deep Midnight ground, Soft White ink, an Electric Blue brand accent and
+   four further families that each carry a meaning. Dark surfaces are
    separated by borders rather than shadows: a drop shadow on a dark ground
    reads as mud, so elevation here is a lighter surface plus a hairline.
 
@@ -25,117 +25,120 @@
      system was — on a dark ground, tighter corners read as harsh. */
   --radius: 1.25rem;
 
-  /* Surfaces. A cooler, blue-green ground so the accents sit on it naturally
-     rather than fighting a neutral grey. Steps are 5-6 L* apart. */
-  --background: #0d141b; /* page */
-  --card: #151e27; /* panels — +5 L* over the page, so it reads as a panel */
-  --surface-raised: #1f2b36; /* hover, nested rows */
-  --surface-sunken: #111921; /* wells, tracks, inputs */
-  --popover: #1a242e;
+  /* ---------------------------------------------------------------------
+     Surfaces. Deep Midnight ground, Soft Charcoal panels, Slate for anything
+     raised. The steps land 5.3 and 5.7 L* apart, which is exactly the range
+     where a panel reads as a panel without needing a heavy border.
+     --------------------------------------------------------------------- */
+  --background: #101318; /* Deep Midnight — page */
+  --card: #191e26; /* Soft Charcoal — panels, +5.3 L* over the page */
+  --surface-raised: #222a36; /* Slate — hover, nested rows, +5.7 over card */
+  --surface-sunken: #141922; /* wells, tracks, inputs */
+  --popover: #1d232d;
 
-  --foreground: #e8edf2;
-  --card-foreground: #e8edf2;
-  --popover-foreground: #e8edf2;
+  --foreground: #f1f3f7;
+  --card-foreground: #f1f3f7;
+  --popover-foreground: #f1f3f7;
 
-  --ink: #e8edf2; /* 15.2:1 on the page */
-  --ink-muted: #a3b4c2; /* 7.0:1 on card — body secondary */
-  --ink-subtle: #859aab; /* 5.2:1 on card — labels, timestamps, meta */
+  --ink: #f1f3f7; /* Soft White — 16.8:1 on the page */
+  --ink-muted: #9aa4b2; /* Muted Slate — 6.6:1 on card */
+  --ink-subtle: #848e9e; /* labels, timestamps, meta — 5.0:1 on card */
 
-  --border: #2a3742; /* +12 L* over card: a hairline has to actually read */
-  --border-strong: #3c4c59;
-  --input: #2a3742;
+  --border: #303846; /* Soft Slate — +12 L* over card, so a hairline reads */
+  --border-strong: #3f4a5c;
+  --input: #303846;
 
   /* ---------------------------------------------------------------------
      Accents. Five families, each one meaning something:
 
-       brand   emerald — actions, the active nav state, anything "go"
-       lesson  blue    — a timetabled class
-       revise  violet  — revision and study
-       pause   amber   — breaks and free periods
-       danger  rose    — overdue and destructive
+       brand   Electric Blue  actions, the active nav state, anything "go"
+       lesson  Mint           a timetabled class
+       revise  Periwinkle     revision and study
+       pause   Warm Yellow    breaks and free periods
+       danger  Coral          overdue and destructive
 
-     Each has a `soft` tinted surface and an `ink` that stays legible on
-     dark. Named for what they mean, not what colour they are, so recolouring
-     later does not leave every token lying about itself.
+     Each carries a `soft` tinted surface (the accent mixed ~16% into the card
+     colour, so the tint belongs to the same family as the panel it sits on)
+     and an `ink` that stays legible on dark.
 
-     These are deliberately NOT named sky/violet/amber/rose: those are
-     Tailwind palette names, and a custom `--color-amber` sitting beside the
-     built-in `--color-amber-500` is the same namespace collision that made
-     `text-hero` resolve to a colour instead of a font size.
+     Named for what they mean, not what colour they are — recolouring then
+     does not leave every token lying about itself, and it avoids colliding
+     with Tailwind's own palette names.
      --------------------------------------------------------------------- */
 
-  /* Brand: emerald. Bright enough to carry dark label text, which is what
-     makes a primary button read as energetic rather than as a grey slab. */
-  --brand: #34d399;
-  --brand-bright: #4ade9f; /* hover */
-  --brand-soft: #0e3a2c; /* tinted surface for selected states */
-  --brand-ink: #5eead4; /* 11.6:1 on card */
-  --brand-glow: rgba(52, 211, 153, 0.28);
+  /* Brand: Electric Blue. NOTE the label is near-black, not white: white on
+     this blue is 3.1:1 and fails AA, while the dark label is 6.2:1. */
+  --brand: #6c8cff;
+  --brand-bright: #8aa3ff; /* hover */
+  --brand-soft: #263049;
+  --brand-ink: #9bb1ff; /* 8.1:1 on card */
+  --brand-glow: rgba(108, 140, 255, 0.35);
 
-  --lesson: #38bdf8;
-  --lesson-soft: #0b3a52;
-  --lesson-ink: #7dd3fc;
+  --lesson: #55d6be; /* Mint */
+  --lesson-soft: #233b3e;
+  --lesson-ink: #8be3d3;
 
-  --revise: #a78bfa;
-  --revise-soft: #2a2150;
-  --revise-ink: #c4b5fd;
+  --revise: #9b8cff; /* Periwinkle — the one hue not supplied, chosen as a
+                        sibling of Electric Blue so the set still reads as
+                        one family */
+  --revise-soft: #2e3049;
+  --revise-ink: #bbb1ff;
 
-  --pause: #fbbf24;
-  --pause-soft: #3a2c0c;
-  --pause-ink: #fcd34d;
+  --pause: #ffd166; /* Warm Yellow */
+  --pause-soft: #3e3b30;
+  --pause-ink: #ffe097;
 
-  /* Primary maps to brand. Dark label on bright green: 8.4:1, where white on
-     the same green would be 1.9:1 — never use white here. */
-  --primary: #34d399;
-  --primary-foreground: #04261c;
+  --primary: #6c8cff;
+  --primary-foreground: #0b1020;
 
-  /* The hero panel: a green-to-blue gradient rather than one flat fill. White
-     text clears 5.5:1 at the worst point along its length. */
-  --hero-from: #047857;
-  --hero-to: #1e40af;
-  --hero: #0e627a; /* the midpoint, for anything needing a single value */
+  /* The hero panel: Electric Blue into Mint. Both are too light at full
+     strength to carry white text, so the gradient runs through darker members
+     of the same two hues — sampled along its length, worst point 4.9:1. */
+  --hero-from: #3550c4;
+  --hero-to: #1a7e6d;
+  --hero: #27679a; /* midpoint, for anything needing a single value */
   --hero-foreground: #ffffff;
   --hero-line: rgba(255, 255, 255, 0.22);
   --hero-fill: rgba(255, 255, 255, 0.2);
 
-  /* Break variant of the hero, so a break still reads as "now" but calmer. */
-  --hero-rest-from: #2b3444;
-  --hero-rest-to: #3a2f24;
-  --hero-rest: #33323a;
-  --hero-rest-foreground: #e9e2d6;
+  /* Break variant, so a break still reads as "now" but calmer. */
+  --hero-rest-from: #222a36;
+  --hero-rest-to: #3a3426;
+  --hero-rest: #2e2f2e;
+  --hero-rest-foreground: #f1f3f7;
 
   /* Status */
-  --danger: #fb7185;
-  --danger-soft: #3d1622;
-  --destructive: #fb7185;
-  --warn: #fbbf24;
-  --warn-soft: #3a2c0c;
+  --danger: #ff6b6b; /* Coral */
+  --danger-soft: #3e2a31;
+  --destructive: #ff6b6b;
+  --warn: #ffd166;
+  --warn-soft: #3e3b30;
 
   /* shadcn neutrals */
-  --secondary: #1f2b36;
-  --secondary-foreground: #e8edf2;
-  --muted: #1f2b36;
-  --muted-foreground: #a3b4c2;
-  --accent: #0e3a2c;
-  --accent-foreground: #5eead4;
-  --ring: #34d399;
+  --secondary: #222a36;
+  --secondary-foreground: #f1f3f7;
+  --muted: #222a36;
+  --muted-foreground: #9aa4b2;
+  --accent: #263049;
+  --accent-foreground: #9bb1ff;
+  --ring: #6c8cff;
 
-  /* Subject colour slots — five distinguishable hues, all legible on card. */
-  --chart-1: #38bdf8;
-  --chart-2: #a78bfa;
-  --chart-3: #fbbf24;
-  --chart-4: #34d399;
-  --chart-5: #fb7185;
+  /* Subject colour slots — five distinguishable hues from the same set. */
+  --chart-1: #6c8cff;
+  --chart-2: #55d6be;
+  --chart-3: #ffd166;
+  --chart-4: #9b8cff;
+  --chart-5: #ff6b6b;
 
   /* Sidebar sits darker than the page so the rail reads as chrome. */
-  --sidebar: #05090d;
-  --sidebar-foreground: #e8edf2;
-  --sidebar-primary: #34d399;
-  --sidebar-primary-foreground: #04261c;
-  --sidebar-accent: #0e3a2c;
-  --sidebar-accent-foreground: #5eead4;
-  --sidebar-border: #1c2732;
-  --sidebar-ring: #34d399;
+  --sidebar: #0a0d12;
+  --sidebar-foreground: #f1f3f7;
+  --sidebar-primary: #6c8cff;
+  --sidebar-primary-foreground: #0b1020;
+  --sidebar-accent: #263049;
+  --sidebar-accent-foreground: #9bb1ff;
+  --sidebar-border: #232b36;
+  --sidebar-ring: #6c8cff;
 
   /* Elevation. A single black blur on a dark ground reads as smudge rather
      than height — which is why the first attempt at this was dropped. These
