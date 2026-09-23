@@ -35,7 +35,7 @@ export async function getActiveTimetable(): Promise<ActiveTimetable> {
   const { data } = await supabase
     .from("timetable_entries")
     .select(
-      "id, activity_type, title, room, teacher, day_of_week, start_time, end_time, subjects(name, color_token)",
+      "id, activity_type, title, room, teacher, day_of_week, start_time, end_time, subject_id, subjects(name, color_token)",
     )
     .eq("timetable_version_id", version.id)
     .order("day_of_week")

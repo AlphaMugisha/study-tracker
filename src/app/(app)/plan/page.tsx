@@ -1,18 +1,22 @@
 import type { Metadata } from "next";
-import { BookMarked, ListChecks, NotebookPen } from "lucide-react";
+import Link from "next/link";
+import { BookMarked, ListChecks, NotebookPen, Plus } from "lucide-react";
 
 import { PageContainer } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { DeferredList, PlanTimeline, StartWithCard } from "@/components/plan/evening-plan";
+import { RevisionActions } from "@/components/plan/revision-actions";
+import { RevisionDialog } from "@/components/plan/revision-dialog";
 import { RowSessionButton } from "@/components/plan/session-controls";
 import { PriorityBadge, StatusBadge, SubjectDot } from "@/components/shared/badges";
 import { Reveal } from "@/components/shared/reveal";
 import { Block, BlockHeading, Surface } from "@/components/shared/surface";
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getOpenSession } from "@/lib/actions/sessions";
 import { requireSessionContext } from "@/lib/auth";
 import { byUrgency, getAssignments, getRevisionTasks, type RevisionView } from "@/lib/data/tasks";
-import { getActiveTimetable } from "@/lib/data/timetable";
+import { getActiveTimetable, getSubjects } from "@/lib/data/timetable";
 import { formatDueLabel } from "@/lib/format";
 import { buildEveningPlan, timeToMinutesSafe } from "@/lib/planner/build-plan";
 import { formatDuration, toDayOfWeek } from "@/lib/timetable/types";
@@ -22,13 +26,15 @@ export const metadata: Metadata = { title: "Home plan" };
 
 export default async function PlanPage() {
   const now = new Date();
-  const [session, { entries }, assignments, revision, openSession] = await Promise.all([
-    requireSessionContext(),
-    getActiveTimetable(),
-    getAssignments(now),
-    getRevisionTasks(),
-    getOpenSession(),
-  ]);
+  const [session, { entries }, assignments, revision, openSession, subjects] =
+    await Promise.all([
+      requireSessionContext(),
+      getActiveTimetable(),
+      getAssignments(now),
+      getRevisionTasks(),
+      getOpenSession(),
+      getSubjects(),
+    ]);
 
   const today = toDayOfWeek(now);
   const todaysEntries = entries.filter((e) => e.dayOfWeek === today);
@@ -105,6 +111,14 @@ export default async function PlanPage() {
                 icon={NotebookPen}
                 empty="Nothing outstanding. You're all caught up."
                 count={outstanding.length}
+                action={
+                  <Button asChild variant="ghost" size="sm">
+                    <Link href="/homework?new=1">
+                      <Plus aria-hidden="true" />
+                      Add
+                    </Link>
+                  </Button>
+                }
               >
                 {outstanding.slice(0, 8).map((a) => (
                   <HomeworkRow
@@ -121,8 +135,9 @@ export default async function PlanPage() {
               <TaskPanel
                 title="Revision"
                 icon={BookMarked}
-                empty="No revision tasks planned."
+                empty="Nothing to revise yet. Add something to study."
                 count={openRevision.length}
+                action={<RevisionDialog subjects={subjects} />}
               >
                 {openRevision.map((r) => (
                   <RevisionRow key={r.id} task={r} />
@@ -141,24 +156,29 @@ function TaskPanel({
   icon: Icon,
   empty,
   count,
+  action,
   children,
 }: {
   title: string;
   icon: typeof ListChecks;
   empty: string;
   count: number;
+  action?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <Surface className="flex h-full flex-col">
-      <div className="mb-6 flex items-baseline justify-between">
-        <h3 className="text-section text-ink">{title}</h3>
-        <span className="text-[0.95rem] text-ink-subtle" data-numeric>
-          {count}
-        </span>
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <div className="flex items-baseline gap-3">
+          <h3 className="text-section text-ink">{title}</h3>
+          <span className="text-[0.95rem] text-ink-subtle" data-numeric>
+            {count}
+          </span>
+        </div>
+        {action}
       </div>
       {count === 0 ? (
-        <EmptyState icon={Icon} headline={empty} className="border-0 py-8" />
+        <EmptyState icon={Icon} headline={empty} action={action} className="border-0 py-8" />
       ) : (
         <ul className="divide-y divide-border">{children}</ul>
       )}
@@ -211,7 +231,7 @@ function HomeworkRow({
 
 function RevisionRow({ task }: { task: RevisionView }) {
   return (
-    <li className="flex items-start gap-4 py-4">
+    <li className="group/row flex items-start gap-4 py-4">
       <SubjectDot colorToken={task.subject?.color_token ?? null} className="mt-2 size-2.5" />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-body font-medium text-ink">{task.title}</span>
@@ -221,8 +241,9 @@ function RevisionRow({ task }: { task: RevisionView }) {
           <span data-numeric>{formatDuration(task.estimated_minutes)}</span>
         </span>
       </span>
-      <span className="shrink-0">
+      <span className="flex shrink-0 items-center gap-2">
         <StatusBadge status={task.status} />
+        <RevisionActions id={task.id} status={task.status} />
       </span>
     </li>
   );

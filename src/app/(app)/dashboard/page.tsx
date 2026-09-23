@@ -116,16 +116,23 @@ export default async function TodayPage() {
       <Reveal>
         <DayStats
           stats={[
-            { label: "Lessons today", value: String(lessonsToday), tone: "lesson" as const },
+            {
+              label: "Lessons today",
+              value: String(lessonsToday),
+              tone: "lesson" as const,
+              href: "/timetable",
+            },
             {
               label: "Due soon",
               value: String(dueSoon.length),
               tone: groups.overdue.length > 0 ? ("danger" as const) : ("pause" as const),
+              href: "/homework",
             },
             {
               label: "Work tonight",
               value: workMinutes > 0 ? formatDurationCompact(workMinutes) : "None",
               tone: "brand" as const,
+              href: "/plan",
             },
           ]}
         />

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CalendarPlus } from "lucide-react";
 
 import { activityStyle, ActivityChip } from "@/components/shared/badges";
@@ -67,20 +68,25 @@ export function DaySchedule({
             </div>
 
             <div className="min-w-0 flex-1 py-1.5">
-              <div
+              {/* A lesson is a doorway to that subject's homework. A break is
+                  not a thing you can open, so it stays a plain block. */}
+              <EntryShell
+                href={entry.subjectId ? `/homework?subject=${entry.subjectId}` : null}
                 className={cn(
-                  "rounded-lg border px-4 py-3",
+                  "block rounded-xl border px-4 py-3.5 transition-colors duration-150 ease-out-flat",
                   isLesson
                     ? "border-border bg-card"
                     : "border-transparent bg-surface-sunken",
+                  entry.subjectId && "group/entry hover:border-border-strong hover:bg-surface-raised",
                 )}
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p
                       className={cn(
-                        "truncate font-medium",
-                        isLesson ? "text-[15px] text-ink" : "text-sm text-ink-muted",
+                        "truncate font-medium transition-colors duration-150 ease-out-flat",
+                        isLesson ? "text-body text-ink" : "text-[0.95rem] text-ink-muted",
+                        entry.subjectId && "group-hover/entry:text-brand-ink",
                       )}
                     >
                       {entry.label}
@@ -98,7 +104,7 @@ export function DaySchedule({
                     </span>
                   </div>
                 </div>
-              </div>
+              </EntryShell>
             </div>
           </li>
         );
@@ -161,13 +167,17 @@ export function WeekGrid({
                   const isLesson = entry.activityType === "class";
 
                   return (
-                    <li
-                      key={entry.id}
-                      className={cn(
-                        "flex items-start gap-2 rounded-md px-2 py-1.5",
-                        isLesson ? "bg-card" : "bg-surface-sunken/70",
-                      )}
-                    >
+                    <li key={entry.id}>
+                      <EntryShell
+                        href={
+                          entry.subjectId ? `/homework?subject=${entry.subjectId}` : null
+                        }
+                        className={cn(
+                          "flex items-start gap-2 rounded-lg px-2 py-2 transition-colors duration-150 ease-out-flat",
+                          isLesson ? "bg-card" : "bg-surface-sunken",
+                          entry.subjectId && "group/entry hover:bg-surface-raised",
+                        )}
+                      >
                       <span
                         aria-hidden="true"
                         className={cn("mt-1.5 h-6 w-0.5 shrink-0 rounded-full", style.rail)}
@@ -175,8 +185,9 @@ export function WeekGrid({
                       <span className="min-w-0 flex-1">
                         <span
                           className={cn(
-                            "block truncate text-[13px]",
+                            "block truncate text-[0.9rem] transition-colors duration-150 ease-out-flat",
                             isLesson ? "font-medium text-ink" : "text-ink-muted",
+                            entry.subjectId && "group-hover/entry:text-brand-ink",
                           )}
                         >
                           {entry.label}
@@ -185,6 +196,7 @@ export function WeekGrid({
                           {entry.startLabel}–{entry.endLabel}
                         </span>
                       </span>
+                      </EntryShell>
                     </li>
                   );
                 })}
@@ -194,5 +206,27 @@ export function WeekGrid({
         );
       })}
     </div>
+  );
+}
+
+/**
+ * A timetable entry, as a link when it has a subject to open and a plain block
+ * when it does not. Separate branches rather than a polymorphic component,
+ * whose props cannot be typed as a union of Link's and div's without a cast.
+ */
+function EntryShell({
+  href,
+  className,
+  children,
+}: {
+  href: string | null;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  if (!href) return <div className={className}>{children}</div>;
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
   );
 }

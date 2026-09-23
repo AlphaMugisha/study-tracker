@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, NotebookPen } from "lucide-react";
+import { ArrowRight, ArrowUpRight, NotebookPen } from "lucide-react";
 
 import { ProgressRing } from "@/components/shared/progress-ring";
 import {
@@ -69,7 +69,18 @@ function Panel({
 
 export function UpNextCard({ next }: { next: ResolvedEntry | null }) {
   return (
-    <Panel title="Up next" size="md" float="b">
+    <Panel
+      title="Up next"
+      size="md"
+      float="b"
+      action={
+        <Button asChild variant="ghost" size="sm">
+          <Link href="/timetable">
+            Timetable <ArrowRight aria-hidden="true" />
+          </Link>
+        </Button>
+      }
+    >
       {next ? (
         <div className="flex flex-1 flex-col justify-center py-2">
           <p className="text-[1.9rem] font-semibold leading-[1.1] tracking-[-0.025em] text-balance text-ink">
@@ -249,7 +260,19 @@ export function DueSoonList({ assignments }: { assignments: AssignmentView[] }) 
  */
 export function RestOfDay({ entries }: { entries: ResolvedEntry[] }) {
   return (
-    <Panel title="Rest of today" count={entries.length} size="md" float="c">
+    <Panel
+      title="Rest of today"
+      count={entries.length}
+      size="md"
+      float="c"
+      action={
+        <Button asChild variant="ghost" size="sm">
+          <Link href="/timetable">
+            Timetable <ArrowRight aria-hidden="true" />
+          </Link>
+        </Button>
+      }
+    >
       {entries.length === 0 ? (
         <p className="flex flex-1 items-center text-body text-ink-muted">
           Nothing else timetabled. The rest of the day is yours.
@@ -302,7 +325,7 @@ export function RestOfDay({ entries }: { entries: ResolvedEntry[] }) {
 // --- Day stats --------------------------------------------------------------
 
 type StatTone = "brand" | "lesson" | "revise" | "pause" | "danger" | "default";
-type Stat = { label: string; value: string; tone?: StatTone };
+type Stat = { label: string; value: string; tone?: StatTone; href: string };
 
 /** Each statistic carries its own colour, so the row reads as three facts
  *  rather than one block of text. */
@@ -328,11 +351,20 @@ export function DayStats({ stats }: { stats: Stat[] }) {
           than three borders would. */}
       <dl className="grid grid-cols-1 divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         {stats.map((stat) => (
-          <div
+          // The whole tile is the target, not just the label: a number you can
+          // read but not follow is a dead end.
+          <Link
             key={stat.label}
-            className="group/stat min-w-0 px-8 py-9 transition-colors duration-300 ease-out-flat hover:bg-surface-raised sm:px-9 sm:py-11"
+            href={stat.href}
+            className="group/stat min-w-0 px-8 py-9 transition-colors duration-300 ease-out-flat hover:bg-surface-raised focus-visible:bg-surface-raised sm:px-9 sm:py-11"
           >
-            <dt className="text-eyebrow uppercase text-ink-subtle">{stat.label}</dt>
+            <dt className="flex items-center gap-2 text-eyebrow uppercase text-ink-subtle">
+              {stat.label}
+              <ArrowUpRight
+                aria-hidden="true"
+                className="size-3.5 opacity-0 transition-opacity duration-150 group-hover/stat:opacity-100"
+              />
+            </dt>
             <dd
               className={cn(
                 // The clamp is sized to the narrowest cell this sits in, not
@@ -345,7 +377,7 @@ export function DayStats({ stats }: { stats: Stat[] }) {
             >
               {stat.value}
             </dd>
-          </div>
+          </Link>
         ))}
       </dl>
     </Surface>
@@ -364,7 +396,17 @@ export function TodayProgress({
   const complete = total > 0 && done === total;
 
   return (
-    <Panel title="Today's progress" size="md">
+    <Panel
+      title="Today's progress"
+      size="md"
+      action={
+        <Button asChild variant="ghost" size="sm">
+          <Link href="/homework">
+            Homework <ArrowRight aria-hidden="true" />
+          </Link>
+        </Button>
+      }
+    >
       <div className="flex flex-1 flex-col items-center justify-center py-4">
         <ProgressRing value={done} total={total} size={148} stroke={12} />
         <p className="mt-7 text-center text-body text-ink-muted">

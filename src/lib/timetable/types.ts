@@ -17,6 +17,8 @@ export type ResolvedEntry = {
   /** Secondary line: room, teacher, or the subject when a title is present. */
   detail: string | null;
   subjectName: string | null;
+  /** Lets a lesson link to that subject's homework. */
+  subjectId: string | null;
   colorToken: string | null;
   room: string | null;
   dayOfWeek: DayOfWeek;

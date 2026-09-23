@@ -226,6 +226,11 @@ try {
     ["/plan", ["Start with", "The order to work in", "Start this"]],
     // Subject management and the planning window.
     ["/settings", ["Subjects", "Add a subject", "Finish work by", "Wind-down after school"]],
+    // Revision is writable now, not just readable.
+    ["/plan", ["Add revision"]],
+    // Cards that were previously inert now go somewhere.
+    ["/homework", ["Start"]],
+    ["/timetable", ["/homework?subject="]],
     ["/settings", ["Settings", "Smoke Tester", "Support access", "Sign out"]],
   ];
 

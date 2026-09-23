@@ -1,4 +1,4 @@
-import { Check, Pencil, Play, RotateCcw } from "lucide-react";
+import { Check, Pencil, RotateCcw } from "lucide-react";
 
 import { AssignmentDialog } from "@/components/homework/assignment-dialog";
 import { DeleteAssignment } from "@/components/homework/delete-assignment";
@@ -9,6 +9,7 @@ import {
   SubjectDot,
 } from "@/components/shared/badges";
 import { Button } from "@/components/ui/button";
+import { RowSessionButton } from "@/components/plan/session-controls";
 import { setAssignmentStatusAction } from "@/lib/actions/assignments";
 import type { AssignmentView } from "@/lib/data/tasks";
 import { formatDueLabel, formatOverdueLabel } from "@/lib/format";
@@ -42,9 +43,15 @@ function StatusButton({
 export function AssignmentCard({
   assignment,
   subjects,
+  openSessionId = null,
+  isActive = false,
 }: {
   assignment: AssignmentView;
   subjects: Subject[];
+  /** The one session currently running, if any. */
+  openSessionId?: string | null;
+  /** True when that running session belongs to this assignment. */
+  isActive?: boolean;
 }) {
   const done = assignment.status === "completed";
 
@@ -125,12 +132,11 @@ export function AssignmentCard({
               <Check aria-hidden="true" />
               Mark complete
             </StatusButton>
-            {assignment.status === "not_started" ? (
-              <StatusButton id={assignment.id} status="in_progress" variant="outline">
-                <Play aria-hidden="true" />
-                Start
-              </StatusButton>
-            ) : null}
+            <RowSessionButton
+              taskId={assignment.id}
+              openSessionId={openSessionId}
+              isActive={isActive}
+            />
           </>
         )}
 

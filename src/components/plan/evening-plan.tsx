@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AlertTriangle, Clock } from "lucide-react";
 
 import { StartSessionButton } from "@/components/plan/session-controls";
@@ -94,14 +95,16 @@ export function PlanTimeline({
           const tone = KIND_TONE[block.kind];
           const active = block.taskId !== null && block.taskId === activeTaskId;
 
+          const rowClass = cn(
+            "-mx-4 flex items-baseline gap-4 rounded-lg px-4 py-4 transition-colors duration-150 ease-out-flat",
+            block.taskId && "group/row hover:bg-surface-raised",
+            active && "bg-brand-soft",
+          );
+
           return (
-            <li
-              key={block.id}
-              className={cn(
-                "flex items-baseline gap-4 py-4",
-                active && "-mx-4 rounded-lg bg-brand-soft px-4",
-              )}
-            >
+            <li key={block.id}>
+              {/* A break is not a thing you can open; homework and revision are. */}
+              <MaybeLink href={block.taskId ? `/homework#${block.taskId}` : null} className={rowClass}>
               <span
                 className="w-14 shrink-0 text-[0.95rem] font-medium text-ink-muted"
                 data-numeric
@@ -113,7 +116,13 @@ export function PlanTimeline({
                 className={cn("size-2 shrink-0 rounded-full", tone.dot)}
               />
               <span className="min-w-0 flex-1">
-                <span className={cn("block truncate text-body font-medium", tone.label)}>
+                <span
+                  className={cn(
+                    "block truncate text-body font-medium transition-colors duration-150 ease-out-flat",
+                    tone.label,
+                    block.taskId && "group-hover/row:text-brand-ink",
+                  )}
+                >
                   {block.label}
                   {block.part ? (
                     <span className="ml-2 text-[0.85rem] font-normal text-ink-subtle">
@@ -127,9 +136,10 @@ export function PlanTimeline({
                   </span>
                 ) : null}
               </span>
-              <span className="shrink-0 text-[0.9rem] text-ink-subtle" data-numeric>
-                {block.minutes} min
-              </span>
+                <span className="shrink-0 text-[0.9rem] text-ink-subtle" data-numeric>
+                  {block.minutes} min
+                </span>
+              </MaybeLink>
             </li>
           );
         })}
@@ -177,9 +187,13 @@ export function DeferredList({ plan }: { plan: EveningPlan }) {
 
           <ul className="mt-5 divide-y divide-border">
             {plan.deferred.map((task) => (
-              <li key={task.taskId} className="flex items-baseline gap-4 py-3">
+              <li key={task.taskId}>
+                <Link
+                  href={`/homework#${task.taskId}`}
+                  className="group/row -mx-4 flex items-baseline gap-4 rounded-lg px-4 py-3 transition-colors duration-150 ease-out-flat hover:bg-surface-raised"
+                >
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-body font-medium text-ink">
+                  <span className="block truncate text-body font-medium text-ink transition-colors duration-150 ease-out-flat group-hover/row:text-brand-ink">
                     {task.label}
                   </span>
                   <span className="mt-1 flex flex-wrap items-center gap-x-3 text-[0.9rem] text-ink-subtle">
@@ -197,11 +211,34 @@ export function DeferredList({ plan }: { plan: EveningPlan }) {
                     )}
                   </span>
                 </span>
+                </Link>
               </li>
             ))}
           </ul>
         </div>
       </div>
     </Surface>
+  );
+}
+
+/**
+ * Wraps its children in a link when there is somewhere to go, and in a plain
+ * div when there is not — rather than a polymorphic component, whose props
+ * cannot be typed as a union of Link's and div's without a cast.
+ */
+function MaybeLink({
+  href,
+  className,
+  children,
+}: {
+  href: string | null;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  if (!href) return <div className={className}>{children}</div>;
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
   );
 }

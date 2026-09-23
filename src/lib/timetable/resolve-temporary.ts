@@ -125,6 +125,7 @@ export function toResolvedEntry(row: {
   day_of_week: number;
   start_time: string;
   end_time: string;
+  subject_id: string | null;
   subjects: { name: string; color_token: string } | null;
 }): ResolvedEntry {
   const startMinutes = timeToMinutes(row.start_time);
@@ -141,6 +142,7 @@ export function toResolvedEntry(row: {
     label,
     detail,
     subjectName,
+    subjectId: row.subject_id,
     colorToken: row.subjects?.color_token ?? null,
     room: row.room,
     dayOfWeek: row.day_of_week as ResolvedEntry["dayOfWeek"],

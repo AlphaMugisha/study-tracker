@@ -17,6 +17,7 @@ function entry(partial: Partial<ResolvedEntry> & { label: string }): ResolvedEnt
     label: partial.label,
     detail: partial.detail ?? null,
     subjectName: partial.subjectName ?? null,
+    subjectId: partial.subjectId ?? null,
     colorToken: partial.colorToken ?? "chart-1",
     room: partial.room ?? null,
     dayOfWeek: partial.dayOfWeek ?? 1,
