@@ -43,9 +43,12 @@ export function TopBar({
       <header
         className={cn(
           "sticky top-0 z-30 flex h-20 items-center gap-4 px-5 transition-colors duration-300 ease-out-flat md:px-8 lg:px-12",
+          // Always a hairline. Fully transparent at rest looked like the top
+          // bar was missing rather than restrained; the fill is what changes
+          // on scroll now, not whether the bar exists.
           scrolled
             ? "border-b border-border bg-background/90 backdrop-blur-md"
-            : "border-b border-transparent bg-transparent",
+            : "border-b border-border/60 bg-background/40 backdrop-blur-sm",
         )}
       >
         {/* Below md the persistent sidebar is gone, so the same navigation is

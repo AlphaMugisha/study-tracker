@@ -240,6 +240,10 @@ try {
     // open, so asserting the field labels here would be testing the library.
     ["/timetable", ["Add to timetable", "Edit ", "Remove "]],
     ["/dashboard", ["Open navigation"]],
+    // The sidebar must render unconditionally. `hidden` on the <aside> is the
+    // bug that kept coming back, so assert its absence rather than its
+    // presence in some breakpoint we happen to be thinking about.
+    ["/dashboard", ["<aside class=\"sticky top-0 flex h-dvh"]],
     ["/settings", ["Settings", "Smoke Tester", "Support access", "Sign out"]],
   ];
 

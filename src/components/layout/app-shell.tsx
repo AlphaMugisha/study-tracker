@@ -1,7 +1,6 @@
 import { cookies } from "next/headers";
 
 import type { AccountSummary } from "@/components/layout/account-menu";
-import { MobileNav } from "@/components/layout/mobile-nav";
 import { Sidebar } from "@/components/layout/sidebar";
 import { TopBar } from "@/components/layout/top-bar";
 import { displayName, requireSessionContext } from "@/lib/auth";
@@ -10,9 +9,10 @@ import { cn } from "@/lib/utils";
 
 /**
  * Two designed layouts, not one shrunk layout:
- *   < md : top bar with the brand + fixed bottom tab bar, single column
- *   >= md: a 60px icon rail, expanding to a full panel from lg, plus a top
- *          bar carrying the section name, search, the clock and the account
+ *   The sidebar is always present — a 72px icon rail, widening to a labelled
+ *   264px panel from md. The top bar carries the section name, search, the
+ *   clock and the account; the drawer adds labelled navigation below md,
+ *   where the rail shows icons only.
  */
 export async function AppShell({ children }: { children: React.ReactNode }) {
   const session = await requireSessionContext();
@@ -42,11 +42,10 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           role={role}
         />
 
-        <main id="main" className="flex-1 pb-24 sm:pb-0">
+        <main id="main" className="flex-1">
           {children}
         </main>
 
-        <MobileNav role={role} />
       </div>
     </div>
   );

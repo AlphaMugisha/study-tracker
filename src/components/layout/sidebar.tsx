@@ -12,11 +12,17 @@ import { cn } from "@/lib/utils";
 /**
  * The sidebar has two axes, which is why the classes look busy:
  *
- *   viewport  — below sm there is no sidebar (the bottom tab bar takes over);
- *               from sm it is a 72px icon rail; from md a full 264px panel.
- *               The rail starts at sm because an ordinary desktop window
- *               drops under 768px as soon as the browser is zoomed in, and
- *               losing the whole sidebar to a zoom level is absurd.
+ *   viewport  — the sidebar is ALWAYS rendered. It is a 72px icon rail at any
+ *               width, widening to a 264px panel with labels from md.
+ *
+ *               It used to disappear below a breakpoint, handing over to a
+ *               bottom tab bar. That was defensible and it was also wrong in
+ *               practice: it vanished whenever a window was narrow or the
+ *               browser was zoomed, it took the support account's only route
+ *               to its own page with it, and it produced six separate reports
+ *               of "the sidebar is gone" for six different reasons. A 72px
+ *               rail costs 72px. Losing navigation costs more.
+ *
  *   collapsed — the student's own choice, honoured from md up.
  *
  * `collapsed` is persisted in a cookie rather than localStorage so the server
@@ -49,7 +55,7 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-border bg-sidebar sm:flex",
+        "sticky top-0 flex h-dvh shrink-0 flex-col border-r border-border bg-sidebar",
         "transition-[width] duration-200 ease-out",
         collapsed ? "w-[72px]" : "w-[72px] md:w-[264px]",
       )}
