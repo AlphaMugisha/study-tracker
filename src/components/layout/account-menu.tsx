@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronsUpDown, LogOut, Settings } from "lucide-react";
+import { ChevronsUpDown, LogOut, Settings, ShieldCheck } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -29,6 +29,29 @@ function initials(name: string): string {
  * `compact` renders just the avatar, for the top bar. The full form -- avatar,
  * name, role, chevron -- is for a sidebar foot.
  */
+/**
+ * What the account is allowed to do, in one word.
+ *
+ * `admin` is called "Support account" in the interface: it is what the role
+ * actually is, and it does not imply the power "admin" suggests — a support
+ * account can read the record of students who approved it, and nothing else.
+ */
+export function RoleBadge({ role, className }: { role: string; className?: string }) {
+  const isAdmin = role === "admin";
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.75rem] font-medium",
+        isAdmin ? "bg-revise-soft text-revise-ink" : "bg-lesson-soft text-lesson-ink",
+        className,
+      )}
+    >
+      <ShieldCheck aria-hidden="true" className="size-3.5" />
+      {isAdmin ? "Support account" : "Student"}
+    </span>
+  );
+}
+
 export function AccountMenu({
   account,
   className,
@@ -41,7 +64,7 @@ export function AccountMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label={compact ? `Account: ${account.name}` : undefined}
+        aria-label={compact ? `Account: ${account.name}, ${account.role}` : undefined}
         className={cn(
           "flex items-center rounded-md text-left transition-colors",
           compact
@@ -71,10 +94,18 @@ export function AccountMenu({
         ) : null}
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" side={compact ? "bottom" : "top"} className="w-56">
+      <DropdownMenuContent align="end" side={compact ? "bottom" : "top"} className="w-64">
         <DropdownMenuLabel className="font-normal">
-          <span className="block text-[13px] font-medium text-ink">{account.name}</span>
-          <span className="block truncate text-xs text-ink-muted">{account.email}</span>
+          <span className="block text-[0.95rem] font-medium text-ink">{account.name}</span>
+          <span className="mt-0.5 block truncate text-[0.8rem] text-ink-muted">
+            {account.email}
+          </span>
+          {/* The role decides whether "Students" exists at all, so it belongs
+              here rather than only on a settings page you have to go looking
+              for. */}
+          <span className="mt-2.5 block">
+            <RoleBadge role={account.role} />
+          </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>

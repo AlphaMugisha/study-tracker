@@ -228,6 +228,8 @@ try {
     ["/settings", ["Subjects", "Add a subject", "Finish work by", "Wind-down after school"]],
     // The consent panel: who can see your work, and how to stop them.
     ["/settings", ["Support access", "Nobody has access"]],
+    // The role, stated plainly, plus what it means for this account.
+    ["/settings", ["Role", "Student", "Your work is yours"]],
     // Revision is writable now, not just readable.
     ["/plan", ["Add revision"]],
     // Cards that were previously inert now go somewhere.

@@ -4,11 +4,11 @@ import { KeyRound, LogOut } from "lucide-react";
 
 import { PageContainer } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
+import { RoleBadge } from "@/components/layout/account-menu";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { SubjectManager } from "@/components/settings/subject-manager";
 import { SupportAccess } from "@/components/settings/support-access";
 import { Reveal } from "@/components/shared/reveal";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/lib/actions/auth";
 import { displayName, requireSessionContext } from "@/lib/auth";
@@ -88,17 +88,20 @@ export default async function SettingsPage() {
           <Panel title="Account">
             <dl className="grid gap-4 sm:grid-cols-2">
               <div>
-                <dt className="text-[13px] text-ink-muted">Email</dt>
-                <dd className="mt-0.5 truncate text-[15px] font-medium text-ink">
+                <dt className="text-[0.95rem] text-ink-muted">Email</dt>
+                <dd className="mt-1 truncate text-body font-medium text-ink">
                   {user.email}
                 </dd>
               </div>
               <div>
-                <dt className="text-[13px] text-ink-muted">Role</dt>
-                <dd className="mt-1.5">
-                  <Badge className="bg-lesson-soft capitalize text-lesson-ink">
-                    {profile?.role ?? "student"}
-                  </Badge>
+                <dt className="text-[0.95rem] text-ink-muted">Role</dt>
+                <dd className="mt-2.5">
+                  <RoleBadge role={profile?.role ?? "student"} />
+                  <span className="mt-2.5 block max-w-[52ch] text-[0.9rem] leading-relaxed text-ink-subtle">
+                    {profile?.role === "admin"
+                      ? "You can read the record of students who have approved you, and only while they keep that approval. You cannot edit anyone's work."
+                      : "Your work is yours. Nobody can see it unless you approve a request, and you can withdraw that at any time."}
+                  </span>
                 </dd>
               </div>
             </dl>
