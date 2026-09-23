@@ -6,10 +6,11 @@ import { PageContainer } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { Reveal } from "@/components/shared/reveal";
 import { BlockHeading } from "@/components/shared/surface";
+import { TimetableEntryDialog } from "@/components/timetable/entry-dialog";
 import { DaySchedule, WeekGrid } from "@/components/timetable/schedule";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { getActiveTimetable } from "@/lib/data/timetable";
+import { getActiveTimetable, getSubjects } from "@/lib/data/timetable";
 import { DAY_NAMES, DAY_SHORT, toDayOfWeek } from "@/lib/timetable/types";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +26,10 @@ export default async function TimetablePage({
   searchParams: SearchParams;
 }) {
   const params = await searchParams;
-  const { version, entries } = await getActiveTimetable();
+  const [{ version, entries }, subjects] = await Promise.all([
+    getActiveTimetable(),
+    getSubjects(),
+  ]);
 
   const now = new Date();
   const todayIndex = toDayOfWeek(now);
@@ -67,9 +71,12 @@ export default async function TimetablePage({
         title="Your school week."
         description="Lessons, breaks and everything else, day by day or all at once."
         action={
-          <div className="inline-flex rounded-lg border border-border bg-card p-1">
-            <ViewTab href="/timetable" active={view === "day"} label="Day" />
-            <ViewTab href="/timetable?view=week" active={view === "week"} label="Week" />
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="inline-flex rounded-lg border border-border bg-card p-1">
+              <ViewTab href="/timetable" active={view === "day"} label="Day" />
+              <ViewTab href="/timetable?view=week" active={view === "week"} label="Week" />
+            </div>
+            <TimetableEntryDialog subjects={subjects} defaultDay={selectedDay} />
           </div>
         }
       />
@@ -110,7 +117,7 @@ export default async function TimetablePage({
             title={`${DAY_NAMES[selectedDay]}.`}
             count={dayEntries.length}
           />
-          <DaySchedule entries={dayEntries} />
+          <DaySchedule entries={dayEntries} subjects={subjects} editable />
         </Reveal>
       ) : (
         <Reveal index={1}>

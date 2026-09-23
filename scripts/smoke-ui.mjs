@@ -231,6 +231,11 @@ try {
     // Cards that were previously inert now go somewhere.
     ["/homework", ["Start"]],
     ["/timetable", ["/homework?subject="]],
+    // Manual timetable entry, and the drawer that makes nav reachable at any width.
+    // Only the trigger is server-rendered — Radix mounts dialog contents on
+    // open, so asserting the field labels here would be testing the library.
+    ["/timetable", ["Add to timetable", "Edit ", "Remove "]],
+    ["/dashboard", ["Open navigation"]],
     ["/settings", ["Settings", "Smoke Tester", "Support access", "Sign out"]],
   ];
 

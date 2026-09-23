@@ -1,8 +1,12 @@
 import Link from "next/link";
-import { CalendarPlus } from "lucide-react";
+import { CalendarPlus, Pencil } from "lucide-react";
 
 import { activityStyle, ActivityChip } from "@/components/shared/badges";
+import { DeleteEntryButton } from "@/components/timetable/entry-actions";
+import { TimetableEntryDialog } from "@/components/timetable/entry-dialog";
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import type { Subject } from "@/types/database";
 import { DAY_NAMES, DAY_SHORT, formatDuration, type ResolvedEntry } from "@/lib/timetable/types";
 import { cn } from "@/lib/utils";
 
@@ -14,9 +18,14 @@ import { cn } from "@/lib/utils";
 
 export function DaySchedule({
   entries,
+  subjects = [],
+  editable = false,
   emptyMessage = "Nothing timetabled for this day.",
 }: {
   entries: ResolvedEntry[];
+  subjects?: Subject[];
+  /** Shows the edit and remove controls on each slot. */
+  editable?: boolean;
   emptyMessage?: string;
 }) {
   if (entries.length === 0) {
@@ -99,9 +108,28 @@ export function DaySchedule({
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <ActivityChip kind={entry.activityType} />
-                    <span className="text-xs text-ink-subtle" data-numeric>
+                    <span className="text-[0.9rem] text-ink-subtle" data-numeric>
                       {formatDuration(entry.durationMinutes)}
                     </span>
+                    {editable ? (
+                      <span className="flex items-center gap-0.5">
+                        <TimetableEntryDialog
+                          subjects={subjects}
+                          entry={entry}
+                          trigger={
+                            <Button
+                              type="button"
+                              size="icon-sm"
+                              variant="ghost"
+                              aria-label={`Edit ${entry.label}`}
+                            >
+                              <Pencil aria-hidden="true" />
+                            </Button>
+                          }
+                        />
+                        <DeleteEntryButton id={entry.id} label={entry.label} />
+                      </span>
+                    ) : null}
                   </div>
                 </div>
               </EntryShell>

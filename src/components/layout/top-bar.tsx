@@ -8,6 +8,7 @@ import { AccountMenu, type AccountSummary } from "@/components/layout/account-me
 import { CommandPalette, useCommandPalette } from "@/components/layout/command-palette";
 import { useScrolled } from "@/components/layout/use-scrolled";
 import { LiveClock } from "@/components/layout/live-clock";
+import { NavDrawer } from "@/components/layout/nav-drawer";
 import { Logo } from "@/components/layout/logo";
 import { isNavItemActive, primaryNav, secondaryNav } from "@/lib/nav";
 import { cn } from "@/lib/utils";
@@ -44,7 +45,9 @@ export function TopBar({
             : "border-b border-transparent bg-transparent",
         )}
       >
-        {/* Below md there is no sidebar, so the brand lives here instead. */}
+        {/* Below md the persistent sidebar is gone, so the same navigation is
+            reachable from a drawer, and the brand lives here. */}
+        <NavDrawer account={account} />
         <Link href="/dashboard" className="rounded-md md:hidden">
           <Logo />
         </Link>
