@@ -42,11 +42,11 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           role={role}
         />
 
-        <main id="main" className="flex-1 pb-24 md:pb-0">
+        <main id="main" className="flex-1 pb-24 sm:pb-0">
           {children}
         </main>
 
-        <MobileNav />
+        <MobileNav role={role} />
       </div>
     </div>
   );

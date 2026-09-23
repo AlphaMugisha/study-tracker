@@ -3,25 +3,28 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { isNavItemActive, primaryNav } from "@/lib/nav";
+import { adminNav, isNavItemActive, primaryNav } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 /**
- * Thumb-reachable tab bar, below md only -- from md up the icon rail takes
- * over. Four items only: a fifth makes each target narrower than the 44px
- * minimum at 320px wide. Settings lives in the top bar.
+ * Thumb-reachable tab bar, below sm only -- from sm up the icon rail takes
+ * over. Settings lives in the top bar and the drawer.
  */
-export function MobileNav() {
+export function MobileNav({ role }: { role: string }) {
   const pathname = usePathname();
+  // A support account gets Students here too. Five tabs at 320px is 64px
+  // each — still above the 44px touch minimum, and far better than the one
+  // page they need being reachable only from a drawer.
+  const items = role === "admin" ? [...primaryNav, ...adminNav] : primaryNav;
 
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-sidebar/95 backdrop-blur-sm md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-sidebar/95 backdrop-blur-sm sm:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <ul className="mx-auto flex max-w-lg items-stretch">
-        {primaryNav.map((item) => {
+        {items.map((item) => {
           const active = isNavItemActive(pathname, item.href);
           const Icon = item.icon;
 

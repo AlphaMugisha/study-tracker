@@ -51,7 +51,7 @@ export function TopBar({
         {/* Below md the persistent sidebar is gone, so the same navigation is
             reachable from a drawer, and the brand lives here. */}
         <NavDrawer account={account} role={role} />
-        <Link href="/dashboard" className="rounded-md md:hidden">
+        <Link href="/dashboard" className="rounded-md sm:hidden">
           <Logo />
         </Link>
         <span className="hidden shrink-0 text-section text-ink md:block">{current.label}</span>

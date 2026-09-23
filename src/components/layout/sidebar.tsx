@@ -12,9 +12,12 @@ import { cn } from "@/lib/utils";
 /**
  * The sidebar has two axes, which is why the classes look busy:
  *
- *   viewport  — below md there is no sidebar at all (the bottom tab bar takes
- *               over); from md up it is a full 240px panel with labels.
- *   collapsed — the student's own choice, a 60px icon rail, honoured from md.
+ *   viewport  — below sm there is no sidebar (the bottom tab bar takes over);
+ *               from sm it is a 72px icon rail; from md a full 264px panel.
+ *               The rail starts at sm because an ordinary desktop window
+ *               drops under 768px as soon as the browser is zoomed in, and
+ *               losing the whole sidebar to a zoom level is absurd.
+ *   collapsed — the student's own choice, honoured from md up.
  *
  * `collapsed` is persisted in a cookie rather than localStorage so the server
  * renders the correct width on first paint; reading it on the client would
@@ -46,7 +49,7 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-border bg-sidebar md:flex",
+        "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-border bg-sidebar sm:flex",
         "transition-[width] duration-200 ease-out",
         collapsed ? "w-[72px]" : "w-[72px] md:w-[264px]",
       )}
