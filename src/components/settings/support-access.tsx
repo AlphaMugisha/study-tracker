@@ -1,5 +1,6 @@
 import { ShieldAlert, ShieldCheck } from "lucide-react";
 
+import { ItemCard, ItemGrid } from "@/components/shared/item-card";
 import { Eyebrow } from "@/components/shared/surface";
 import { Button } from "@/components/ui/button";
 import {
@@ -111,24 +112,27 @@ export function SupportAccess({ links }: { links: SupportLink[] }) {
                   log. They cannot edit anything, and they see nothing outside
                   StudyFlow.
                 </p>
-                <ul className="mt-5 divide-y divide-border">
-                  {active.map((link) => (
-                    <li
-                      key={link.id}
-                      className="flex items-center justify-between gap-4 py-3.5"
-                    >
-                      <span className="min-w-0 truncate text-body font-medium text-ink">
-                        {link.counterpartName ?? "A support account (run migration 0005 to show names)"}
-                      </span>
-                      <form action={revokeAccessAction}>
-                        <input type="hidden" name="id" value={link.id} />
-                        <Button type="submit" size="sm" variant="outline">
-                          Revoke
-                        </Button>
-                      </form>
-                    </li>
-                  ))}
-                </ul>
+                <div className="mt-5">
+                  <ItemGrid>
+                    {active.map((link, i) => (
+                      <ItemCard
+                        key={link.id}
+                        index={i}
+                        accent="lesson"
+                        title={link.counterpartName ?? "A support account"}
+                        meta={<span>Can read your academic record</span>}
+                        footer={
+                          <form action={revokeAccessAction} className="ml-auto">
+                            <input type="hidden" name="id" value={link.id} />
+                            <Button type="submit" size="sm" variant="outline">
+                              Revoke
+                            </Button>
+                          </form>
+                        }
+                      />
+                    ))}
+                  </ItemGrid>
+                </div>
               </>
             )}
           </div>

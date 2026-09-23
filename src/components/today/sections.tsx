@@ -2,14 +2,23 @@ import Link from "next/link";
 import { ArrowRight, ArrowUpRight, NotebookPen } from "lucide-react";
 
 import { ProgressRing } from "@/components/shared/progress-ring";
+
+/** Timetable activity kind -> the card accent that carries its meaning. */
+const ACTIVITY_ACCENT: Record<string, ItemAccent> = {
+  class: "lesson",
+  break: "pause",
+  free: "pause",
+  study: "revise",
+  other: "brand",
+};
 import {
   ActivityChip,
   OverdueBadge,
   PriorityBadge,
   SubjectDot,
-  activityStyle,
 } from "@/components/shared/badges";
 import { PlanBlockCard } from "@/components/plan/plan-block-card";
+import { ItemCard, ItemGrid, type ItemAccent } from "@/components/shared/item-card";
 import { Surface } from "@/components/shared/surface";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -162,76 +171,11 @@ export function HomePlanPreview({ plan }: { plan: EveningPlan }) {
   );
 }
 
-// --- Due soon ---------------------------------------------------------------
-
-export function DueSoonList({ assignments }: { assignments: AssignmentView[] }) {
-  return (
-    <Panel
-      title="Due soon"
-      count={assignments.length}
-      size="md"
-      action={
-        <Button asChild variant="ghost" size="sm">
-          <Link href="/homework">
-            All homework <ArrowRight aria-hidden="true" />
-          </Link>
-        </Button>
-      }
-    >
-      {assignments.length === 0 ? (
-        <EmptyState
-          icon={NotebookPen}
-          headline="You're all caught up."
-          body="Nothing due in the next few days."
-          className="border-0 bg-transparent py-6"
-        />
-      ) : (
-        <ul className="divide-y divide-border">
-          {assignments.map((a) => (
-            <li key={a.id} className="group/row">
-              <Link
-                href={`/homework#${a.id}`}
-                className="-mx-4 flex items-start gap-4 rounded-lg px-4 py-5 transition-colors duration-150 ease-out-flat hover:bg-surface-raised"
-              >
-                <SubjectDot colorToken={a.subject?.color_token ?? null} className="mt-2 size-2.5" />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-body font-medium text-ink transition-colors duration-150 ease-out-flat group-hover/row:text-brand-ink">
-                    {a.title}
-                  </span>
-                  <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.9rem] text-ink-subtle">
-                    {a.subject ? <span>{a.subject.name}</span> : null}
-                    <span aria-hidden="true">·</span>
-                    <span className={a.overdue ? "font-medium text-danger" : undefined}>
-                      {a.overdue
-                        ? formatOverdueLabel(a.due_date, a.due_time)
-                        : formatDueLabel(a.due_date, a.due_time)}
-                    </span>
-                    <span aria-hidden="true">·</span>
-                    <span>{formatDuration(a.estimated_minutes)}</span>
-                  </span>
-                </span>
-                <span className="shrink-0">
-                  {a.overdue ? (
-                    <OverdueBadge>Overdue</OverdueBadge>
-                  ) : (
-                    <PriorityBadge priority={a.priority} />
-                  )}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Panel>
-  );
-}
-
 // --- Rest of today ----------------------------------------------------------
 
 /**
  * Everything still to come on the timetable today. "Up next" answers the very
- * next thing; this answers "and then what?", which is the question that made
- * the right-hand rail feel half-empty without it.
+ * next thing; this answers "and then what?".
  */
 export function RestOfDay({ entries }: { entries: ResolvedEntry[] }) {
   return (
@@ -253,45 +197,25 @@ export function RestOfDay({ entries }: { entries: ResolvedEntry[] }) {
           Nothing else timetabled. The rest of the day is yours.
         </p>
       ) : (
-        <ol className="-my-1 divide-y divide-border">
-          {entries.map((entry) => {
-            const style = activityStyle(entry.activityType);
-            const isLesson = entry.activityType === "class";
-
-            return (
-              <li key={entry.id} className="flex items-baseline gap-4 py-4">
-                <span
-                  className="w-14 shrink-0 text-[0.95rem] font-medium text-ink-muted"
-                  data-numeric
-                >
-                  {entry.startLabel}
-                </span>
-                <span
-                  aria-hidden="true"
-                  className={cn("size-2 shrink-0 rounded-full", style.rail)}
-                />
-                <span className="min-w-0 flex-1">
-                  <span
-                    className={cn(
-                      "block truncate text-body",
-                      isLesson ? "font-medium text-ink" : "text-ink-muted",
-                    )}
-                  >
-                    {entry.label}
-                  </span>
-                  {entry.room ? (
-                    <span className="block truncate text-[0.9rem] text-ink-subtle">
-                      {entry.room}
-                    </span>
-                  ) : null}
-                </span>
-                <span className="shrink-0 text-[0.9rem] text-ink-subtle" data-numeric>
+        <ItemGrid>
+          {entries.map((entry, i) => (
+            <ItemCard
+              key={entry.id}
+              index={i}
+              muted={entry.activityType !== "class"}
+              accent={ACTIVITY_ACCENT[entry.activityType] ?? "none"}
+              href={entry.subjectId ? `/homework?subject=${entry.subjectId}` : null}
+              lead={entry.startLabel}
+              trailing={
+                <span className="text-[0.85rem] text-ink-subtle" data-numeric>
                   {formatDuration(entry.durationMinutes)}
                 </span>
-              </li>
-            );
-          })}
-        </ol>
+              }
+              title={entry.label}
+              meta={entry.room ? <span>{entry.room}</span> : null}
+            />
+          ))}
+        </ItemGrid>
       )}
     </Panel>
   );
@@ -313,11 +237,6 @@ const STAT_TONE: Record<StatTone, string> = {
   default: "text-ink",
 };
 
-/**
- * A few real numbers under the greeting. The reference puts a status strip
- * here; ours only shows things the database actually knows -- no streaks, no
- * levels, nothing invented.
- */
 export function DayStats({ stats }: { stats: Stat[] }) {
   return (
     <Surface inset="flush" float="a" className="overflow-hidden">
@@ -342,9 +261,7 @@ export function DayStats({ stats }: { stats: Stat[] }) {
             </dt>
             <dd
               className={cn(
-                // The clamp is sized to the narrowest cell this sits in, not
-                // to the widest: at ~560px of content the three columns are
-                // 188px each, and a duration set any larger overflows.
+                // The clamp is sized to the narrowest cell this sits in.
                 "mt-5 text-[clamp(2.25rem,4vw,4rem)] font-semibold leading-[0.95] tracking-[-0.04em]",
                 STAT_TONE[stat.tone ?? "default"],
               )}
@@ -356,6 +273,69 @@ export function DayStats({ stats }: { stats: Stat[] }) {
         ))}
       </dl>
     </Surface>
+  );
+}
+
+// --- Due soon ---------------------------------------------------------------
+
+export function DueSoonList({ assignments }: { assignments: AssignmentView[] }) {
+  return (
+    <Panel
+      title="Due soon"
+      count={assignments.length}
+      size="md"
+      action={
+        <Button asChild variant="ghost" size="sm">
+          <Link href="/homework">
+            All homework <ArrowRight aria-hidden="true" />
+          </Link>
+        </Button>
+      }
+    >
+      {assignments.length === 0 ? (
+        <EmptyState
+          icon={NotebookPen}
+          headline="You're all caught up."
+          body="Nothing due in the next few days."
+          className="border-0 bg-transparent py-8"
+        />
+      ) : (
+        <ItemGrid>
+          {assignments.map((a, i) => (
+            <ItemCard
+              key={a.id}
+              index={i}
+              href={`/homework#${a.id}`}
+              accent={a.overdue ? "danger" : "lesson"}
+              title={a.title}
+              trailing={
+                a.overdue ? (
+                  <OverdueBadge>Overdue</OverdueBadge>
+                ) : (
+                  <PriorityBadge priority={a.priority} />
+                )
+              }
+              meta={
+                <>
+                  {a.subject ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <SubjectDot colorToken={a.subject.color_token} />
+                      {a.subject.name}
+                    </span>
+                  ) : null}
+                  <span className={a.overdue ? "font-medium text-danger" : undefined}>
+                    {a.overdue
+                      ? formatOverdueLabel(a.due_date, a.due_time)
+                      : formatDueLabel(a.due_date, a.due_time)}
+                  </span>
+                  <span data-numeric>{formatDuration(a.estimated_minutes)}</span>
+                </>
+              }
+            />
+          ))}
+        </ItemGrid>
+      )}
+    </Panel>
   );
 }
 

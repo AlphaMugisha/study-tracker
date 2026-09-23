@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CalendarPlus, Pencil } from "lucide-react";
 
 import { activityStyle, ActivityChip } from "@/components/shared/badges";
+import { ItemCard, ItemGrid, type ItemAccent } from "@/components/shared/item-card";
 import { DeleteEntryButton } from "@/components/timetable/entry-actions";
 import { TimetableEntryDialog } from "@/components/timetable/entry-dialog";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,14 @@ import { cn } from "@/lib/utils";
  * named slots rather than arbitrary blocks on a grid.
  */
 
+const ACCENT: Record<string, ItemAccent> = {
+  class: "lesson",
+  break: "pause",
+  free: "pause",
+  study: "revise",
+  other: "brand",
+};
+
 export function DaySchedule({
   entries,
   subjects = [],
@@ -29,115 +38,67 @@ export function DaySchedule({
   emptyMessage?: string;
 }) {
   if (entries.length === 0) {
-    return (
-      <EmptyState
-        icon={CalendarPlus}
-        headline="Nothing timetabled"
-        body={emptyMessage}
-      />
-    );
+    return <EmptyState icon={CalendarPlus} headline="Nothing timetabled" body={emptyMessage} />;
   }
 
   return (
-    <ol className="relative">
-      {entries.map((entry, index) => {
-        const style = activityStyle(entry.activityType);
+    <ItemGrid>
+      {entries.map((entry, i) => {
         const isLesson = entry.activityType === "class";
 
         return (
-          <li key={entry.id} className="flex gap-4">
-            {/* time gutter */}
-            <div className="w-14 shrink-0 pt-3 text-right sm:w-16">
-              <span className="block text-[13px] font-medium text-ink" data-numeric>
-                {entry.startLabel}
+          <ItemCard
+            key={entry.id}
+            index={i}
+            muted={!isLesson}
+            accent={ACCENT[entry.activityType] ?? "none"}
+            href={
+              !editable && entry.subjectId ? `/homework?subject=${entry.subjectId}` : null
+            }
+            lead={`${entry.startLabel} – ${entry.endLabel}`}
+            trailing={
+              <span className="flex items-center gap-2">
+                <ActivityChip kind={entry.activityType} />
+                <span className="text-[0.85rem] text-ink-subtle" data-numeric>
+                  {formatDuration(entry.durationMinutes)}
+                </span>
               </span>
-              <span className="block text-[11px] text-ink-subtle" data-numeric>
-                {entry.endLabel}
-              </span>
-            </div>
-
-            {/* spine */}
-            <div className="relative flex w-3 shrink-0 justify-center">
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "absolute inset-y-0 w-px",
-                  index === 0 && "top-4",
-                  index === entries.length - 1 && "bottom-4",
-                  "bg-border",
-                )}
-              />
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "relative mt-4 size-2 rounded-full ring-4 ring-background",
-                  style.rail,
-                )}
-              />
-            </div>
-
-            <div className="min-w-0 flex-1 py-1.5">
-              {/* A lesson is a doorway to that subject's homework. A break is
-                  not a thing you can open, so it stays a plain block. */}
-              <EntryShell
-                href={entry.subjectId ? `/homework?subject=${entry.subjectId}` : null}
-                className={cn(
-                  "block rounded-xl border px-4 py-3.5 transition-colors duration-150 ease-out-flat",
-                  isLesson
-                    ? "border-border bg-card"
-                    : "border-transparent bg-surface-sunken",
-                  entry.subjectId && "group/entry hover:border-border-strong hover:bg-surface-raised",
-                )}
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p
-                      className={cn(
-                        "truncate font-medium transition-colors duration-150 ease-out-flat",
-                        isLesson ? "text-body text-ink" : "text-[0.95rem] text-ink-muted",
-                        entry.subjectId && "group-hover/entry:text-brand-ink",
-                      )}
-                    >
-                      {entry.label}
-                    </p>
-                    {entry.detail ? (
-                      <p className="mt-0.5 truncate text-[13px] text-ink-subtle">
-                        {entry.detail}
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <ActivityChip kind={entry.activityType} />
-                    <span className="text-[0.9rem] text-ink-subtle" data-numeric>
-                      {formatDuration(entry.durationMinutes)}
-                    </span>
-                    {editable ? (
-                      <span className="flex items-center gap-0.5">
-                        <TimetableEntryDialog
-                          subjects={subjects}
-                          entry={entry}
-                          trigger={
-                            <Button
-                              type="button"
-                              size="icon-sm"
-                              variant="ghost"
-                              aria-label={`Edit ${entry.label}`}
-                            >
-                              <Pencil aria-hidden="true" />
-                            </Button>
-                          }
-                        />
-                        <DeleteEntryButton id={entry.id} label={entry.label} />
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-              </EntryShell>
-            </div>
-          </li>
+            }
+            title={entry.label}
+            meta={entry.detail ? <span>{entry.detail}</span> : null}
+            footer={
+              editable ? (
+                <>
+                  <TimetableEntryDialog
+                    subjects={subjects}
+                    entry={entry}
+                    trigger={
+                      // Visible text plus an accessible name: "Edit" alone is
+                      // ambiguous when a dozen cards each have one.
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        aria-label={`Edit ${entry.label}`}
+                      >
+                        <Pencil aria-hidden="true" />
+                        Edit
+                      </Button>
+                    }
+                  />
+                  <DeleteEntryButton id={entry.id} label={entry.label} />
+                  {entry.subjectId ? (
+                    <Button asChild size="sm" variant="ghost" className="ml-auto">
+                      <Link href={`/homework?subject=${entry.subjectId}`}>Homework</Link>
+                    </Button>
+                  ) : null}
+                </>
+              ) : null
+            }
+          />
         );
       })}
-    </ol>
+    </ItemGrid>
   );
 }
 

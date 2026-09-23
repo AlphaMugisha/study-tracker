@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { AlertTriangle, Clock } from "lucide-react";
 
 import { PlanBlockCard } from "@/components/plan/plan-block-card";
+import { ItemCard, ItemGrid } from "@/components/shared/item-card";
 import { StartSessionButton } from "@/components/plan/session-controls";
 import { Eyebrow, Surface } from "@/components/shared/surface";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -140,36 +140,32 @@ export function DeferredList({ plan }: { plan: EveningPlan }) {
             deadline, shorten an estimate, or plan to finish these another day.
           </p>
 
-          <ul className="mt-5 divide-y divide-border">
-            {plan.deferred.map((task) => (
-              <li key={task.taskId}>
-                <Link
+          <div className="mt-6">
+            <ItemGrid>
+              {plan.deferred.map((task, i) => (
+                <ItemCard
+                  key={task.taskId}
+                  index={i}
                   href={`/homework#${task.taskId}`}
-                  className="group/row -mx-4 flex items-baseline gap-4 rounded-lg px-4 py-3 transition-colors duration-150 ease-out-flat hover:bg-surface-raised"
-                >
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-body font-medium text-ink transition-colors duration-150 ease-out-flat group-hover/row:text-brand-ink">
-                    {task.label}
-                  </span>
-                  <span className="mt-1 flex flex-wrap items-center gap-x-3 text-[0.9rem] text-ink-subtle">
-                    {task.detail ? <span>{task.detail}</span> : null}
-                    {task.overdue ? (
-                      <span className="font-medium text-danger">Overdue</span>
-                    ) : null}
-                    {task.scheduledMinutes > 0 ? (
+                  accent={task.overdue ? "danger" : "pause"}
+                  title={task.label}
+                  meta={
+                    <>
+                      {task.detail ? <span>{task.detail}</span> : null}
+                      {task.overdue ? (
+                        <span className="font-medium text-danger">Overdue</span>
+                      ) : null}
                       <span data-numeric>
-                        {formatDuration(task.scheduledMinutes)} of{" "}
-                        {formatDuration(task.minutes)} scheduled
+                        {task.scheduledMinutes > 0
+                          ? `${formatDuration(task.scheduledMinutes)} of ${formatDuration(task.minutes)} scheduled`
+                          : `${formatDuration(task.minutes)} needed`}
                       </span>
-                    ) : (
-                      <span data-numeric>{formatDuration(task.minutes)} needed</span>
-                    )}
-                  </span>
-                </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+                    </>
+                  }
+                />
+              ))}
+            </ItemGrid>
+          </div>
         </div>
       </div>
     </Surface>

@@ -9,6 +9,7 @@ import { RevisionActions } from "@/components/plan/revision-actions";
 import { RevisionDialog } from "@/components/plan/revision-dialog";
 import { RowSessionButton } from "@/components/plan/session-controls";
 import { PriorityBadge, StatusBadge, SubjectDot } from "@/components/shared/badges";
+import { ItemCard, ItemGrid } from "@/components/shared/item-card";
 import { Reveal } from "@/components/shared/reveal";
 import { Block, BlockHeading, Surface } from "@/components/shared/surface";
 import { Button } from "@/components/ui/button";
@@ -120,9 +121,10 @@ export default async function PlanPage() {
                   </Button>
                 }
               >
-                {outstanding.slice(0, 8).map((a) => (
+                {outstanding.slice(0, 8).map((a, i) => (
                   <HomeworkRow
                     key={a.id}
+                    index={i}
                     assignment={a}
                     openSessionId={openSession?.id ?? null}
                     isActive={activeTaskId === a.id}
@@ -139,8 +141,8 @@ export default async function PlanPage() {
                 count={openRevision.length}
                 action={<RevisionDialog subjects={subjects} />}
               >
-                {openRevision.map((r) => (
-                  <RevisionRow key={r.id} task={r} />
+                {openRevision.map((r, i) => (
+                  <RevisionRow key={r.id} task={r} index={i} />
                 ))}
               </TaskPanel>
             </Reveal>
@@ -180,7 +182,7 @@ function TaskPanel({
       {count === 0 ? (
         <EmptyState icon={Icon} headline={empty} action={action} className="border-0 py-8" />
       ) : (
-        <ul className="divide-y divide-border">{children}</ul>
+        <ItemGrid className="@md:grid-cols-1 @3xl:grid-cols-2">{children}</ItemGrid>
       )}
     </Surface>
   );
@@ -190,61 +192,62 @@ function HomeworkRow({
   assignment,
   openSessionId,
   isActive,
+  index,
 }: {
   assignment: AssignmentView;
   openSessionId: string | null;
   isActive: boolean;
+  index: number;
 }) {
   return (
-    <li className="flex items-start gap-4 py-4">
-      <SubjectDot
-        colorToken={assignment.subject?.color_token ?? null}
-        className="mt-2 size-2.5"
-      />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-body font-medium text-ink">
-          {assignment.title}
-        </span>
-        <span className="mt-1.5 flex flex-wrap items-center gap-x-3 text-[0.9rem] text-ink-subtle">
-          <span>{assignment.subject?.name ?? "No subject"}</span>
-          <span aria-hidden="true">·</span>
+    <ItemCard
+      index={index}
+      active={isActive}
+      accent={assignment.overdue ? "danger" : "lesson"}
+      title={assignment.title}
+      trailing={<PriorityBadge priority={assignment.priority} />}
+      meta={
+        <>
+          <span className="inline-flex items-center gap-1.5">
+            <SubjectDot colorToken={assignment.subject?.color_token ?? null} />
+            {assignment.subject?.name ?? "No subject"}
+          </span>
           <span className={assignment.overdue ? "font-medium text-danger" : undefined}>
             {assignment.overdue
               ? "Overdue"
               : formatDueLabel(assignment.due_date, assignment.due_time)}
           </span>
-          <span aria-hidden="true">·</span>
           <span data-numeric>{formatDuration(assignment.estimated_minutes)}</span>
-        </span>
-      </span>
-      <span className="flex shrink-0 items-center gap-2">
-        <PriorityBadge priority={assignment.priority} />
+        </>
+      }
+      footer={
         <RowSessionButton
           taskId={assignment.id}
           openSessionId={openSessionId}
           isActive={isActive}
         />
-      </span>
-    </li>
+      }
+    />
   );
 }
 
-function RevisionRow({ task }: { task: RevisionView }) {
+function RevisionRow({ task, index }: { task: RevisionView; index: number }) {
   return (
-    <li className="group/row flex items-start gap-4 py-4">
-      <SubjectDot colorToken={task.subject?.color_token ?? null} className="mt-2 size-2.5" />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-body font-medium text-ink">{task.title}</span>
-        <span className="mt-1.5 flex flex-wrap items-center gap-x-3 text-[0.9rem] text-ink-subtle">
-          <span>{task.subject?.name ?? "General"}</span>
-          <span aria-hidden="true">·</span>
+    <ItemCard
+      index={index}
+      accent="revise"
+      title={task.title}
+      trailing={<StatusBadge status={task.status} />}
+      meta={
+        <>
+          <span className="inline-flex items-center gap-1.5">
+            <SubjectDot colorToken={task.subject?.color_token ?? null} />
+            {task.subject?.name ?? "General"}
+          </span>
           <span data-numeric>{formatDuration(task.estimated_minutes)}</span>
-        </span>
-      </span>
-      <span className="flex shrink-0 items-center gap-2">
-        <StatusBadge status={task.status} />
-        <RevisionActions id={task.id} status={task.status} />
-      </span>
-    </li>
+        </>
+      }
+      footer={<RevisionActions id={task.id} status={task.status} />}
+    />
   );
 }

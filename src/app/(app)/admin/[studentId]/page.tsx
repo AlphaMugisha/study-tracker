@@ -6,8 +6,9 @@ import { PageContainer } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { ActivityFeed } from "@/components/admin/activity-feed";
 import { OverdueBadge, PriorityBadge, StatusBadge, SubjectDot } from "@/components/shared/badges";
+import { ItemCard, ItemGrid } from "@/components/shared/item-card";
 import { Reveal } from "@/components/shared/reveal";
-import { Block, BlockHeading, Surface } from "@/components/shared/surface";
+import { Block, BlockHeading } from "@/components/shared/surface";
 import { DayStats } from "@/components/today/sections";
 import { EmptyState } from "@/components/ui/empty-state";
 import { requireSessionContext } from "@/lib/auth";
@@ -124,42 +125,38 @@ export default async function StudentRecordPage({
                 body="Everything they have logged is done."
               />
             ) : (
-              <Surface>
-                <ul className="-my-2 divide-y divide-border">
-                  {outstanding.map((a) => (
-                    <li key={a.id} className="flex items-start gap-4 py-4">
-                      <SubjectDot
-                        colorToken={a.subject?.color_token ?? null}
-                        className="mt-2 size-2.5"
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-body font-medium text-ink">
-                          {a.title}
+              <ItemGrid>
+                {outstanding.map((a, i) => (
+                  <ItemCard
+                    key={a.id}
+                    index={i}
+                    accent={a.overdue ? "danger" : "lesson"}
+                    title={a.title}
+                    trailing={
+                      a.overdue ? (
+                        <OverdueBadge>Overdue</OverdueBadge>
+                      ) : (
+                        <PriorityBadge priority={a.priority} />
+                      )
+                    }
+                    meta={
+                      <>
+                        <span className="inline-flex items-center gap-1.5">
+                          <SubjectDot colorToken={a.subject?.color_token ?? null} />
+                          {a.subject?.name ?? "No subject"}
                         </span>
-                        <span className="mt-1.5 flex flex-wrap items-center gap-x-3 text-[0.9rem] text-ink-subtle">
-                          <span>{a.subject?.name ?? "No subject"}</span>
-                          <span aria-hidden="true">·</span>
-                          <span className={a.overdue ? "font-medium text-danger" : undefined}>
-                            {a.overdue
-                              ? formatOverdueLabel(a.due_date, a.due_time)
-                              : formatDueLabel(a.due_date, a.due_time)}
-                          </span>
-                          <span aria-hidden="true">·</span>
-                          <span data-numeric>{formatDuration(a.estimated_minutes)}</span>
+                        <span className={a.overdue ? "font-medium text-danger" : undefined}>
+                          {a.overdue
+                            ? formatOverdueLabel(a.due_date, a.due_time)
+                            : formatDueLabel(a.due_date, a.due_time)}
                         </span>
-                      </span>
-                      <span className="flex shrink-0 items-center gap-2">
-                        {a.overdue ? (
-                          <OverdueBadge>Overdue</OverdueBadge>
-                        ) : (
-                          <PriorityBadge priority={a.priority} />
-                        )}
-                        <StatusBadge status={a.status} />
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </Surface>
+                        <span data-numeric>{formatDuration(a.estimated_minutes)}</span>
+                      </>
+                    }
+                    footer={<StatusBadge status={a.status} />}
+                  />
+                ))}
+              </ItemGrid>
             )}
           </Reveal>
         </Block>

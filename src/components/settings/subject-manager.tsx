@@ -6,6 +6,7 @@ import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 import { Field, FormAlert, fieldA11yProps } from "@/components/auth/form-field";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { SubjectDot } from "@/components/shared/badges";
+import { ItemCard, ItemGrid } from "@/components/shared/item-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -42,10 +43,10 @@ export function SubjectManager({ subjects }: { subjects: Subject[] }) {
           colour-coding themselves.
         </p>
       ) : (
-        <ul className="divide-y divide-border">
-          {subjects.map((subject) =>
+        <ItemGrid>
+          {subjects.map((subject, i) =>
             editingId === subject.id ? (
-              <li key={subject.id} className="py-5">
+              <li key={subject.id} className="rounded-xl border border-border bg-surface-sunken p-5 @md:col-span-2">
                 <SubjectForm
                   subject={subject}
                   onDone={() => setEditingId(null)}
@@ -53,45 +54,45 @@ export function SubjectManager({ subjects }: { subjects: Subject[] }) {
                 />
               </li>
             ) : (
-              <li key={subject.id} className="flex items-center gap-4 py-4">
-                <SubjectDot colorToken={subject.color_token} className="size-3" />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-body font-medium text-ink">
+              <ItemCard
+                key={subject.id}
+                index={i}
+                title={
+                  <span className="inline-flex items-center gap-2.5">
+                    <SubjectDot colorToken={subject.color_token} className="size-3" />
                     {subject.name}
                   </span>
-                  {subject.short_name ? (
-                    <span className="block text-[0.9rem] text-ink-subtle">
-                      {subject.short_name}
-                    </span>
-                  ) : null}
-                </span>
-                <span className="flex shrink-0 items-center gap-1">
-                  <Button
-                    type="button"
-                    size="icon-sm"
-                    variant="ghost"
-                    aria-label={`Rename ${subject.name}`}
-                    onClick={() => setEditingId(subject.id)}
-                  >
-                    <Pencil aria-hidden="true" />
-                  </Button>
-                  <form action={deleteSubjectAction}>
-                    <input type="hidden" name="id" value={subject.id} />
+                }
+                meta={subject.short_name ? <span>{subject.short_name}</span> : null}
+                footer={
+                  <>
                     <Button
-                      type="submit"
-                      size="icon-sm"
+                      type="button"
+                      size="sm"
                       variant="ghost"
-                      aria-label={`Remove ${subject.name}`}
-                      title="Homework keeps its place; it just becomes unfiled."
+                      onClick={() => setEditingId(subject.id)}
                     >
-                      <Trash2 aria-hidden="true" />
+                      <Pencil aria-hidden="true" />
+                      Rename
                     </Button>
-                  </form>
-                </span>
-              </li>
+                    <form action={deleteSubjectAction} className="ml-auto">
+                      <input type="hidden" name="id" value={subject.id} />
+                      <Button
+                        type="submit"
+                        size="sm"
+                        variant="ghost"
+                        title="Homework keeps its place; it just becomes unfiled."
+                      >
+                        <Trash2 aria-hidden="true" />
+                        Remove
+                      </Button>
+                    </form>
+                  </>
+                }
+              />
             ),
           )}
-        </ul>
+        </ItemGrid>
       )}
 
       {adding ? (

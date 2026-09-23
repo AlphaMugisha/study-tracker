@@ -7,6 +7,7 @@ import { PageContainer } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { RequestAccessDialog } from "@/components/admin/request-access-dialog";
 import { WithdrawButton } from "@/components/admin/link-actions";
+import { ItemCard, ItemGrid } from "@/components/shared/item-card";
 import { Reveal } from "@/components/shared/reveal";
 import { Block, BlockHeading, Eyebrow, Surface } from "@/components/shared/surface";
 import { Badge } from "@/components/ui/badge";
@@ -108,29 +109,19 @@ export default async function AdminPage() {
               />
             </Reveal>
             <Reveal index={1}>
-              <Surface>
-                <ul className="-my-2 divide-y divide-border">
-                  {pending.map((link) => (
-                    <li
-                      key={link.id}
-                      className="flex items-center justify-between gap-4 py-4"
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate text-body font-medium text-ink">
-                          {link.counterpartName ?? "Name unavailable"}
-                        </span>
-                        <span className="mt-1 block text-[0.9rem] text-ink-subtle">
-                          Waiting on their approval
-                        </span>
-                      </span>
-                      <span className="flex shrink-0 items-center gap-3">
-                        <Badge className="bg-pause-soft text-pause-ink">Pending</Badge>
-                        <WithdrawButton id={link.id} label="Withdraw" />
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </Surface>
+              <ItemGrid>
+                {pending.map((link, i) => (
+                  <ItemCard
+                    key={link.id}
+                    index={i}
+                    accent="pause"
+                    title={link.counterpartName ?? "Name unavailable"}
+                    trailing={<Badge className="bg-pause-soft text-pause-ink">Pending</Badge>}
+                    meta={<span>Waiting on their approval</span>}
+                    footer={<WithdrawButton id={link.id} label="Withdraw" />}
+                  />
+                ))}
+              </ItemGrid>
             </Reveal>
           </Block>
         ) : null}

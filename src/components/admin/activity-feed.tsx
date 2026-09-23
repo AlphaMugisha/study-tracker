@@ -1,15 +1,7 @@
+import { ItemCard, ItemGrid } from "@/components/shared/item-card";
 import { Surface } from "@/components/shared/surface";
 import { activityTone, describeActivity } from "@/lib/data/support";
 import type { ActivityLog } from "@/types/database";
-import { cn } from "@/lib/utils";
-
-const TONE_DOT: Record<ReturnType<typeof activityTone>, string> = {
-  brand: "bg-brand",
-  lesson: "bg-lesson",
-  revise: "bg-revise",
-  pause: "bg-pause",
-  danger: "bg-danger",
-};
 
 /**
  * The academic activity log, newest first.
@@ -30,38 +22,24 @@ export function ActivityFeed({ entries }: { entries: ActivityLog[] }) {
       {days.map(([day, items]) => (
         <Surface key={day}>
           <h3 className="mb-5 text-section text-ink">{day}</h3>
-          <ol className="-my-2 divide-y divide-border">
-            {items.map((entry) => {
+          <ItemGrid>
+            {items.map((entry, i) => {
               const { label, detail } = describeActivity(entry);
-              const tone = activityTone(entry.activity_type);
-
               return (
-                <li key={entry.id} className="flex items-baseline gap-4 py-3.5">
-                  <span
-                    className="w-14 shrink-0 text-[0.9rem] font-medium text-ink-muted"
-                    data-numeric
-                  >
-                    {new Date(entry.created_at).toLocaleTimeString(undefined, {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                  <span
-                    aria-hidden="true"
-                    className={cn("size-2 shrink-0 rounded-full", TONE_DOT[tone])}
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-body text-ink">{label}</span>
-                    {detail ? (
-                      <span className="mt-0.5 block truncate text-[0.9rem] text-ink-subtle">
-                        {detail}
-                      </span>
-                    ) : null}
-                  </span>
-                </li>
+                <ItemCard
+                  key={entry.id}
+                  index={i}
+                  accent={activityTone(entry.activity_type)}
+                  lead={new Date(entry.created_at).toLocaleTimeString(undefined, {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                  title={label}
+                  meta={detail ? <span className="truncate">{detail}</span> : null}
+                />
               );
             })}
-          </ol>
+          </ItemGrid>
         </Surface>
       ))}
     </div>
