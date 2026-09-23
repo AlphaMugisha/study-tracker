@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
@@ -28,7 +29,7 @@ export type SessionContext = {
  * JWT against the auth server. `getSession()` trusts whatever the cookie says,
  * which is fine in the browser and not fine on the server.
  */
-export async function getUser(): Promise<User | null> {
+export const getUser = cache(async function getUser(): Promise<User | null> {
   // Touch cookies unconditionally. Without this, a build with no Supabase
   // configuration short-circuits before any dynamic API is called, and Next
   // happily prerenders session-dependent pages as static HTML.
@@ -42,9 +43,22 @@ export async function getUser(): Promise<User | null> {
   } = await supabase.auth.getUser();
 
   return user;
-}
+});
 
-export async function getSessionContext(): Promise<SessionContext | null> {
+/**
+ * The user plus their profile.
+ *
+ * Wrapped in React `cache()`, which dedupes by arguments for the lifetime of
+ * ONE server render. That matters here: `AppShell` needs the session to build
+ * the nav, and most pages need it again for their own content. Without this,
+ * every page paid for two `getUser()` calls and two profile reads — and
+ * `getUser()` is a network round trip to the auth server, not a local token
+ * check, because it revalidates the JWT rather than trusting the cookie.
+ *
+ * At roughly 200ms per round trip to this project's region, the duplication
+ * was costing about 400ms on every single page.
+ */
+export const getSessionContext = cache(async function getSessionContext(): Promise<SessionContext | null> {
   const user = await getUser();
   if (!user) return null;
 
@@ -56,7 +70,7 @@ export async function getSessionContext(): Promise<SessionContext | null> {
     .maybeSingle();
 
   return { user, profile: profile ?? null };
-}
+});
 
 /**
  * For pages that must not render to a signed-out visitor.

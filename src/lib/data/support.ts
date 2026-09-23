@@ -1,3 +1,5 @@
+import { cache } from "react";
+import { getUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { ActivityLog, ActivityType, AdminStudentLink, LinkStatus } from "@/types/database";
 
@@ -28,7 +30,7 @@ async function namesFor(ids: string[]): Promise<Map<string, string>> {
 }
 
 /** Links where the caller is the support account. */
-export async function getLinksAsAdmin(): Promise<SupportLink[]> {
+export const getLinksAsAdmin = cache(async function getLinksAsAdmin(): Promise<SupportLink[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("admin_student_links")
@@ -36,18 +38,16 @@ export async function getLinksAsAdmin(): Promise<SupportLink[]> {
     .order("created_at", { ascending: false });
 
   const rows = (data ?? []) as AdminStudentLink[];
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
 
   const mine = rows.filter((r) => r.admin_id === user?.id);
   const names = await namesFor(mine.map((r) => r.student_id));
 
   return mine.map((r) => ({ ...r, counterpartName: names.get(r.student_id) ?? null }));
-}
+});
 
 /** Links where the caller is the student being asked about. */
-export async function getLinksAsStudent(): Promise<SupportLink[]> {
+export const getLinksAsStudent = cache(async function getLinksAsStudent(): Promise<SupportLink[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("admin_student_links")
@@ -55,15 +55,13 @@ export async function getLinksAsStudent(): Promise<SupportLink[]> {
     .order("created_at", { ascending: false });
 
   const rows = (data ?? []) as AdminStudentLink[];
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
 
   const mine = rows.filter((r) => r.student_id === user?.id);
   const names = await namesFor(mine.map((r) => r.admin_id));
 
   return mine.map((r) => ({ ...r, counterpartName: names.get(r.admin_id) ?? null }));
-}
+});
 
 export function isLive(link: { status: LinkStatus; revoked_at: string | null }): boolean {
   return link.status === "active" && link.revoked_at === null;
@@ -158,16 +156,17 @@ export function activityTone(
  * you are either the admin or the student, so one read answers "how many
  * students can I see" and "is anyone asking to see me".
  */
-export async function getSupportSummary(): Promise<{
+export type SupportSummary = {
   /** Active links where the caller is the support account. */
   studentsVisible: number;
   /** Requests awaiting the caller's own decision. */
   pendingForMe: number;
-}> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+};
+
+export const getSupportSummary = cache(async function getSupportSummary(): Promise<SupportSummary> {
+  // The cached user, not another `auth.getUser()` — this runs in the app
+  // shell on every page, so a second round trip here is paid everywhere.
+  const [supabase, user] = await Promise.all([createClient(), getUser()]);
   if (!user) return { studentsVisible: 0, pendingForMe: 0 };
 
   const { data } = await supabase
@@ -186,4 +185,4 @@ export async function getSupportSummary(): Promise<{
     pendingForMe: rows.filter((r) => r.student_id === user.id && r.status === "pending")
       .length,
   };
-}
+});

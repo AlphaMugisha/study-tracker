@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { AssignmentView, RevisionView } from "@/lib/tasks/ordering";
 import { isOverdue, type Assignment, type RevisionTask } from "@/types/database";
@@ -23,7 +24,7 @@ function toAssignmentView(
   };
 }
 
-export async function getAssignments(now = new Date()): Promise<AssignmentView[]> {
+export const getAssignments = cache(async function getAssignments(now = new Date()): Promise<AssignmentView[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("assignments")
@@ -32,9 +33,9 @@ export async function getAssignments(now = new Date()): Promise<AssignmentView[]
     .order("due_time", { nullsFirst: false });
 
   return ((data ?? []) as never[]).map((row) => toAssignmentView(row, now));
-}
+});
 
-export async function getRevisionTasks(): Promise<RevisionView[]> {
+export const getRevisionTasks = cache(async function getRevisionTasks(): Promise<RevisionView[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("revision_tasks")
@@ -44,7 +45,7 @@ export async function getRevisionTasks(): Promise<RevisionView[]> {
   return ((data ?? []) as never[]).map((row: RevisionTask & {
     subjects: { name: string; color_token: string } | null;
   }) => ({ ...row, subject: row.subjects }));
-}
+});
 
 // ---------------------------------------------------------------------------
 // Grouping used by the Homework page and the Today page's "Due soon"

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { toResolvedEntry } from "@/lib/timetable/resolve-temporary";
 import type { ResolvedEntry } from "@/lib/timetable/types";
@@ -21,7 +22,7 @@ export type ActiveTimetable = {
  * unique per date range by an exclusion constraint, so this cannot be
  * ambiguous.
  */
-export async function getActiveTimetable(): Promise<ActiveTimetable> {
+export const getActiveTimetable = cache(async function getActiveTimetable(): Promise<ActiveTimetable> {
   const supabase = await createClient();
 
   const { data: version } = await supabase
@@ -44,10 +45,10 @@ export async function getActiveTimetable(): Promise<ActiveTimetable> {
   const entries = ((data ?? []) as unknown as EntryRow[]).map(toResolvedEntry);
 
   return { version: version as TimetableVersion, entries };
-}
+});
 
-export async function getSubjects(): Promise<Subject[]> {
+export const getSubjects = cache(async function getSubjects(): Promise<Subject[]> {
   const supabase = await createClient();
   const { data } = await supabase.from("subjects").select("*").order("name");
   return (data ?? []) as Subject[];
-}
+});
