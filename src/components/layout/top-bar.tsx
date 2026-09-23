@@ -38,7 +38,7 @@ export function TopBar({
           should not draw a line across a page that has not been scrolled. */}
       <header
         className={cn(
-          "sticky top-0 z-30 flex h-16 items-center gap-3 px-5 transition-colors duration-300 ease-out-flat md:px-8",
+          "sticky top-0 z-30 flex h-20 items-center gap-4 px-5 transition-colors duration-300 ease-out-flat md:px-8 lg:px-12",
           scrolled
             ? "border-b border-border bg-background/90 backdrop-blur-md"
             : "border-b border-transparent bg-transparent",
@@ -53,11 +53,11 @@ export function TopBar({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="ml-auto hidden h-9 w-full max-w-[320px] items-center gap-2.5 rounded-lg border border-border bg-surface-sunken px-3 text-left text-[13px] text-ink-subtle transition-colors hover:border-border-strong hover:text-ink-muted md:flex lg:ml-8 lg:mr-auto"
+          className="ml-auto hidden h-11 w-full max-w-[340px] items-center gap-3 rounded-xl border border-border bg-surface-sunken px-4 text-left text-[0.95rem] text-ink-subtle transition-colors duration-150 ease-out-flat hover:border-border-strong hover:bg-surface-raised hover:text-ink-muted md:flex lg:ml-10 lg:mr-auto"
         >
-          <Search aria-hidden="true" className="size-4 shrink-0" />
+          <Search aria-hidden="true" className="size-[18px] shrink-0" />
           <span className="flex-1 truncate">Search</span>
-          <kbd className="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium">
+          <kbd className="rounded-md border border-border px-2 py-1 text-[0.75rem] font-medium">
             Ctrl K
           </kbd>
         </button>

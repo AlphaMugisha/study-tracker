@@ -3,8 +3,8 @@
 import { motion, useReducedMotion } from "motion/react";
 
 /**
- * The one entrance animation in the product: a 16px rise with a slight scale
- * settle, staggered per section.
+ * The one entrance animation in the product: a 28px rise, staggered 90ms per
+ * section.
  *
  * It fires when the block scrolls into view rather than on mount, so content
  * below the fold arrives as you reach it instead of having already animated
@@ -29,12 +29,12 @@ export function Reveal({
 
   return (
     <motion.div
-      initial={reduced ? { opacity: 0 } : { opacity: 0, y: 16 }}
+      initial={reduced ? { opacity: 0 } : { opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.15 }}
       transition={{
-        duration: reduced ? 0.15 : 0.56,
-        delay: Math.min(index, 4) * 0.07,
+        duration: reduced ? 0.15 : 0.68,
+        delay: Math.min(index, 5) * 0.09,
         ease: [0.22, 1, 0.36, 1],
       }}
       className={className}

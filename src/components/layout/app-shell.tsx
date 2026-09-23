@@ -56,7 +56,7 @@ export function PageContainer({
   return (
     <div
       className={cn(
-        "mx-auto w-full max-w-[1440px] px-5 pb-24 pt-10 sm:px-8 sm:pt-14 md:px-10 md:pb-32 md:pt-16 2xl:max-w-[1680px]",
+        "mx-auto w-full max-w-[1500px] px-5 pb-28 pt-12 sm:px-8 sm:pt-16 md:px-12 md:pb-36 md:pt-20 lg:px-16 2xl:max-w-[1760px]",
         className,
       )}
     >

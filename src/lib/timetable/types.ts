@@ -77,6 +77,17 @@ export function formatDuration(minutes: number): string {
   return m === 0 ? `${h} hr` : `${h} hr ${m} min`;
 }
 
+/**
+ * `105` → `"1h 45m"`. For stat slots, where the number is set very large and
+ * the long form ("1 hr 45 min") is three times wider than the cell.
+ */
+export function formatDurationCompact(minutes: number): string {
+  if (minutes < 60) return `${minutes}m`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
 export const DAY_NAMES: Record<number, string> = {
   1: "Monday",
   2: "Tuesday",

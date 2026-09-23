@@ -88,7 +88,7 @@ export function CurrentActivityCard({ state }: { state: TimetableState }) {
             <CalendarPlus aria-hidden="true" className="size-3.5 text-indigo-ink" />
             <Eyebrow tone="accent">Currently</Eyebrow>
           </div>
-          <h2 className="mt-6 text-hero text-balance text-ink">No timetable yet.</h2>
+          <h2 className="mt-6 text-headline text-balance text-ink">No timetable yet.</h2>
           <p className="mt-3 max-w-[46ch] text-[15px] leading-relaxed text-ink-muted">
             Add your school timetable and this card will tell you what you&apos;re
             doing, what&apos;s next, and how long is left.
@@ -121,41 +121,44 @@ function LivePanel({
     <section
       aria-labelledby="current-activity-heading"
       className={cn(
-        "relative overflow-hidden rounded-xl",
-        resting ? "bg-hero-rest text-hero-rest-foreground" : "bg-hero text-hero-foreground",
+        "group/hero relative overflow-hidden rounded-2xl shadow-hero",
+        "transition-shadow duration-500 ease-out-flat",
+        resting
+          ? "bg-hero-rest text-hero-rest-foreground shadow-card"
+          : "bg-hero text-hero-foreground",
       )}
     >
-      <div className="p-7 sm:p-10">
-        <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between sm:gap-12">
+      <div className="flex min-h-[22rem] flex-col justify-center p-7 sm:p-12 md:min-h-[24rem] lg:p-16">
+        <div className="flex flex-col gap-12 lg:flex-row lg:items-start lg:justify-between lg:gap-16">
           {/* what */}
           <div className="min-w-0 flex-1">
             {/* A tracked label rather than a filled pill: on a panel that is
                 already solid colour, a chip is a second box inside a box. */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              <span className="inline-flex items-center gap-2 text-eyebrow uppercase opacity-80">
-                <Icon aria-hidden="true" className="size-3" />
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+              <span className="inline-flex items-center gap-2.5 text-eyebrow uppercase opacity-85">
+                <Icon aria-hidden="true" className="size-3.5" />
                 {resting ? "Currently · Break" : "Currently"}
               </span>
               <span
-                className="inline-flex items-center gap-1.5 text-[13px] opacity-70"
+                className="inline-flex items-center gap-2 text-body opacity-70"
                 data-numeric
               >
-                <Clock aria-hidden="true" className="size-3.5" />
+                <Clock aria-hidden="true" className="size-4" />
                 {current.startLabel} — {current.endLabel}
               </span>
             </div>
 
-            <h2 id="current-activity-heading" className="mt-6 text-hero text-balance">
+            <h2 id="current-activity-heading" className="mt-8 text-headline text-balance">
               {current.label}
             </h2>
             {current.detail ? (
-              <p className="mt-2.5 text-[15px] opacity-75">{current.detail}</p>
+              <p className="mt-4 text-body-lg opacity-75">{current.detail}</p>
             ) : null}
 
             {next ? (
               <p
                 className={cn(
-                  "mt-7 border-t pt-4 text-[13px] opacity-75",
+                  "mt-10 border-t pt-6 text-body opacity-75",
                   resting ? "border-white/15" : "border-hero-line",
                 )}
               >
@@ -168,24 +171,22 @@ function LivePanel({
           </div>
 
           {/* how long */}
-          <div className="shrink-0 sm:text-right">
+          <div className="shrink-0 lg:text-right">
             <p className="text-eyebrow uppercase opacity-65">Ends in</p>
-            <p className="mt-3 flex items-baseline gap-2 sm:justify-end" data-numeric>
+            <p className="mt-4 flex items-baseline gap-3 lg:justify-end" data-numeric>
               <span className="text-count">{remainingMinutes}</span>
-              <span className="text-lg font-medium opacity-60">min</span>
+              <span className="text-2xl font-medium opacity-60">min</span>
             </p>
-            <div className="mt-7">
+            <div className="mt-10">
               {/* Outlined, not filled: a solid white button on a solid colour
-                  panel fights the headline for the eye. */}
+                  panel fights the headline for the eye. The dark: variants are
+                  overridden at their own level because the outline variant sets
+                  dark:bg-input/30, which would otherwise win. */}
               <Button
                 asChild
-                size="lg"
+                size="xl"
                 variant="outline"
-                // The dark: variants must be overridden at their own level:
-                // the outline variant sets dark:bg-input/30, which would
-                // otherwise win over a plain bg-transparent and drop a grey
-                // button onto the indigo panel.
-                className="w-full border-white/30 bg-transparent text-current hover:border-white/60 hover:bg-white/10 dark:border-white/30 dark:bg-transparent dark:hover:bg-white/10 sm:w-auto"
+                className="w-full border-white/35 bg-transparent text-current hover:border-white/70 hover:bg-white/12 dark:border-white/35 dark:bg-transparent dark:hover:bg-white/12 sm:w-auto lg:w-auto"
               >
                 <Link href="/timetable">
                   View timetable <ArrowRight aria-hidden="true" />
@@ -199,13 +200,13 @@ function LivePanel({
       {/* progress strip along the foot of the panel */}
       <div
         className={cn(
-          "flex flex-wrap items-center gap-x-4 gap-y-2 border-t px-7 py-4 sm:px-10",
+          "flex flex-wrap items-center gap-x-6 gap-y-3 border-t px-9 py-6 sm:px-12 lg:px-16",
           resting ? "border-white/10" : "border-hero-line",
         )}
       >
         <div
           className={cn(
-            "h-1.5 min-w-[8rem] flex-1 overflow-hidden rounded-full",
+            "h-3 min-w-[8rem] flex-1 overflow-hidden rounded-full",
             resting ? "bg-white/10" : "bg-hero-fill",
           )}
           role="progressbar"
@@ -222,7 +223,7 @@ function LivePanel({
             style={{ width: `${percent}%` }}
           />
         </div>
-        <p className="text-[12px] opacity-70" data-numeric>
+        <p className="text-[0.95rem] opacity-70" data-numeric>
           {elapsedMinutes} of {formatDuration(current.durationMinutes)} · {percent}%
         </p>
       </div>
@@ -251,7 +252,7 @@ function QuietPanel({
         <Icon aria-hidden="true" className="size-3.5 text-indigo-ink" />
         <Eyebrow tone="accent">{eyebrow}</Eyebrow>
       </div>
-      <h2 className="mt-6 text-hero text-balance text-ink">{title}</h2>
+      <h2 className="mt-6 text-headline text-balance text-ink">{title}</h2>
       {children}
     </section>
   );

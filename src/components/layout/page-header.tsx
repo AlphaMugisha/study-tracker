@@ -34,17 +34,17 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        "mb-rhythm flex flex-col gap-6 md:flex-row md:items-end md:justify-between md:gap-10",
+        "mb-rhythm flex flex-col gap-8 md:flex-row md:items-end md:justify-between md:gap-14",
         className,
       )}
     >
       <div className="min-w-0 max-w-[22ch] sm:max-w-[18ch] md:max-w-none">
-        {eyebrow ? <Eyebrow tone="accent" className="mb-4">{eyebrow}</Eyebrow> : null}
+        {eyebrow ? <Eyebrow tone="accent" className="mb-6">{eyebrow}</Eyebrow> : null}
         <h1 className="text-statement text-balance text-ink">
           {typeof title === "string" ? <RevealWords text={title} /> : title}
         </h1>
         {description ? (
-          <p className="mt-5 max-w-[48ch] text-[15px] leading-relaxed text-ink-muted">
+          <p className="mt-7 max-w-[48ch] text-body-lg text-ink-muted">
             {description}
           </p>
         ) : null}

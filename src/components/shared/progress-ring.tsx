@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils";
 export function ProgressRing({
   value,
   total,
-  size = 132,
-  stroke = 9,
+  size = 148,
+  stroke = 12,
   className,
 }: {
   value: number;
@@ -23,7 +23,6 @@ export function ProgressRing({
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const dash = (percent / 100) * circumference;
-  const complete = total > 0 && value === total;
 
   return (
     <div className={cn("relative inline-flex", className)}>
@@ -49,7 +48,7 @@ export function ProgressRing({
             cy={size / 2}
             r={radius}
             fill="none"
-            stroke={complete ? "var(--sage)" : "var(--sage)"}
+            stroke="var(--sage)"
             strokeWidth={stroke}
             strokeLinecap="round"
             strokeDasharray={`${dash} ${circumference - dash}`}
@@ -59,10 +58,13 @@ export function ProgressRing({
       </svg>
 
       <span className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-semibold text-ink" data-numeric>
+        <span
+          className="text-[2.6rem] font-semibold leading-none tracking-[-0.035em] text-ink"
+          data-numeric
+        >
           {percent}%
         </span>
-        <span className="mt-0.5 text-[11px] text-ink-subtle" data-numeric>
+        <span className="mt-2 text-[0.85rem] text-ink-subtle" data-numeric>
           {value} of {total}
         </span>
       </span>

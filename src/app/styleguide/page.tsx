@@ -261,7 +261,7 @@ export default function StyleguidePage() {
               </p>
             </div>
             <div>
-              <p className="text-hero text-ink">Mathematics</p>
+              <p className="text-headline text-ink">Mathematics</p>
               <p className="mt-2 text-xs text-ink-subtle">
                 Hero · clamp(34px, 4.2vw, 50px) / 600 / -0.03em / 0.98 · current
                 activity only

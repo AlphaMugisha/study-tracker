@@ -28,21 +28,31 @@ function Panel({
   action,
   children,
   className,
+  size,
+  float,
 }: {
   title?: string;
   count?: number;
   action?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  size?: "auto" | "md" | "lg" | "xl";
+  float?: "a" | "b" | "c";
 }) {
   return (
-    <Surface className={cn("flex h-full flex-col", className)}>
+    <Surface
+      interactive
+      lift={!float}
+      float={float}
+      size={size}
+      className={cn("flex h-full flex-col", className)}
+    >
       {title || action ? (
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div className="flex items-baseline gap-2.5">
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <div className="flex items-baseline gap-3">
             {title ? <h3 className="text-section text-ink">{title}</h3> : null}
             {typeof count === "number" ? (
-              <span className="text-[13px] font-medium text-ink-subtle" data-numeric>
+              <span className="text-[0.95rem] font-medium text-ink-subtle" data-numeric>
                 {count}
               </span>
             ) : null}
@@ -59,22 +69,24 @@ function Panel({
 
 export function UpNextCard({ next }: { next: ResolvedEntry | null }) {
   return (
-    <Panel title="Up next">
+    <Panel title="Up next" size="md" float="b">
       {next ? (
-        <>
-          <p className="text-lg font-semibold text-ink">{next.label}</p>
-          <p className="mt-0.5 text-sm text-ink-muted" data-numeric>
+        <div className="flex flex-1 flex-col justify-center py-2">
+          <p className="text-[1.9rem] font-semibold leading-[1.1] tracking-[-0.025em] text-balance text-ink">
+            {next.label}
+          </p>
+          <p className="mt-3 text-body-lg text-ink-muted" data-numeric>
             {next.startLabel} — {next.endLabel}
           </p>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="mt-6 flex flex-wrap items-center gap-3">
             <ActivityChip kind={next.activityType} />
             {next.room ? (
-              <span className="text-xs text-ink-subtle">{next.room}</span>
+              <span className="text-[0.95rem] text-ink-subtle">{next.room}</span>
             ) : null}
           </div>
-        </>
+        </div>
       ) : (
-        <p className="text-sm text-ink-muted">
+        <p className="flex flex-1 items-center text-body text-ink-muted">
           Nothing else is timetabled today.
         </p>
       )}
@@ -99,9 +111,10 @@ export function HomePlanPreview({
 }) {
   return (
     <Panel
+      size="md"
       count={blocks.filter((b) => b.kind !== "break").length}
       action={
-        <Button asChild variant="ghost" size="xs">
+        <Button asChild variant="ghost" size="sm">
           <Link href="/plan">
             Open plan <ArrowRight aria-hidden="true" />
           </Link>
@@ -118,28 +131,28 @@ export function HomePlanPreview({
             {blocks.map((block) => {
               const tone = PLAN_TONE[block.kind];
               return (
-                <li key={block.id} className="flex items-baseline gap-3 py-1.5">
+                <li key={block.id} className="flex items-baseline gap-4 py-3">
                   <span
-                    className="w-11 shrink-0 text-[13px] font-medium text-ink-muted"
+                    className="w-14 shrink-0 text-[0.95rem] font-medium text-ink-muted"
                     data-numeric
                   >
                     {block.startLabel}
                   </span>
                   <span
                     aria-hidden="true"
-                    className={cn("mt-1.5 size-1.5 shrink-0 rounded-full", tone.dot)}
+                    className={cn("mt-2 size-2 shrink-0 rounded-full", tone.dot)}
                   />
                   <span className="min-w-0 flex-1">
-                    <span className={cn("block truncate text-sm font-medium", tone.label)}>
+                    <span className={cn("block truncate text-body font-medium", tone.label)}>
                       {block.label}
                     </span>
                     {block.detail ? (
-                      <span className="block truncate text-xs text-ink-subtle">
+                      <span className="block truncate text-[0.9rem] text-ink-subtle">
                         {block.detail}
                       </span>
                     ) : null}
                   </span>
-                  <span className="shrink-0 text-xs text-ink-subtle" data-numeric>
+                  <span className="shrink-0 text-[0.9rem] text-ink-subtle" data-numeric>
                     {block.minutes} min
                   </span>
                 </li>
@@ -147,7 +160,7 @@ export function HomePlanPreview({
             })}
           </ol>
           {startsAt ? (
-            <p className="mt-4 border-t border-border/70 pt-3 text-xs text-ink-subtle">
+            <p className="mt-6 border-t border-border pt-5 text-[0.9rem] text-ink-subtle">
               A rough order, starting <span data-numeric>{startsAt}</span>. You can move
               things around.
             </p>
@@ -164,7 +177,7 @@ export function DueSoonList({ assignments }: { assignments: AssignmentView[] }) 
   return (
     <Panel
       action={
-        <Button asChild variant="ghost" size="xs">
+        <Button asChild variant="ghost" size="sm">
           <Link href="/homework">
             All homework <ArrowRight aria-hidden="true" />
           </Link>
@@ -179,19 +192,19 @@ export function DueSoonList({ assignments }: { assignments: AssignmentView[] }) 
           className="border-0 bg-transparent py-6"
         />
       ) : (
-        <ul className="divide-y divide-border/70">
+        <ul className="divide-y divide-border">
           {assignments.map((a) => (
-            <li key={a.id}>
+            <li key={a.id} className="group/row">
               <Link
                 href={`/homework#${a.id}`}
-                className="flex items-start gap-3 py-3 transition-colors hover:bg-surface-sunken/50"
+                className="-mx-4 flex items-start gap-4 rounded-lg px-4 py-5 transition-colors duration-150 ease-out-flat hover:bg-surface-raised"
               >
-                <SubjectDot colorToken={a.subject?.color_token ?? null} className="mt-1.5" />
+                <SubjectDot colorToken={a.subject?.color_token ?? null} className="mt-2 size-2.5" />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium text-ink">
+                  <span className="block truncate text-body font-medium text-ink transition-colors duration-150 ease-out-flat group-hover/row:text-indigo-ink">
                     {a.title}
                   </span>
-                  <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-subtle">
+                  <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.9rem] text-ink-subtle">
                     {a.subject ? <span>{a.subject.name}</span> : null}
                     <span aria-hidden="true">·</span>
                     <span className={a.overdue ? "font-medium text-danger" : undefined}>
@@ -228,45 +241,45 @@ export function DueSoonList({ assignments }: { assignments: AssignmentView[] }) 
  */
 export function RestOfDay({ entries }: { entries: ResolvedEntry[] }) {
   return (
-    <Panel title="Rest of today" count={entries.length}>
+    <Panel title="Rest of today" count={entries.length} size="md" float="c">
       {entries.length === 0 ? (
-        <p className="text-sm text-ink-muted">
+        <p className="flex flex-1 items-center text-body text-ink-muted">
           Nothing else timetabled. The rest of the day is yours.
         </p>
       ) : (
-        <ol className="-my-1 divide-y divide-border/60">
+        <ol className="-my-1 divide-y divide-border">
           {entries.map((entry) => {
             const style = activityStyle(entry.activityType);
             const isLesson = entry.activityType === "class";
 
             return (
-              <li key={entry.id} className="flex items-baseline gap-3 py-2.5">
+              <li key={entry.id} className="flex items-baseline gap-4 py-4">
                 <span
-                  className="w-11 shrink-0 text-[13px] font-medium text-ink-muted"
+                  className="w-14 shrink-0 text-[0.95rem] font-medium text-ink-muted"
                   data-numeric
                 >
                   {entry.startLabel}
                 </span>
                 <span
                   aria-hidden="true"
-                  className={cn("size-1.5 shrink-0 rounded-full", style.rail)}
+                  className={cn("size-2 shrink-0 rounded-full", style.rail)}
                 />
                 <span className="min-w-0 flex-1">
                   <span
                     className={cn(
-                      "block truncate text-sm",
+                      "block truncate text-body",
                       isLesson ? "font-medium text-ink" : "text-ink-muted",
                     )}
                   >
                     {entry.label}
                   </span>
                   {entry.room ? (
-                    <span className="block truncate text-xs text-ink-subtle">
+                    <span className="block truncate text-[0.9rem] text-ink-subtle">
                       {entry.room}
                     </span>
                   ) : null}
                 </span>
-                <span className="shrink-0 text-xs text-ink-subtle" data-numeric>
+                <span className="shrink-0 text-[0.9rem] text-ink-subtle" data-numeric>
                   {formatDuration(entry.durationMinutes)}
                 </span>
               </li>
@@ -289,17 +302,23 @@ type Stat = { label: string; value: string; tone?: "danger" | "default" };
  */
 export function DayStats({ stats }: { stats: Stat[] }) {
   return (
-    <Surface inset="flush" className="overflow-hidden">
+    <Surface inset="flush" float="a" className="overflow-hidden">
       {/* One ruled row rather than three separate boxes: the numbers belong to
           the same reading, and hairlines between them say so more quietly
           than three borders would. */}
       <dl className="grid grid-cols-1 divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         {stats.map((stat) => (
-          <div key={stat.label} className="px-5 py-5 sm:px-6 sm:py-6">
+          <div
+            key={stat.label}
+            className="group/stat min-w-0 px-8 py-9 transition-colors duration-300 ease-out-flat hover:bg-surface-raised sm:px-9 sm:py-11"
+          >
             <dt className="text-eyebrow uppercase text-ink-subtle">{stat.label}</dt>
             <dd
               className={cn(
-                "mt-3 text-[2rem] font-semibold leading-none tracking-[-0.03em]",
+                // The clamp is sized to the narrowest cell this sits in, not
+                // to the widest: at ~560px of content the three columns are
+                // 188px each, and a duration set any larger overflows.
+                "mt-5 text-[clamp(2.25rem,4vw,4rem)] font-semibold leading-[0.95] tracking-[-0.04em]",
                 stat.tone === "danger" ? "text-danger" : "text-ink",
               )}
               data-numeric
@@ -325,10 +344,10 @@ export function TodayProgress({
   const complete = total > 0 && done === total;
 
   return (
-    <Panel title="Today's progress">
-      <div className="flex flex-1 flex-col items-center justify-center py-2">
-        <ProgressRing value={done} total={total} />
-        <p className="mt-4 text-center text-[13px] text-ink-muted">
+    <Panel title="Today's progress" size="md">
+      <div className="flex flex-1 flex-col items-center justify-center py-4">
+        <ProgressRing value={done} total={total} size={148} stroke={12} />
+        <p className="mt-7 text-center text-body text-ink-muted">
           {total === 0
             ? "Nothing tracked for today."
             : complete

@@ -38,14 +38,14 @@ export function Sidebar({ defaultCollapsed }: { defaultCollapsed: boolean }) {
       className={cn(
         "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-border bg-sidebar md:flex",
         "transition-[width] duration-200 ease-out",
-        collapsed ? "w-[60px]" : "w-[60px] md:w-[240px]",
+        collapsed ? "w-[72px]" : "w-[72px] md:w-[264px]",
       )}
     >
       {/* brand + collapse */}
       <div
         className={cn(
-          "flex h-16 items-center justify-center px-2",
-          !collapsed && "md:justify-between md:px-4",
+          "flex h-20 items-center justify-center px-3",
+          !collapsed && "md:justify-between md:px-5",
         )}
       >
         <Link
@@ -53,10 +53,10 @@ export function Sidebar({ defaultCollapsed }: { defaultCollapsed: boolean }) {
           className="flex items-center gap-2.5 rounded-md"
           aria-label="StudyFlow home"
         >
-          <LogoMark className="size-7" />
+          <LogoMark className="size-8" />
           <span
             className={cn(
-              "text-[15px] font-semibold tracking-[-0.01em] text-ink",
+              "text-[1.0625rem] font-semibold tracking-[-0.015em] text-ink",
               wideOnly,
             )}
           >
@@ -77,17 +77,17 @@ export function Sidebar({ defaultCollapsed }: { defaultCollapsed: boolean }) {
       </div>
 
       {/* primary action */}
-      <div className={cn("px-2 pb-3", !collapsed && "md:px-3")}>
+      <div className={cn("px-3 pb-5", !collapsed && "md:px-4")}>
         <Link
           href="/homework?new=1"
           title="Add homework"
           className={cn(
-            "flex size-11 items-center justify-center gap-2 rounded-lg bg-primary font-medium text-primary-foreground",
-            "transition-colors hover:bg-indigo-bright",
-            !collapsed && "md:h-11 md:w-full md:text-[13px]",
+            "flex size-12 items-center justify-center gap-2.5 rounded-xl bg-primary font-medium text-primary-foreground shadow-card",
+            "transition-all duration-200 ease-out-flat hover:-translate-y-0.5 hover:bg-indigo-bright hover:shadow-card-hover",
+            !collapsed && "md:h-13 md:w-full md:text-[0.95rem]",
           )}
         >
-          <Plus aria-hidden="true" className="size-4 shrink-0" />
+          <Plus aria-hidden="true" className="size-5 shrink-0" />
           <span className={wideOnly}>Add homework</span>
           <span className={cn("sr-only", !collapsed && "md:hidden")}>Add homework</span>
         </Link>
@@ -95,7 +95,7 @@ export function Sidebar({ defaultCollapsed }: { defaultCollapsed: boolean }) {
 
       <nav
         aria-label="Main"
-        className={cn("flex flex-1 flex-col gap-0.5 px-2", !collapsed && "md:px-3")}
+        className={cn("flex flex-1 flex-col gap-1.5 px-3", !collapsed && "md:px-4")}
       >
         {primaryNav.map((item) => (
           <SidebarLink
@@ -106,7 +106,7 @@ export function Sidebar({ defaultCollapsed }: { defaultCollapsed: boolean }) {
           />
         ))}
 
-        <div className="my-2 h-px bg-sidebar-border" />
+        <div className="my-4 h-px bg-sidebar-border" />
 
         {secondaryNav.map((item) => (
           <SidebarLink
@@ -159,7 +159,7 @@ function SidebarLink({
       title={item.label}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group flex h-10 w-10 items-center justify-center rounded-lg text-[13px] font-medium transition-colors duration-150",
+        "group flex h-12 w-12 items-center justify-center rounded-xl text-[0.95rem] font-medium transition-colors duration-150 ease-out-flat",
         !collapsed && "md:w-full md:justify-start md:gap-3 md:px-3",
         active
           ? "bg-sidebar-accent text-sidebar-accent-foreground"
@@ -169,7 +169,7 @@ function SidebarLink({
       <Icon
         aria-hidden="true"
         className={cn(
-          "size-[18px] shrink-0 transition-colors duration-150",
+          "size-[21px] shrink-0 transition-colors duration-150",
           active ? "text-indigo-ink" : "text-ink-subtle group-hover:text-ink-muted",
         )}
       />

@@ -18,7 +18,7 @@ import { byUrgency, getAssignments, getRevisionTasks, groupAssignments } from "@
 import { firstNameOf, formatFullDate, greeting } from "@/lib/format";
 import { buildHomePlanPreview } from "@/lib/temporary/home-plan-preview";
 import { resolveTemporary } from "@/lib/timetable/resolve-temporary";
-import { formatDuration, toDayOfWeek } from "@/lib/timetable/types";
+import { formatDurationCompact, toDayOfWeek } from "@/lib/timetable/types";
 
 export const metadata: Metadata = { title: "Today" };
 
@@ -96,10 +96,11 @@ export default async function TodayPage() {
 
   return (
     <PageContainer>
-      {/* The statement. The greeting is the headline because "Today" as a
-          title tells her something the nav already said. */}
-      <header className="mb-rhythm max-w-[20ch] sm:max-w-none">
-        <Eyebrow tone="accent" className="mb-4">
+      {/* The greeting is the headline -- "Today" as a title tells her what the
+          nav already said -- and it is the entry point of the whole dashboard,
+          so it gets the most air on the page, above it and below it. */}
+      <header className="mb-rhythm max-w-[20ch] pt-2 sm:max-w-none md:pt-6">
+        <Eyebrow tone="accent" className="mb-7">
           {formatFullDate(now)}
         </Eyebrow>
         <h1 className="text-greeting text-balance text-ink">
@@ -118,7 +119,7 @@ export default async function TodayPage() {
             },
             {
               label: "Work tonight",
-              value: workMinutes > 0 ? formatDuration(workMinutes) : "None",
+              value: workMinutes > 0 ? formatDurationCompact(workMinutes) : "None",
             },
           ]}
         />
@@ -136,7 +137,7 @@ export default async function TodayPage() {
             <CurrentActivityCard state={state} />
           </Reveal>
 
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="mt-6 grid gap-6 md:mt-8 lg:grid-cols-2 lg:gap-8">
             <Reveal index={1}>
               <UpNextCard next={upNext} />
             </Reveal>
@@ -154,7 +155,7 @@ export default async function TodayPage() {
               description="A rough order of work for this evening, laid out from what's still outstanding."
             />
           </Reveal>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
             <Reveal index={1}>
               <HomePlanPreview blocks={plan.blocks} startsAt={plan.startsAt} />
             </Reveal>

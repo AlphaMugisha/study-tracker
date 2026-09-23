@@ -21,7 +21,7 @@ export const cn = createCn({
             "statement",
             "greeting",
             "count",
-            "hero",
+            "headline",
             "display",
             "section",
           ],
