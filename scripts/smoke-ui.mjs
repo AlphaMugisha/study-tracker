@@ -242,6 +242,8 @@ try {
     // open, so asserting the field labels here would be testing the library.
     ["/timetable", ["Add to timetable", "Edit ", "Remove "]],
     ["/dashboard", ["Open navigation"]],
+    // The header corner names the account rather than showing bare initials.
+    ["/dashboard", ["Smoke Tester", "Student", "Account: Smoke Tester"]],
     // The header's role slot. A student with no pending request sees nothing
     // there, which is the point — so assert the absence, not a chip.
     ["/dashboard", ["Ctrl K"]],

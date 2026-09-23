@@ -97,8 +97,11 @@ export function TopBar({
             <Settings aria-hidden="true" className="size-5" />
           </Link>
 
+          {/* Who you are, said out loud rather than hidden behind an
+              initials circle. Falls back to the avatar when the bar is
+              tight. */}
           <span className="hidden md:block">
-            <AccountMenu account={account} compact />
+            <AccountMenu account={account} variant="header" />
           </span>
         </div>
       </header>
