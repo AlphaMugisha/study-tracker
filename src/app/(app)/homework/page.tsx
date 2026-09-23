@@ -174,7 +174,10 @@ function Section({
             {emptyMessage}
           </p>
         ) : (
-          <div className="grid gap-3">
+          // Container query: this sits inside the page container, whose width
+          // depends on the sidebar as well as the viewport.
+          <div className="@container">
+            <div className="grid gap-4 @2xl:grid-cols-2 @6xl:grid-cols-3">
             {assignments.map((a) => (
               <AssignmentCard
                 key={a.id}
@@ -184,6 +187,7 @@ function Section({
                 isActive={openSession?.assignmentId === a.id}
               />
             ))}
+            </div>
           </div>
         )}
       </Reveal>

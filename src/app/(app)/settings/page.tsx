@@ -60,8 +60,9 @@ export default async function SettingsPage() {
           description="Your account, and who can see your academic progress."
         />
 
-      <div className="grid gap-4 md:grid-cols-2 md:gap-5">
-        <Reveal index={1} className="md:col-span-2">
+      <div className="@container">
+        <div className="grid gap-5 @3xl:grid-cols-2 @3xl:gap-6">
+        <Reveal index={1} className="@3xl:col-span-2">
           <Panel
             title="Your details"
             description="Your timezone is how StudyFlow works out what you're doing right now, so keep it accurate if you travel."
@@ -75,7 +76,7 @@ export default async function SettingsPage() {
           </Panel>
         </Reveal>
 
-        <Reveal index={1} className="md:col-span-2">
+        <Reveal index={1} className="@3xl:col-span-2">
           <Panel
             title="Subjects"
             description="What you study. Subjects colour your homework, timetable and plan."
@@ -135,7 +136,7 @@ export default async function SettingsPage() {
           </Panel>
         </Reveal>
 
-        <Reveal index={4} className="md:col-span-2">
+        <Reveal index={4} className="@3xl:col-span-2">
           <Panel
             title="Support access"
             description="Who can see your academic progress. You decide, and you can change your mind at any time."
@@ -143,6 +144,7 @@ export default async function SettingsPage() {
             <SupportAccess links={supportLinks} />
           </Panel>
         </Reveal>
+        </div>
       </div>
     </PageContainer>
   );

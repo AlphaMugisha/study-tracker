@@ -33,6 +33,13 @@ const entrySchema = z
   .object({
     activityType: z.enum(["class", "break", "free", "study", "other"]),
     subjectId: z.string().uuid().nullable(),
+    /**
+     * A lesson can name its subject in words instead of picking an id. The
+     * timetable is where a student first says what they study, so demanding
+     * they go and create subjects elsewhere before they can enter a single
+     * lesson gets the order backwards.
+     */
+    subjectName: z.string().max(80, "That subject name is too long.").nullable(),
     title: z.string().max(200, "That title is a little too long.").nullable(),
     // The column is a literal union (1..7) in the generated types, so the
     // range check and the narrowing happen in one place rather than leaving a
@@ -52,14 +59,20 @@ const entrySchema = z
     message: "The end time has to be after the start time.",
     path: ["endTime"],
   })
-  .refine((v) => v.activityType !== "class" || v.subjectId !== null, {
-    message: "A lesson needs a subject. Add one in Settings first.",
-    path: ["subjectId"],
-  })
-  .refine((v) => v.subjectId !== null || (v.title !== null && v.title.trim() !== ""), {
-    message: "Give this a name.",
-    path: ["title"],
-  });
+  .refine(
+    (v) =>
+      v.activityType !== "class" ||
+      v.subjectId !== null ||
+      (v.subjectName !== null && v.subjectName.trim() !== ""),
+    { message: "Which subject is this lesson?", path: ["subjectName"] },
+  )
+  .refine(
+    (v) =>
+      v.subjectId !== null ||
+      (v.subjectName !== null && v.subjectName.trim() !== "") ||
+      (v.title !== null && v.title.trim() !== ""),
+    { message: "Give this a name.", path: ["title"] },
+  );
 
 export type TimetableEntryFormState = {
   formError?: string;
@@ -77,6 +90,7 @@ function read(formData: FormData) {
   return {
     activityType: text("activityType") ?? "class",
     subjectId: subjectId === "__none__" ? null : subjectId,
+    subjectName: text("subjectName"),
     title: text("title"),
     dayOfWeek: Number(text("dayOfWeek") ?? 1),
     startTime: text("startTime") ?? "",
@@ -129,6 +143,60 @@ async function ensureActiveVersion(
   return created?.id ?? null;
 }
 
+/** The palette slots, cycled so a new subject is not always chart-1. */
+const COLOR_TOKENS = ["chart-1", "chart-2", "chart-3", "chart-4", "chart-5"] as const;
+
+/**
+ * Turn a typed subject name into a subject id, creating it if needed.
+ *
+ * Matching is case-insensitive and trims, because `subjects_user_name_key` is
+ * a unique index on `(user_id, lower(btrim(name)))` — so "maths " and "Maths"
+ * are the same subject to the database, and this must agree with it or the
+ * insert fails on a constraint the student cannot see.
+ */
+async function resolveSubject(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  name: string,
+): Promise<{ id: string } | { error: string }> {
+  const wanted = name.trim();
+
+  const { data: existing } = await supabase
+    .from("subjects")
+    .select("id, name")
+    .ilike("name", wanted);
+
+  const match = (existing ?? []).find(
+    (s) => s.name.trim().toLowerCase() === wanted.toLowerCase(),
+  );
+  if (match) return { id: match.id };
+
+  const { count } = await supabase
+    .from("subjects")
+    .select("id", { count: "exact", head: true });
+
+  const { data: created, error } = await supabase
+    .from("subjects")
+    .insert({
+      user_id: userId,
+      name: wanted,
+      color_token: COLOR_TOKENS[(count ?? 0) % COLOR_TOKENS.length],
+    })
+    .select("id")
+    .single();
+
+  if (error || !created) return { error: "Could not create that subject." };
+
+  await logActivity({
+    activityType: "subject_created",
+    entityType: "subject",
+    entityId: created.id,
+    metadata: { name: wanted, via: "timetable" },
+  });
+
+  return { id: created.id };
+}
+
 export async function saveTimetableEntryAction(
   _prev: TimetableEntryFormState,
   formData: FormData,
@@ -145,8 +213,17 @@ export async function saveTimetableEntryAction(
   const versionId = await ensureActiveVersion(supabase, user.id);
   if (!versionId) return { formError: "Could not open your timetable. Try again." };
 
+  // A typed name wins over a picked id: if the student edited the field, that
+  // is the more recent expression of intent.
+  let subjectId = parsed.data.subjectId;
+  if (parsed.data.subjectName && parsed.data.subjectName.trim() !== "") {
+    const resolved = await resolveSubject(supabase, user.id, parsed.data.subjectName);
+    if ("error" in resolved) return { fieldErrors: { subjectName: resolved.error } };
+    subjectId = resolved.id;
+  }
+
   const row = {
-    subject_id: parsed.data.subjectId,
+    subject_id: subjectId,
     activity_type: parsed.data.activityType,
     // A lesson is named by its subject, so a redundant title is dropped.
     title: parsed.data.activityType === "class" ? null : parsed.data.title,

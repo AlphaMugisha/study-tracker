@@ -141,25 +141,42 @@ export function TimetableEntryDialog({
           </div>
 
           {isLesson ? (
-            <Field id="entrySubject" label="Subject" error={fieldErrors.subjectId}>
-              {subjects.length === 0 ? (
-                <p className="rounded-lg border border-dashed border-border px-4 py-3.5 text-[0.95rem] text-ink-muted">
-                  You have no subjects yet. Add one in Settings, then come back.
-                </p>
-              ) : (
-                <Select name="subjectId" defaultValue={entry?.subjectId ?? undefined}>
-                  <SelectTrigger id="entrySubject" className="h-11 w-full">
-                    <SelectValue placeholder="Choose a subject" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {subjects.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+            /*
+              Type it or pick it. A plain <Select> of existing subjects is
+              useless on a fresh account — there are none, and the student is
+              sent to Settings to create one before they can enter a single
+              lesson. The timetable is where they first say what they study,
+              so this is the right place to learn it: an unrecognised name
+              becomes a new subject, and a matching one is reused.
+            */
+            <Field
+              id="entrySubject"
+              label="Subject"
+              error={fieldErrors.subjectName ?? fieldErrors.subjectId}
+              hint={
+                subjects.length === 0
+                  ? "Type it — the subject is created for you."
+                  : "Pick one, or type a new subject."
+              }
+            >
+              <Input
+                {...fieldA11yProps(
+                  "entrySubject",
+                  fieldErrors.subjectName ?? fieldErrors.subjectId,
+                  "Pick one, or type a new subject.",
+                )}
+                name="subjectName"
+                list="timetable-subjects"
+                required
+                defaultValue={entry?.subjectName ?? ""}
+                placeholder="Mathematics"
+                className="h-11"
+              />
+              <datalist id="timetable-subjects">
+                {subjects.map((s) => (
+                  <option key={s.id} value={s.name} />
+                ))}
+              </datalist>
             </Field>
           ) : (
             <>

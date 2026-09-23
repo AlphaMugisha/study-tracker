@@ -62,7 +62,8 @@ export default async function AdminPage() {
                 action={<RequestAccessDialog />}
               />
             ) : (
-              <div className="grid gap-5 lg:grid-cols-2">
+              <div className="@container">
+                <div className="grid gap-5 @3xl:grid-cols-2 @6xl:grid-cols-3">
                 {active.map((link) => (
                   <Surface key={link.id} interactive lift className="flex flex-col">
                     <Eyebrow tone="brand">Active access</Eyebrow>
@@ -93,6 +94,7 @@ export default async function AdminPage() {
                     </div>
                   </Surface>
                 ))}
+                </div>
               </div>
             )}
           </Reveal>

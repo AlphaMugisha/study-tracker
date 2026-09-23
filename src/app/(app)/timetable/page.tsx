@@ -8,7 +8,6 @@ import { Reveal } from "@/components/shared/reveal";
 import { BlockHeading } from "@/components/shared/surface";
 import { TimetableEntryDialog } from "@/components/timetable/entry-dialog";
 import { DaySchedule, WeekGrid } from "@/components/timetable/schedule";
-import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getActiveTimetable, getSubjects } from "@/lib/data/timetable";
 import { DAY_NAMES, DAY_SHORT, toDayOfWeek } from "@/lib/timetable/types";
@@ -48,17 +47,19 @@ export default async function TimetablePage({
     return (
       <PageContainer>
         <PageHeader
-          title="Timetable"
-          description="Your school week, by day or at a glance."
+          eyebrow="School timetable"
+          title="Your school week."
+          description="The lessons, breaks and free periods of your school day — not homework or revision. StudyFlow reads this to work out what you are doing now, what is next, and how much of the evening is left."
         />
         <EmptyState
           icon={CalendarPlus}
-          headline="No timetable yet."
-          body="Add your school timetable and StudyFlow can tell you what you're doing now, what's next, and what to do when you get home."
-          action={<Button disabled>Add timetable</Button>}
+          headline="No school timetable yet."
+          body="Add your lessons one at a time. Naming a subject here creates it, so it is ready to file homework against."
+          action={<TimetableEntryDialog subjects={subjects} defaultDay={selectedDay} />}
         />
-        <p className="mt-4 text-center text-xs text-ink-subtle">
-          Uploading a timetable arrives in a later phase.
+        <p className="mt-5 text-center text-[0.9rem] text-ink-subtle">
+          Importing a timetable from a photo or PDF comes later. This is the manual way,
+          and it is the one that always works.
         </p>
       </PageContainer>
     );
@@ -67,9 +68,9 @@ export default async function TimetablePage({
   return (
     <PageContainer>
       <PageHeader
-        eyebrow={version.name}
+        eyebrow={`School timetable · ${version.name}`}
         title="Your school week."
-        description="Lessons, breaks and everything else, day by day or all at once."
+        description="Lessons, breaks and free periods. Naming a subject here creates it, so homework can be filed against it straight away."
         action={
           <div className="flex flex-wrap items-center gap-3">
             <div className="inline-flex rounded-lg border border-border bg-card p-1">
