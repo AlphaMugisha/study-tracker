@@ -66,8 +66,16 @@ export default async function AdminPage() {
                   <Surface key={link.id} interactive lift className="flex flex-col">
                     <Eyebrow tone="brand">Active access</Eyebrow>
                     <h3 className="mt-4 text-[1.5rem] font-semibold tracking-[-0.025em] text-ink">
-                      {link.counterpartName ?? "Student"}
+                      {link.counterpartName ?? "Name unavailable"}
                     </h3>
+                    {link.counterpartName === null ? (
+                      // Reading a linked student's name needs the widened
+                      // profiles policy from 0005. Saying so beats showing a
+                      // generic word that looks like their actual name.
+                      <p className="mt-2 text-[0.9rem] text-pause-ink">
+                        Run migration 0005 to show names.
+                      </p>
+                    ) : null}
                     {link.note ? (
                       <p className="mt-2.5 text-[0.95rem] text-ink-subtle">
                         “{link.note}”
@@ -109,7 +117,7 @@ export default async function AdminPage() {
                     >
                       <span className="min-w-0">
                         <span className="block truncate text-body font-medium text-ink">
-                          {link.counterpartName ?? "Student"}
+                          {link.counterpartName ?? "Name unavailable"}
                         </span>
                         <span className="mt-1 block text-[0.9rem] text-ink-subtle">
                           Waiting on their approval

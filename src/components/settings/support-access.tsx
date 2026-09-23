@@ -46,7 +46,7 @@ export function SupportAccess({ links }: { links: SupportLink[] }) {
                   >
                     <span className="min-w-0">
                       <span className="block truncate text-body font-medium text-ink">
-                        {link.counterpartName ?? "A support account"}
+                        {link.counterpartName ?? "A support account (run migration 0005 to show names)"}
                       </span>
                       {link.note ? (
                         <span className="mt-1 block text-[0.9rem] text-ink-subtle">
@@ -118,7 +118,7 @@ export function SupportAccess({ links }: { links: SupportLink[] }) {
                       className="flex items-center justify-between gap-4 py-3.5"
                     >
                       <span className="min-w-0 truncate text-body font-medium text-ink">
-                        {link.counterpartName ?? "A support account"}
+                        {link.counterpartName ?? "A support account (run migration 0005 to show names)"}
                       </span>
                       <form action={revokeAccessAction}>
                         <input type="hidden" name="id" value={link.id} />

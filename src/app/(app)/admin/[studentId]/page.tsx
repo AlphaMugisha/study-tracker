@@ -77,7 +77,7 @@ export default async function StudentRecordPage({
     <PageContainer>
       <PageHeader
         eyebrow="Student record"
-        title={`${link.counterpartName ?? "Student"}.`}
+        title={`${link.counterpartName ?? "Student record"}.`}
         description="Read-only. They can revoke your access at any time, and they can see that you have it."
       />
 
