@@ -4,6 +4,7 @@
  *   npm run seed -- --email you@example.com
  *   npm run seed -- --email you@example.com --reset
  *   npm run seed -- --email you@example.com --reset-only --yes
+ *   npm run seed -- --email student@example.com --link-admin you@example.com
  *
  * Why this exists: Phases 3-7 (timetable engine, Current Activity Card, home
  * planner) cannot be built or judged against empty tables. This produces a
@@ -363,6 +364,61 @@ console.log(`\n${BOLD}Monday, read back through the API${RESET}`);
 for (const e of mondayCheck) {
   const label = e.subjects?.name ?? e.title;
   console.log(`  ${e.start_time.slice(0, 5)}-${e.end_time.slice(0, 5)}  ${label}`);
+}
+
+// --- optional: grant a support account access to this student --------------
+/**
+ * `--link-admin <email>` creates an ACTIVE link from that admin to the student
+ * just seeded, so the support dashboard has something to show.
+ *
+ * This is a seeding shortcut and it is worth naming as such: in the product an
+ * admin can only ever create a PENDING request, and the STUDENT is the only
+ * one who can activate it. That rule is enforced by RLS, which is exactly why
+ * this needs the service-role key — the app has no path to do this, and
+ * nothing here changes that. It is for demoing your own two accounts.
+ */
+const linkAdmin = flag("link-admin");
+if (linkAdmin) {
+  const admins = await api("/auth/v1/admin/users?per_page=200");
+  const adminUser = (admins.users ?? []).find(
+    (u) => u.email?.toLowerCase() === linkAdmin.toLowerCase(),
+  );
+
+  if (!adminUser) {
+    console.log(`
+  ${RED}No account with email ${linkAdmin} - link skipped.${RESET}`);
+  } else if (adminUser.id === uid) {
+    console.log(`
+  ${RED}--link-admin matches --email - link skipped.${RESET}`);
+  } else {
+    const profiles = await api(`/rest/v1/profiles?id=eq.${adminUser.id}&select=role`);
+    if (profiles[0]?.role !== "admin") {
+      console.log(
+        `
+  ${YELLOW}${linkAdmin} is not an admin.${RESET} ` +
+          `Run: npm run role -- --email ${linkAdmin} --role admin`,
+      );
+    } else {
+      await api(
+        `/rest/v1/admin_student_links?admin_id=eq.${adminUser.id}&student_id=eq.${uid}`,
+        { method: "DELETE" },
+      );
+      await insert("admin_student_links", [
+        {
+          admin_id: adminUser.id,
+          student_id: uid,
+          status: "active",
+          note: "Seeded demo link",
+        },
+      ]);
+      console.log(
+        `
+  ${GREEN}support link${RESET}  ${linkAdmin} can now see ${email}
+` +
+          `  ${DIM}(seeded directly; in the app the student must approve)${RESET}`,
+      );
+    }
+  }
 }
 
 console.log(`\n${GREEN}${BOLD}Demo data seeded.${RESET} ${DIM}Re-run with --reset to replace it.${RESET}\n`);
