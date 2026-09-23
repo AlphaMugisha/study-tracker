@@ -195,6 +195,9 @@ export function HomePlanPreview({ plan }: { plan: EveningPlan }) {
 export function DueSoonList({ assignments }: { assignments: AssignmentView[] }) {
   return (
     <Panel
+      title="Due soon"
+      count={assignments.length}
+      size="md"
       action={
         <Button asChild variant="ghost" size="sm">
           <Link href="/homework">
@@ -386,13 +389,7 @@ export function DayStats({ stats }: { stats: Stat[] }) {
 
 // --- Today's progress -------------------------------------------------------
 
-export function TodayProgress({
-  done,
-  total,
-}: {
-  done: number;
-  total: number;
-}) {
+export function TodayProgress({ done, total }: { done: number; total: number }) {
   const complete = total > 0 && done === total;
 
   return (

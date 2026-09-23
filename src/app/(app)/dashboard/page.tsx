@@ -139,24 +139,30 @@ export default async function TodayPage() {
       </Reveal>
 
       {/*
-        A single narrative column, the way the reference composes: full-width
-        blocks separated by rhythm, with grids *inside* a block rather than a
-        main-plus-rail split. A rail would come out around 250px at the widths
-        this is actually used at, which is too narrow to carry anything.
+        A 12-column grid, not a stack.
+
+        The splits start at xl rather than lg because of the sidebar: it takes
+        264px, so at a 1024px window the content area is only ~660px and an 8/4
+        split would leave a 220px rail — narrower than the cards need. At xl
+        the same split is 592/296, which works. Below xl everything stacks,
+        which is the right answer at those widths anyway.
       */}
       <div className="mt-rhythm space-y-rhythm md:space-y-rhythm-lg">
         <Block aria-label="Right now">
-          <Reveal>
-            <CurrentActivityCard state={state} />
-          </Reveal>
+          <div className="grid gap-6 lg:gap-8 xl:grid-cols-12">
+            <Reveal className="h-full xl:col-span-8">
+              <CurrentActivityCard state={state} />
+            </Reveal>
 
-          <div className="mt-6 grid gap-6 md:mt-8 lg:grid-cols-2 lg:gap-8">
-            <Reveal index={1}>
-              <UpNextCard next={upNext} />
-            </Reveal>
-            <Reveal index={2}>
-              <RestOfDay entries={restOfDay} />
-            </Reveal>
+            {/* Beside the hero at xl; two across at sm; stacked on a phone. */}
+            <div className="grid gap-6 sm:grid-cols-2 lg:gap-8 xl:col-span-4 xl:grid-cols-1">
+              <Reveal index={1} className="h-full">
+                <UpNextCard next={upNext} />
+              </Reveal>
+              <Reveal index={2} className="h-full">
+                <RestOfDay entries={restOfDay} />
+              </Reveal>
+            </div>
           </div>
         </Block>
 
@@ -173,30 +179,25 @@ export default async function TodayPage() {
               }
             />
           </Reveal>
-          <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
-            <Reveal index={1}>
+
+          {/* Tonight's order is the widest because it is a timeline; due-soon
+              sits beside it; the ring needs the least but has a hard floor —
+              148px plus 72px of padding is 220px, so the 3-up arrangement
+              waits for 2xl. At xl it would resolve to 206px and overflow. */}
+          <div className="grid gap-6 lg:grid-cols-12 lg:gap-8">
+            <Reveal index={1} className="h-full lg:col-span-7 2xl:col-span-5">
               <HomePlanPreview plan={plan} />
             </Reveal>
-            <Reveal index={2}>
+            <Reveal index={2} className="h-full lg:col-span-5 2xl:col-span-3">
               <TodayProgress done={doneToday} total={trackedToday.length} />
+            </Reveal>
+            <Reveal index={3} className="h-full lg:col-span-12 2xl:col-span-4">
+              <DueSoonList assignments={dueSoon} />
             </Reveal>
           </div>
         </Block>
-
-        <Block id="due">
-          <Reveal>
-            <BlockHeading
-              eyebrow="Deadlines"
-              tone="pause"
-              title="What's coming due."
-              count={dueSoon.length}
-            />
-          </Reveal>
-          <Reveal index={1}>
-            <DueSoonList assignments={dueSoon} />
-          </Reveal>
-        </Block>
       </div>
+
     </PageContainer>
   );
 }
