@@ -4,6 +4,7 @@ import {
   ListChecks,
   Settings,
   Sun,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -29,6 +30,21 @@ export const primaryNav: NavItem[] = [
 export const secondaryNav: NavItem[] = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
+
+/**
+ * Shown only to a support account. Kept out of `secondaryNav` so the nav a
+ * student sees cannot accidentally include it — the page redirects anyway, and
+ * RLS returns nothing regardless, but a link to a page you cannot use is a
+ * bad experience rather than a security question.
+ */
+export const adminNav: NavItem[] = [
+  { href: "/admin", label: "Students", icon: Users },
+];
+
+/** The secondary items for a given role. */
+export function secondaryNavFor(role: string | undefined): NavItem[] {
+  return role === "admin" ? [...adminNav, ...secondaryNav] : secondaryNav;
+}
 
 /** `/timetable/upload` should still light up the "Timetable" tab. */
 export function isNavItemActive(pathname: string, href: string): boolean {

@@ -6,7 +6,7 @@ import { useState } from "react";
 import { PanelLeft, Plus } from "lucide-react";
 
 import { LogoMark } from "@/components/layout/logo";
-import { isNavItemActive, primaryNav, secondaryNav, type NavItem } from "@/lib/nav";
+import { isNavItemActive, primaryNav, secondaryNavFor, type NavItem } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 /**
@@ -20,7 +20,17 @@ import { cn } from "@/lib/utils";
  * renders the correct width on first paint; reading it on the client would
  * flash the wrong layout on every navigation.
  */
-export function Sidebar({ defaultCollapsed }: { defaultCollapsed: boolean }) {
+export function Sidebar({
+  defaultCollapsed,
+  role,
+}: {
+  defaultCollapsed: boolean;
+  /** A support account also gets "Students". Resolved here rather than passed
+   *  in, because NavItem carries an icon component and functions cannot cross
+   *  the server/client props boundary. */
+  role: string;
+}) {
+  const secondaryItems = secondaryNavFor(role);
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
@@ -108,7 +118,7 @@ export function Sidebar({ defaultCollapsed }: { defaultCollapsed: boolean }) {
 
         <div className="my-4 h-px bg-sidebar-border" />
 
-        {secondaryNav.map((item) => (
+        {secondaryItems.map((item) => (
           <SidebarLink
             key={item.href}
             item={item}

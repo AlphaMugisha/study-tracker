@@ -235,8 +235,12 @@ export type Database = {
       admin_student_links: Table<
         AdminStudentLink,
         Pick<AdminStudentLink, "admin_id" | "student_id"> & { note?: string | null },
-        /** Only `status` may move; admin_id and student_id are immutable. */
-        Pick<AdminStudentLink, "status">
+        /**
+         * Only `status` and `revoked_at` may move — matching the column grant
+         * in 0005. admin_id and student_id are immutable, so a link can never
+         * be re-pointed at a different student.
+         */
+        Partial<Pick<AdminStudentLink, "status" | "revoked_at">>
       >;
       /** Append-only: no Update type, because there is no UPDATE path. */
       activity_logs: Table<
@@ -250,6 +254,12 @@ export type Database = {
     Functions: {
       is_admin: { Args: Record<never, never>; Returns: boolean };
       has_student_access: { Args: { target: string }; Returns: boolean };
+      shares_support_link: { Args: { other: string }; Returns: boolean };
+      /** Returns the link id. Always creates a PENDING row — see 0005. */
+      request_student_access: {
+        Args: { student_email: string; request_note: string | null };
+        Returns: string;
+      };
     };
     Enums: {
       user_role: UserRole;

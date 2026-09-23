@@ -226,6 +226,8 @@ try {
     ["/plan", ["Start with", "The order to work in", "Start this"]],
     // Subject management and the planning window.
     ["/settings", ["Subjects", "Add a subject", "Finish work by", "Wind-down after school"]],
+    // The consent panel: who can see your work, and how to stop them.
+    ["/settings", ["Support access", "Nobody has access"]],
     // Revision is writable now, not just readable.
     ["/plan", ["Add revision"]],
     // Cards that were previously inert now go somewhere.
@@ -252,6 +254,15 @@ try {
       missing.length ? `missing: ${missing.join(", ")}` : `${(r.html.length / 1024) | 0}KB`,
     );
   }
+
+  // A student reaching the support dashboard is redirected. RLS would return
+  // an empty list anyway; this checks the courtesy guard is wired.
+  const asStudent = await page("/admin");
+  rec(
+    "a student is redirected away from /admin",
+    asStudent.status === 307 && (asStudent.location ?? "").includes("/dashboard"),
+    `HTTP ${asStudent.status} -> ${asStudent.location ?? "-"}`,
+  );
 
   // Signed out, the same pages must still bounce to /login.
   const guarded = await fetch(`${base}/dashboard`, { redirect: "manual" });

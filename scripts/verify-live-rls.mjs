@@ -267,6 +267,91 @@ async function run() {
   });
   rec("an admin cannot re-activate a revoked link", blocked(reActivate), `HTTP ${reActivate.status}`);
 
+  // --- 0005: requesting by email, and name visibility ------------------------
+  console.log(`
+${BOLD}support access (0005)${RESET}`);
+
+  // Preflight. Without this, "a student cannot call request_student_access"
+  // passes with a 404 when the function simply does not exist — a test that
+  // succeeds because the feature is missing is worse than no test.
+  const probe0005 = await call("/rest/v1/rpc/request_student_access", {
+    headers: service, method: "POST",
+    body: { student_email: "probe@example.invalid", request_note: null },
+  });
+  const has0005 = probe0005.body?.code !== "PGRST202" && probe0005.status !== 404;
+  rec("migration 0005 is applied", has0005,
+      has0005 ? "request_student_access exists" : "run 0005_support_access.sql");
+
+  // A student must never be able to mint a request, even via the function.
+  const studentRpc = await call("/rest/v1/rpc/request_student_access", {
+    headers: ava.h, method: "POST",
+    body: { student_email: `${ben.email}`, request_note: "let me in" },
+  });
+  rec("a student cannot call request_student_access",
+      has0005 && !studentRpc.ok && studentRpc.body?.code !== "PGRST202",
+      `HTTP ${studentRpc.status} ${studentRpc.body?.code ?? ""}`);
+
+  const badEmail = await call("/rest/v1/rpc/request_student_access", {
+    headers: omar.h, method: "POST",
+    body: { student_email: "nobody-here@example.invalid", request_note: null },
+  });
+  rec("requesting an unknown email fails cleanly",
+      has0005 && !badEmail.ok && badEmail.body?.code !== "PGRST202",
+      `HTTP ${badEmail.status}`);
+
+  const rpcReq = await call("/rest/v1/rpc/request_student_access", {
+    headers: omar.h, method: "POST",
+    body: { student_email: ben.email, request_note: "Maths support" },
+  });
+  rec("an admin can request access by email", rpcReq.ok, `HTTP ${rpcReq.status}`);
+
+  const rpcLinkId = typeof rpcReq.body === "string" ? rpcReq.body : null;
+
+  const rpcPendingRead = await call("/rest/v1/assignments?select=id", { headers: omar.h });
+  rec("requesting by email grants nothing on its own",
+      has0005 && rows(rpcPendingRead) === 0, `rows: ${rows(rpcPendingRead)}`);
+
+  // The student must be able to see WHO is asking, or consent is uninformed.
+  const studentSeesAdminName = await call(
+    `/rest/v1/profiles?select=id,full_name&id=eq.${omar.id}`, { headers: ben.h },
+  );
+  rec("the student can see the requesting admin's name",
+      studentSeesAdminName.ok && rows(studentSeesAdminName) === 1,
+      `rows: ${rows(studentSeesAdminName)}`);
+
+  // ...but a stranger with no link must not be readable.
+  const strangerProfile = await call(
+    `/rest/v1/profiles?select=id&id=eq.${ava.id}`, { headers: ben.h },
+  );
+  // Meaningful only once the policy has been WIDENED — before 0005 every
+  // profile but your own is hidden, so this would pass trivially.
+  rec("an unrelated student's profile stays hidden",
+      has0005 && rows(strangerProfile) === 0, `rows: ${rows(strangerProfile)}`);
+
+  if (rpcLinkId) {
+    await call(`/rest/v1/admin_student_links?id=eq.${rpcLinkId}`, {
+      headers: ben.h, method: "PATCH", body: { status: "active" },
+    });
+    const linkedName = await call(
+      `/rest/v1/profiles?select=id,full_name&id=eq.${ben.id}`, { headers: omar.h },
+    );
+    rec("a linked admin can read the student's name",
+        linkedName.ok && rows(linkedName) === 1, `rows: ${rows(linkedName)}`);
+
+    const adminEditsProfile = await call(`/rest/v1/profiles?id=eq.${ben.id}`, {
+      headers: omar.h, method: "PATCH", prefer: "return=representation",
+      body: { full_name: "renamed by admin" },
+    });
+    rec("a linked admin cannot EDIT the student's profile", blocked(adminEditsProfile),
+        `HTTP ${adminEditsProfile.status}, rows ${rows(adminEditsProfile)}`);
+
+    const adminReadsLog = await call(
+      `/rest/v1/activity_logs?select=id&user_id=eq.${ben.id}`, { headers: omar.h },
+    );
+    rec("a linked admin can read the activity log", adminReadsLog.ok,
+        `HTTP ${adminReadsLog.status}`);
+  }
+
   const studentMintsLink = await call("/rest/v1/admin_student_links", {
     headers: ava.h, method: "POST", prefer: "return=representation",
     body: { admin_id: ava.id, student_id: ben.id },

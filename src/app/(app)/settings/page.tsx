@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { KeyRound, LogOut, ShieldCheck } from "lucide-react";
+import { KeyRound, LogOut } from "lucide-react";
 
 import { PageContainer } from "@/components/layout/app-shell";
-import { Eyebrow, PageHeader } from "@/components/layout/page-header";
+import { PageHeader } from "@/components/layout/page-header";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { SubjectManager } from "@/components/settings/subject-manager";
+import { SupportAccess } from "@/components/settings/support-access";
 import { Reveal } from "@/components/shared/reveal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/lib/actions/auth";
 import { displayName, requireSessionContext } from "@/lib/auth";
+import { getLinksAsStudent } from "@/lib/data/support";
 import { getSubjects } from "@/lib/data/timetable";
 import { cn } from "@/lib/utils";
 
@@ -43,7 +45,11 @@ function Panel({
 }
 
 export default async function SettingsPage() {
-  const [session, subjects] = await Promise.all([requireSessionContext(), getSubjects()]);
+  const [session, subjects, supportLinks] = await Promise.all([
+    requireSessionContext(),
+    getSubjects(),
+    getLinksAsStudent(),
+  ]);
   const { user, profile } = session;
 
   return (
@@ -127,28 +133,11 @@ export default async function SettingsPage() {
         </Reveal>
 
         <Reveal index={4} className="md:col-span-2">
-          <Panel title="Support access">
-            <div className="rounded-md border border-border bg-surface-sunken/60 p-4">
-              <div className="flex items-start gap-2.5">
-                <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-lesson" />
-                <div>
-                  <Eyebrow className="text-lesson-ink">Nobody has access</Eyebrow>
-                  <p className="mt-1.5 max-w-prose text-[13px] leading-5 text-ink-muted">
-                    A support account can only see your academic progress if you
-                    approve a request, and you can revoke it at any time. When
-                    someone has access you will see them listed here, along with
-                    exactly what they can read.
-                  </p>
-                  <p className="mt-2 max-w-prose text-xs leading-5 text-ink-subtle">
-                    Support accounts can never edit your work, and never see
-                    anything outside StudyFlow.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <p className="mt-3 text-xs text-ink-subtle">
-              Managing support access arrives with the admin dashboard.
-            </p>
+          <Panel
+            title="Support access"
+            description="Who can see your academic progress. You decide, and you can change your mind at any time."
+          >
+            <SupportAccess links={supportLinks} />
           </Panel>
         </Reveal>
       </div>

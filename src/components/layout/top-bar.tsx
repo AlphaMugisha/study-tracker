@@ -10,7 +10,7 @@ import { useScrolled } from "@/components/layout/use-scrolled";
 import { LiveClock } from "@/components/layout/live-clock";
 import { NavDrawer } from "@/components/layout/nav-drawer";
 import { Logo } from "@/components/layout/logo";
-import { isNavItemActive, primaryNav, secondaryNav } from "@/lib/nav";
+import { isNavItemActive, primaryNav, secondaryNavFor } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 /**
@@ -21,16 +21,19 @@ import { cn } from "@/lib/utils";
 export function TopBar({
   timezone,
   account,
+  role,
 }: {
   timezone: string;
   account: AccountSummary;
+  role: string;
 }) {
+  const secondaryItems = secondaryNavFor(role);
   const pathname = usePathname();
   const { open, setOpen } = useCommandPalette();
   const scrolled = useScrolled();
 
   const current =
-    [...primaryNav, ...secondaryNav].find((item) => isNavItemActive(pathname, item.href)) ??
+    [...primaryNav, ...secondaryItems].find((item) => isNavItemActive(pathname, item.href)) ??
     primaryNav[0];
 
   return (
@@ -47,7 +50,7 @@ export function TopBar({
       >
         {/* Below md the persistent sidebar is gone, so the same navigation is
             reachable from a drawer, and the brand lives here. */}
-        <NavDrawer account={account} />
+        <NavDrawer account={account} role={role} />
         <Link href="/dashboard" className="rounded-md md:hidden">
           <Logo />
         </Link>

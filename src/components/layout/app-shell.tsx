@@ -5,6 +5,7 @@ import { MobileNav } from "@/components/layout/mobile-nav";
 import { Sidebar } from "@/components/layout/sidebar";
 import { TopBar } from "@/components/layout/top-bar";
 import { displayName, requireSessionContext } from "@/lib/auth";
+
 import { cn } from "@/lib/utils";
 
 /**
@@ -18,6 +19,12 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
   // Read on the server so the first paint is already the right width.
   const collapsed = (await cookies()).get("sf-sidebar")?.value === "collapsed";
 
+  // The ROLE crosses the server/client boundary, not the nav array: every
+  // NavItem carries an `icon`, and a component is a function, which React
+  // refuses to serialise into a Client Component's props. The client resolves
+  // the items itself from this string.
+  const role = session.profile?.role ?? "student";
+
   const account: AccountSummary = {
     name: displayName(session),
     email: session.user.email ?? "",
@@ -26,10 +33,14 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-dvh bg-background">
-      <Sidebar defaultCollapsed={collapsed} />
+      <Sidebar defaultCollapsed={collapsed} role={role} />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar timezone={session.profile?.timezone ?? "UTC"} account={account} />
+        <TopBar
+          timezone={session.profile?.timezone ?? "UTC"}
+          account={account}
+          role={role}
+        />
 
         <main id="main" className="flex-1 pb-24 md:pb-0">
           {children}

@@ -9,7 +9,7 @@ import { AccountMenu, type AccountSummary } from "@/components/layout/account-me
 import { LogoMark } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { isNavItemActive, primaryNav, secondaryNav, type NavItem } from "@/lib/nav";
+import { isNavItemActive, primaryNav, secondaryNavFor, type NavItem } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 /**
@@ -24,7 +24,14 @@ import { cn } from "@/lib/utils";
  * This makes the full navigation reachable at every width. The trigger lives
  * in the top bar and is hidden from `md` up, where the real sidebar exists.
  */
-export function NavDrawer({ account }: { account: AccountSummary }) {
+export function NavDrawer({
+  account,
+  role,
+}: {
+  account: AccountSummary;
+  role: string;
+}) {
+  const secondaryItems = secondaryNavFor(role);
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -95,7 +102,7 @@ export function NavDrawer({ account }: { account: AccountSummary }) {
 
             <div className="my-4 h-px bg-sidebar-border" />
 
-            {secondaryNav.map((item) => (
+            {secondaryItems.map((item) => (
               <DrawerLink
                 key={item.href}
                 item={item}
