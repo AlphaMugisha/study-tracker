@@ -30,7 +30,7 @@ export function CurrentActivityCard({ state }: { state: TimetableState }) {
     case "gap":
       return (
         <QuietPanel eyebrow="Currently" icon={Coffee} title="You're free right now">
-          <p className="mt-2 text-[15px] text-ink-muted">
+          <p className="mt-3 max-w-[46ch] text-[15px] leading-relaxed text-ink-muted">
             Nothing is timetabled until {state.next.label} at{" "}
             <span data-numeric>{state.next.startLabel}</span>.
           </p>
@@ -44,7 +44,7 @@ export function CurrentActivityCard({ state }: { state: TimetableState }) {
           icon={Sunrise}
           title="School hasn't started yet"
         >
-          <p className="mt-2 text-[15px] text-ink-muted">
+          <p className="mt-3 max-w-[46ch] text-[15px] leading-relaxed text-ink-muted">
             First up is {state.next.label} at{" "}
             <span data-numeric>{state.next.startLabel}</span>, in{" "}
             {formatDuration(state.startsInMinutes)}.
@@ -59,7 +59,7 @@ export function CurrentActivityCard({ state }: { state: TimetableState }) {
           icon={MoonStar}
           title="School is done for today"
         >
-          <p className="mt-2 text-[15px] text-ink-muted">
+          <p className="mt-3 max-w-[46ch] text-[15px] leading-relaxed text-ink-muted">
             You finished at <span data-numeric>{state.lastEntry.endLabel}</span>. Your
             plan for home is below.
           </p>
@@ -74,7 +74,7 @@ export function CurrentActivityCard({ state }: { state: TimetableState }) {
             state.reason === "weekend" ? "No school today" : "Nothing timetabled today"
           }
         >
-          <p className="mt-2 text-[15px] text-ink-muted">
+          <p className="mt-3 max-w-[46ch] text-[15px] leading-relaxed text-ink-muted">
             {state.reason === "weekend"
               ? "Enjoy the weekend. Homework due next week is below."
               : "There are no lessons on your timetable for today."}
@@ -83,15 +83,13 @@ export function CurrentActivityCard({ state }: { state: TimetableState }) {
       );
     case "no_timetable":
       return (
-        <section className="rounded-xl border border-dashed border-border bg-card/60 p-6 sm:p-10">
-          <div className="flex items-center gap-2">
-            <CalendarPlus aria-hidden="true" className="size-3.5 text-ink-subtle" />
-            <Eyebrow>Currently</Eyebrow>
+        <section className="rounded-xl border border-dashed border-border p-7 sm:p-10">
+          <div className="flex items-center gap-2.5">
+            <CalendarPlus aria-hidden="true" className="size-3.5 text-indigo-ink" />
+            <Eyebrow tone="accent">Currently</Eyebrow>
           </div>
-          <h2 className="mt-4 text-[1.75rem] font-semibold tracking-[-0.02em] text-ink">
-            No timetable yet
-          </h2>
-          <p className="mt-2 max-w-md text-[15px] leading-6 text-ink-muted">
+          <h2 className="mt-6 text-hero text-balance text-ink">No timetable yet.</h2>
+          <p className="mt-3 max-w-[46ch] text-[15px] leading-relaxed text-ink-muted">
             Add your school timetable and this card will tell you what you&apos;re
             doing, what&apos;s next, and how long is left.
           </p>
@@ -128,25 +126,18 @@ function LivePanel({
       )}
     >
       <div className="p-7 sm:p-10">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between sm:gap-10">
+        <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between sm:gap-12">
           {/* what */}
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1",
-                  "text-eyebrow uppercase",
-                  resting ? "bg-white/10" : "bg-white/15",
-                )}
-              >
+            {/* A tracked label rather than a filled pill: on a panel that is
+                already solid colour, a chip is a second box inside a box. */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <span className="inline-flex items-center gap-2 text-eyebrow uppercase opacity-80">
                 <Icon aria-hidden="true" className="size-3" />
-                {/* The brief's word, not the reference's "SCHOOL IN SESSION" —
-                    the panel colour and the big label already say what kind of
-                    activity it is. */}
                 {resting ? "Currently · Break" : "Currently"}
               </span>
               <span
-                className="inline-flex items-center gap-1.5 text-[13px] opacity-80"
+                className="inline-flex items-center gap-1.5 text-[13px] opacity-70"
                 data-numeric
               >
                 <Clock aria-hidden="true" className="size-3.5" />
@@ -154,25 +145,24 @@ function LivePanel({
               </span>
             </div>
 
-            <h2
-              id="current-activity-heading"
-              className="mt-5 text-hero font-semibold"
-            >
+            <h2 id="current-activity-heading" className="mt-6 text-hero text-balance">
               {current.label}
             </h2>
             {current.detail ? (
-              <p className="mt-1.5 text-[15px] opacity-75">{current.detail}</p>
+              <p className="mt-2.5 text-[15px] opacity-75">{current.detail}</p>
             ) : null}
 
             {next ? (
               <p
                 className={cn(
-                  "mt-5 inline-flex items-center gap-2 rounded-full px-3 py-1.5",
-                  "text-[12px] font-medium uppercase tracking-[0.06em]",
-                  resting ? "bg-white/10" : "bg-white/12",
+                  "mt-7 border-t pt-4 text-[13px] opacity-75",
+                  resting ? "border-white/15" : "border-hero-line",
                 )}
               >
-                Then {next.label} at <span data-numeric>{next.startLabel}</span>
+                Then {next.label} at{" "}
+                <span data-numeric className="font-medium opacity-100">
+                  {next.startLabel}
+                </span>
               </p>
             ) : null}
           </div>
@@ -180,20 +170,22 @@ function LivePanel({
           {/* how long */}
           <div className="shrink-0 sm:text-right">
             <p className="text-eyebrow uppercase opacity-65">Ends in</p>
-            <p className="mt-1 flex items-baseline gap-1.5 sm:justify-end" data-numeric>
+            <p className="mt-3 flex items-baseline gap-2 sm:justify-end" data-numeric>
               <span className="text-count">{remainingMinutes}</span>
-              <span className="text-lg font-medium opacity-70">min</span>
+              <span className="text-lg font-medium opacity-60">min</span>
             </p>
-            <div className="mt-5">
+            <div className="mt-7">
+              {/* Outlined, not filled: a solid white button on a solid colour
+                  panel fights the headline for the eye. */}
               <Button
                 asChild
                 size="lg"
-                className={cn(
-                  "w-full sm:w-auto",
-                  resting
-                    ? "bg-hero-rest-foreground text-hero-rest hover:bg-hero-rest-foreground/90"
-                    : "bg-white text-hero hover:bg-white/90",
-                )}
+                variant="outline"
+                // The dark: variants must be overridden at their own level:
+                // the outline variant sets dark:bg-input/30, which would
+                // otherwise win over a plain bg-transparent and drop a grey
+                // button onto the indigo panel.
+                className="w-full border-white/30 bg-transparent text-current hover:border-white/60 hover:bg-white/10 dark:border-white/30 dark:bg-transparent dark:hover:bg-white/10 sm:w-auto"
               >
                 <Link href="/timetable">
                   View timetable <ArrowRight aria-hidden="true" />
@@ -255,13 +247,11 @@ function QuietPanel({
 }) {
   return (
     <section className="rounded-xl border border-border bg-card p-7 sm:p-10">
-      <div className="flex items-center gap-2">
-        <Icon aria-hidden="true" className="size-3.5 text-ink-subtle" />
-        <Eyebrow>{eyebrow}</Eyebrow>
+      <div className="flex items-center gap-2.5">
+        <Icon aria-hidden="true" className="size-3.5 text-indigo-ink" />
+        <Eyebrow tone="accent">{eyebrow}</Eyebrow>
       </div>
-      <h2 className="mt-4 text-[1.75rem] font-semibold leading-tight tracking-[-0.02em] text-ink sm:text-[2rem]">
-        {title}
-      </h2>
+      <h2 className="mt-6 text-hero text-balance text-ink">{title}</h2>
       {children}
     </section>
   );
@@ -269,7 +259,7 @@ function QuietPanel({
 
 function QuietFooter({ next }: { next: ResolvedEntry | null }) {
   return (
-    <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-5">
+    <div className="mt-7 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
       {next ? (
         <p className="text-sm text-ink-muted">
           Next: <span className="font-medium text-ink">{next.label}</span>

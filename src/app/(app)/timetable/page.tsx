@@ -5,6 +5,7 @@ import { CalendarPlus } from "lucide-react";
 import { PageContainer } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { Reveal } from "@/components/shared/reveal";
+import { BlockHeading } from "@/components/shared/surface";
 import { DaySchedule, WeekGrid } from "@/components/timetable/schedule";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -62,16 +63,16 @@ export default async function TimetablePage({
   return (
     <PageContainer>
       <PageHeader
-          eyebrow={version.name}
-          title="Your school week."
-          description="Lessons, breaks and everything else, day by day or all at once."
-          action={
-            <div className="inline-flex rounded-lg border border-border bg-card p-1">
-              <ViewTab href="/timetable" active={view === "day"} label="Day" />
-              <ViewTab href="/timetable?view=week" active={view === "week"} label="Week" />
-            </div>
-          }
-        />
+        eyebrow={version.name}
+        title="Your school week."
+        description="Lessons, breaks and everything else, day by day or all at once."
+        action={
+          <div className="inline-flex rounded-lg border border-border bg-card p-1">
+            <ViewTab href="/timetable" active={view === "day"} label="Day" />
+            <ViewTab href="/timetable?view=week" active={view === "week"} label="Week" />
+          </div>
+        }
+      />
 
       {view === "day" ? (
         <Reveal index={1}>
@@ -96,7 +97,7 @@ export default async function TimetablePage({
                     <span className="sm:hidden">{DAY_SHORT[day]}</span>
                     <span className="hidden sm:inline">{DAY_NAMES[day]}</span>
                     {day === todayIndex ? (
-                      <span className="ml-1.5 text-[11px] text-sage">•</span>
+                      <span className="ml-1.5 text-[11px] text-indigo-ink">•</span>
                     ) : null}
                   </Link>
                 );
@@ -104,11 +105,16 @@ export default async function TimetablePage({
             </div>
           </div>
 
-          <h2 className="sr-only">{DAY_NAMES[selectedDay]}</h2>
+          <BlockHeading
+            eyebrow={selectedDay === todayIndex ? "Today" : "Selected day"}
+            title={`${DAY_NAMES[selectedDay]}.`}
+            count={dayEntries.length}
+          />
           <DaySchedule entries={dayEntries} />
         </Reveal>
       ) : (
         <Reveal index={1}>
+          <BlockHeading eyebrow="All five days" title="The whole week." />
           <WeekGrid entries={entries} today={todayIndex} />
         </Reveal>
       )}

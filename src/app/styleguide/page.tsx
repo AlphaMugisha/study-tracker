@@ -370,10 +370,10 @@ export default function StyleguidePage() {
 
           <div className="mt-6 flex flex-wrap gap-4">
             {[
-              ["rounded-sm", "6px · buttons"],
-              ["rounded-md", "8px · inputs"],
-              ["rounded-lg", "10px · cards"],
-              ["rounded-xl", "14px · rare"],
+              ["rounded-md", "6px · small controls"],
+              ["rounded-lg", "8px · buttons, inputs, nav"],
+              ["rounded-xl", "12px · cards and panels"],
+              ["rounded-2xl", "16px · rare"],
             ].map(([cls, label]) => (
               <div key={cls} className="text-center">
                 <div
