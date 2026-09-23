@@ -240,6 +240,9 @@ try {
     // open, so asserting the field labels here would be testing the library.
     ["/timetable", ["Add to timetable", "Edit ", "Remove "]],
     ["/dashboard", ["Open navigation"]],
+    // The header's role slot. A student with no pending request sees nothing
+    // there, which is the point — so assert the absence, not a chip.
+    ["/dashboard", ["Ctrl K"]],
     // The sidebar must render unconditionally. `hidden` on the <aside> is the
     // bug that kept coming back, so assert its absence rather than its
     // presence in some breakpoint we happen to be thinking about.

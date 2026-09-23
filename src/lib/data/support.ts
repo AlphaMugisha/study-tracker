@@ -146,3 +146,44 @@ export function activityTone(
   if (type.startsWith("support_access")) return "danger";
   return "pause";
 }
+
+/**
+ * A one-query summary for the app shell.
+ *
+ * The header renders on every page, so this deliberately does not reuse
+ * `getLinksAsAdmin`/`getLinksAsStudent` — those each make a second round trip
+ * to resolve names, which the header does not need.
+ *
+ * Both sides come from the same rows: the SELECT policy returns links where
+ * you are either the admin or the student, so one read answers "how many
+ * students can I see" and "is anyone asking to see me".
+ */
+export async function getSupportSummary(): Promise<{
+  /** Active links where the caller is the support account. */
+  studentsVisible: number;
+  /** Requests awaiting the caller's own decision. */
+  pendingForMe: number;
+}> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { studentsVisible: 0, pendingForMe: 0 };
+
+  const { data } = await supabase
+    .from("admin_student_links")
+    .select("admin_id, student_id, status, revoked_at");
+
+  const rows = (data ?? []) as Array<{
+    admin_id: string;
+    student_id: string;
+    status: LinkStatus;
+    revoked_at: string | null;
+  }>;
+
+  return {
+    studentsVisible: rows.filter((r) => r.admin_id === user.id && isLive(r)).length,
+    pendingForMe: rows.filter((r) => r.student_id === user.id && r.status === "pending")
+      .length,
+  };
+}

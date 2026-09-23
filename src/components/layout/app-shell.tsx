@@ -4,6 +4,7 @@ import type { AccountSummary } from "@/components/layout/account-menu";
 import { Sidebar } from "@/components/layout/sidebar";
 import { TopBar } from "@/components/layout/top-bar";
 import { displayName, requireSessionContext } from "@/lib/auth";
+import { getSupportSummary } from "@/lib/data/support";
 
 import { cn } from "@/lib/utils";
 
@@ -15,7 +16,10 @@ import { cn } from "@/lib/utils";
  *   where the rail shows icons only.
  */
 export async function AppShell({ children }: { children: React.ReactNode }) {
-  const session = await requireSessionContext();
+  const [session, support] = await Promise.all([
+    requireSessionContext(),
+    getSupportSummary(),
+  ]);
   // Read on the server so the first paint is already the right width.
   const collapsed = (await cookies()).get("sf-sidebar")?.value === "collapsed";
 
@@ -40,6 +44,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           timezone={session.profile?.timezone ?? "UTC"}
           account={account}
           role={role}
+          support={support}
         />
 
         <main id="main" className="flex-1">

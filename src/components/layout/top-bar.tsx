@@ -7,9 +7,9 @@ import { Search, Settings } from "lucide-react";
 import { AccountMenu, type AccountSummary } from "@/components/layout/account-menu";
 import { CommandPalette, useCommandPalette } from "@/components/layout/command-palette";
 import { useScrolled } from "@/components/layout/use-scrolled";
+import { HeaderSupport } from "@/components/layout/header-support";
 import { LiveClock } from "@/components/layout/live-clock";
 import { NavDrawer } from "@/components/layout/nav-drawer";
-import { Logo } from "@/components/layout/logo";
 import { isNavItemActive, primaryNav, secondaryNavFor } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
@@ -22,10 +22,12 @@ export function TopBar({
   timezone,
   account,
   role,
+  support,
 }: {
   timezone: string;
   account: AccountSummary;
   role: string;
+  support: { studentsVisible: number; pendingForMe: number };
 }) {
   const secondaryItems = secondaryNavFor(role);
   const pathname = usePathname();
@@ -51,12 +53,10 @@ export function TopBar({
             : "border-b border-border/60 bg-background/40 backdrop-blur-sm",
         )}
       >
-        {/* Below md the persistent sidebar is gone, so the same navigation is
-            reachable from a drawer, and the brand lives here. */}
+        {/* The rail below md shows icons only, so the drawer stays available
+            there for labelled navigation. The brand is not repeated here —
+            the rail carries it at every width now. */}
         <NavDrawer account={account} role={role} />
-        <Link href="/dashboard" className="rounded-md sm:hidden">
-          <Logo />
-        </Link>
         <span className="hidden shrink-0 text-section text-ink md:block">{current.label}</span>
 
         <button
@@ -80,6 +80,12 @@ export function TopBar({
           >
             <Search aria-hidden="true" className="size-5" />
           </button>
+
+          <HeaderSupport
+            role={role}
+            studentsVisible={support.studentsVisible}
+            pendingForMe={support.pendingForMe}
+          />
 
           <LiveClock timezone={timezone} />
 
