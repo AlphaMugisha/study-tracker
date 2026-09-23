@@ -41,10 +41,25 @@ export const adminNav: NavItem[] = [
   { href: "/admin", label: "Students", icon: Users },
 ];
 
-/** The secondary items for a given role. */
-export function secondaryNavFor(role: string | undefined): NavItem[] {
-  return role === "admin" ? [...adminNav, ...secondaryNav] : secondaryNav;
+/**
+ * A support account's own Timetable, Homework and Home plan are empty by
+ * definition — they are a parent, not a student, and those pages describe a
+ * school day they do not have. Showing four links to nothing makes the app
+ * look broken rather than focused.
+ *
+ * So the parent gets two destinations: Today, which is about the child, and
+ * Students. Everything they can actually do lives in those.
+ */
+export function primaryNavFor(role: string | undefined): NavItem[] {
+  if (role !== "admin") return primaryNav;
+  return [
+    { href: "/dashboard", label: "Today", icon: Sun },
+    ...adminNav,
+  ];
 }
+
+// There is no `secondaryNavFor`: Settings is the only secondary item and both
+// roles get it. A parent's Students link is primary, not secondary.
 
 /** `/timetable/upload` should still light up the "Timetable" tab. */
 export function isNavItemActive(pathname: string, href: string): boolean {

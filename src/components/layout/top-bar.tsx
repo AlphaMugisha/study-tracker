@@ -10,7 +10,7 @@ import { useScrolled } from "@/components/layout/use-scrolled";
 import { HeaderSupport } from "@/components/layout/header-support";
 import { LiveClock } from "@/components/layout/live-clock";
 import { NavDrawer } from "@/components/layout/nav-drawer";
-import { isNavItemActive, primaryNav, secondaryNavFor } from "@/lib/nav";
+import { isNavItemActive, primaryNavFor, secondaryNav } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 /**
@@ -23,20 +23,24 @@ export function TopBar({
   account,
   role,
   support,
+  alongside,
 }: {
   timezone: string;
   account: AccountSummary;
   role: string;
   support: { studentsVisible: number; pendingForMe: number };
+  /** A second clock — the student a parent is watching. */
+  alongside?: { label: string; timezone: string } | null;
 }) {
-  const secondaryItems = secondaryNavFor(role);
+  const primaryItems = primaryNavFor(role);
+  const secondaryItems = secondaryNav;
   const pathname = usePathname();
   const { open, setOpen } = useCommandPalette();
   const scrolled = useScrolled();
 
   const current =
-    [...primaryNav, ...secondaryItems].find((item) => isNavItemActive(pathname, item.href)) ??
-    primaryNav[0];
+    [...primaryItems, ...secondaryItems].find((item) => isNavItemActive(pathname, item.href)) ??
+    primaryItems[0];
 
   return (
     <>
@@ -87,7 +91,7 @@ export function TopBar({
             pendingForMe={support.pendingForMe}
           />
 
-          <LiveClock timezone={timezone} />
+          <LiveClock timezone={timezone} alongside={alongside} />
 
           <Link
             href="/settings"

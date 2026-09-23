@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { toResolvedEntry } from "@/lib/timetable/resolve-temporary";
+import { toResolvedEntry } from "@/lib/timetable/to-resolved-entry";
 import type { ResolvedEntry } from "@/lib/timetable/types";
 import type { Subject, TimetableVersion } from "@/types/database";
 

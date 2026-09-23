@@ -4,7 +4,10 @@ import type { AccountSummary } from "@/components/layout/account-menu";
 import { Sidebar } from "@/components/layout/sidebar";
 import { TopBar } from "@/components/layout/top-bar";
 import { displayName, requireSessionContext } from "@/lib/auth";
+import { SchoolDayProvider } from "@/components/school-day/school-day-provider";
 import { getSupportSummary } from "@/lib/data/support";
+import { getActiveTimetable } from "@/lib/data/timetable";
+import { clockIn, resolveNow } from "@/lib/timetable/resolve";
 
 import { cn } from "@/lib/utils";
 
@@ -16,9 +19,11 @@ import { cn } from "@/lib/utils";
  *   where the rail shows icons only.
  */
 export async function AppShell({ children }: { children: React.ReactNode }) {
-  const [session, support] = await Promise.all([
+  const [session, support, timetable] = await Promise.all([
     requireSessionContext(),
     getSupportSummary(),
+    // Cached, so the pages that also need this do not pay twice.
+    getActiveTimetable(),
   ]);
   // Read on the server so the first paint is already the right width.
   const collapsed = (await cookies()).get("sf-sidebar")?.value === "collapsed";
@@ -28,6 +33,15 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
   // refuses to serialise into a Client Component's props. The client resolves
   // the items itself from this string.
   const role = session.profile?.role ?? "student";
+  const timezone = session.profile?.timezone ?? "UTC";
+
+  /**
+   * Resolved on the server so the first paint already knows where she is,
+   * then re-resolved on a timer by the provider. Both use the STUDENT's
+   * timezone, never the host's — on Vercel those are different clocks.
+   */
+  const { minutes, dayOfWeek } = clockIn(timezone);
+  const initialState = resolveNow(timetable.entries, minutes, dayOfWeek);
 
   const account: AccountSummary = {
     name: displayName(session),
@@ -36,15 +50,23 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
   };
 
   return (
+    <SchoolDayProvider
+      entries={timetable.entries}
+      timezone={timezone}
+      // A support account is never locked: it is her school day, not theirs.
+      lockable={role !== "admin"}
+      initial={{ state: initialState, nowMinutes: minutes }}
+    >
     <div className="flex min-h-dvh bg-background">
       <Sidebar defaultCollapsed={collapsed} role={role} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar
-          timezone={session.profile?.timezone ?? "UTC"}
+          timezone={timezone}
           account={account}
           role={role}
           support={support}
+          alongside={support.watching}
         />
 
         <main id="main" className="flex-1">
@@ -53,6 +75,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
 
       </div>
     </div>
+    </SchoolDayProvider>
   );
 }
 

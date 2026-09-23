@@ -5,6 +5,7 @@ import { Activity, NotebookPen } from "lucide-react";
 import { PageContainer } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { ActivityFeed } from "@/components/admin/activity-feed";
+import { WeeklyReportCard } from "@/components/admin/weekly-report";
 import { OverdueBadge, PriorityBadge, StatusBadge, SubjectDot } from "@/components/shared/badges";
 import { ItemCard, ItemGrid } from "@/components/shared/item-card";
 import { Reveal } from "@/components/shared/reveal";
@@ -13,6 +14,7 @@ import { DayStats } from "@/components/today/sections";
 import { EmptyState } from "@/components/ui/empty-state";
 import { requireSessionContext } from "@/lib/auth";
 import { byUrgency, groupAssignments } from "@/lib/tasks/ordering";
+import { getWeeklyReport } from "@/lib/data/report";
 import { getActivityFeed, getLinksAsAdmin, isLive } from "@/lib/data/support";
 import { createClient } from "@/lib/supabase/server";
 import { formatDueLabel, formatOverdueLabel } from "@/lib/format";
@@ -51,13 +53,14 @@ export default async function StudentRecordPage({
   const now = new Date();
   const supabase = await createClient();
 
-  const [{ data: rows }, activity] = await Promise.all([
+  const [{ data: rows }, activity, report] = await Promise.all([
     supabase
       .from("assignments")
       .select("*, subjects(name, color_token)")
       .eq("user_id", studentId)
       .order("due_date"),
     getActivityFeed(studentId),
+    getWeeklyReport(studentId),
   ]);
 
   const assignments = ((rows ?? []) as never[]).map((row: Assignment & {
@@ -83,6 +86,10 @@ export default async function StudentRecordPage({
       />
 
       <Reveal>
+        <WeeklyReportCard report={report} name={link.counterpartName ?? "This student"} />
+      </Reveal>
+
+      <Reveal index={1} className="mt-rhythm block">
         <DayStats
           stats={[
             {

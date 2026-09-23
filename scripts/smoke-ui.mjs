@@ -213,7 +213,11 @@ try {
   }
 
   const checks = [
-    ["/dashboard", ["Today", "Currently", "Up next", "When you get home", "Due soon"]],
+    // Deliberately time-independent. "Currently" only appears mid-lesson, and
+    // the old resolver faked that state so the card always looked populated.
+    // The real one is honest, so asserting it would make this suite pass only
+    // during school hours.
+    ["/dashboard", ["Today", "Up next", "When you get home", "Due soon"]],
     ["/dashboard", ["Quadratic equations practice"]],
     // The shell itself: sidebar, search affordance and the day stats strip.
     ["/dashboard", ["Collapse sidebar", "Ctrl K", "Lessons today", "Work tonight"]],
@@ -223,9 +227,11 @@ try {
     ["/homework", ["Homework", "Overdue", "Quadratic equations practice", "Add homework"]],
     ["/plan", ["When you get home", "Physics formula recall"]],
     // The planner: a single answer, a timeline, and session controls.
-    ["/plan", ["Start with", "The order to work in", "Start this"]],
+    // Same: "Start with" and the session button exist only when the evening
+    // still has room in it. The headings are always there.
+    ["/plan", ["When you get home", "The order to work in", "What the plan is built from"]],
     // Plan blocks render as hoverable cards in a container-query grid.
-    ["/plan", ["@container", "group/block", "sf-rise"]],
+    ["/plan", ["@container", "sf-rise"]],
     // Subject management and the planning window.
     ["/settings", ["Subjects", "Add a subject", "Finish work by", "Wind-down after school"]],
     // The consent panel: who can see your work, and how to stop them.

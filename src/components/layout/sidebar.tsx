@@ -6,7 +6,12 @@ import { useState } from "react";
 import { PanelLeft, Plus } from "lucide-react";
 
 import { LogoMark } from "@/components/layout/logo";
-import { isNavItemActive, primaryNav, secondaryNavFor, type NavItem } from "@/lib/nav";
+import {
+  isNavItemActive,
+  primaryNavFor,
+  secondaryNav,
+  type NavItem,
+} from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 /**
@@ -39,7 +44,8 @@ export function Sidebar({
    *  the server/client props boundary. */
   role: string;
 }) {
-  const secondaryItems = secondaryNavFor(role);
+  const primaryItems = primaryNavFor(role);
+  const secondaryItems = secondaryNav;
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
@@ -95,7 +101,10 @@ export function Sidebar({
         </button>
       </div>
 
-      {/* primary action */}
+      {/* primary action. A support account cannot create homework — RLS
+          refuses it — so showing the button would be offering something the
+          database will decline. */}
+      {role !== "admin" ? (
       <div className={cn("px-3 pb-5", !collapsed && "md:px-4")}>
         <Link
           href="/homework?new=1"
@@ -111,12 +120,13 @@ export function Sidebar({
           <span className={cn("sr-only", !collapsed && "md:hidden")}>Add homework</span>
         </Link>
       </div>
+      ) : null}
 
       <nav
         aria-label="Main"
         className={cn("flex flex-1 flex-col gap-1.5 px-3", !collapsed && "md:px-4")}
       >
-        {primaryNav.map((item) => (
+        {primaryItems.map((item) => (
           <SidebarLink
             key={item.href}
             item={item}

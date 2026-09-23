@@ -161,13 +161,19 @@ export type SupportSummary = {
   studentsVisible: number;
   /** Requests awaiting the caller's own decision. */
   pendingForMe: number;
+  /**
+   * The single student a support account is watching, for the second clock in
+   * the header. Null when there is no link, or more than one — a parent with
+   * two children in two zones needs a real picker, not a guess.
+   */
+  watching: { label: string; timezone: string } | null;
 };
 
 export const getSupportSummary = cache(async function getSupportSummary(): Promise<SupportSummary> {
   // The cached user, not another `auth.getUser()` — this runs in the app
   // shell on every page, so a second round trip here is paid everywhere.
   const [supabase, user] = await Promise.all([createClient(), getUser()]);
-  if (!user) return { studentsVisible: 0, pendingForMe: 0 };
+  if (!user) return { studentsVisible: 0, pendingForMe: 0, watching: null };
 
   const { data } = await supabase
     .from("admin_student_links")
@@ -180,9 +186,29 @@ export const getSupportSummary = cache(async function getSupportSummary(): Promi
     revoked_at: string | null;
   }>;
 
+  const mine = rows.filter((r) => r.admin_id === user.id && isLive(r));
+
+  // Only when there is exactly one: with two children the header cannot show
+  // both clocks without becoming a departures board.
+  let watching: SupportSummary["watching"] = null;
+  if (mine.length === 1) {
+    const { data: p } = await supabase
+      .from("profiles")
+      .select("full_name, timezone")
+      .eq("id", mine[0].student_id)
+      .maybeSingle();
+    if (p) {
+      watching = {
+        label: p.full_name.split(/\s+/)[0] ?? p.full_name,
+        timezone: p.timezone,
+      };
+    }
+  }
+
   return {
-    studentsVisible: rows.filter((r) => r.admin_id === user.id && isLive(r)).length,
+    studentsVisible: mine.length,
     pendingForMe: rows.filter((r) => r.student_id === user.id && r.status === "pending")
       .length,
+    watching,
   };
 });

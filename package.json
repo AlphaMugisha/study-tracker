@@ -18,7 +18,9 @@
     "test:planner": "node --import ./scripts/alias-hook.mjs --test scripts/test-planner.mjs",
     "password": "node --env-file-if-exists=.env.local scripts/set-password.mjs",
     "perf": "node --env-file-if-exists=.env.local scripts/perf.mjs",
-    "truncate": "node --env-file-if-exists=.env.local scripts/truncate.mjs"
+    "truncate": "node --env-file-if-exists=.env.local scripts/truncate.mjs",
+    "test:resolve": "node --import ./scripts/alias-hook.mjs --test scripts/test-resolve.mjs",
+    "test": "npm run test:planner && npm run test:resolve"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

@@ -9,7 +9,12 @@ import { AccountMenu, type AccountSummary } from "@/components/layout/account-me
 import { LogoMark } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { isNavItemActive, primaryNav, secondaryNavFor, type NavItem } from "@/lib/nav";
+import {
+  isNavItemActive,
+  primaryNavFor,
+  secondaryNav,
+  type NavItem,
+} from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 /**
@@ -31,7 +36,8 @@ export function NavDrawer({
   account: AccountSummary;
   role: string;
 }) {
-  const secondaryItems = secondaryNavFor(role);
+  const primaryItems = primaryNavFor(role);
+  const secondaryItems = secondaryNav;
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -79,6 +85,7 @@ export function NavDrawer({
             </Button>
           </div>
 
+          {role !== "admin" ? (
           <div className="px-4 pb-5">
             <Link
               href="/homework?new=1"
@@ -89,9 +96,10 @@ export function NavDrawer({
               Add homework
             </Link>
           </div>
+          ) : null}
 
           <nav aria-label="All pages" className="flex flex-col gap-1.5 px-4">
-            {primaryNav.map((item) => (
+            {primaryItems.map((item) => (
               <DrawerLink
                 key={item.href}
                 item={item}

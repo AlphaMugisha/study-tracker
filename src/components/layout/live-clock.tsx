@@ -27,7 +27,19 @@ function subscribe(onChange: () => void) {
 const getSnapshot = () => Math.floor(Date.now() / BUCKET_MS);
 const getServerSnapshot = () => null;
 
-export function LiveClock({ timezone }: { timezone: string }) {
+export function LiveClock({
+  timezone,
+  /**
+   * A second clock, labelled. A parent's own time is rarely the question —
+   * "what time is it where she is" is — so when the two differ, both are
+   * shown. When they are the same zone, a second identical clock would be
+   * noise, so it is not rendered.
+   */
+  alongside,
+}: {
+  timezone: string;
+  alongside?: { label: string; timezone: string } | null;
+}) {
   const tick = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const parts =
@@ -60,19 +72,48 @@ export function LiveClock({ timezone }: { timezone: string }) {
   // Just the city, not the whole IANA path.
   const place = timezone.split("/").pop()?.replace(/_/g, " ") ?? timezone;
 
+  const other =
+    alongside && alongside.timezone !== timezone && tick !== null
+      ? (() => {
+          try {
+            return new Intl.DateTimeFormat("en-GB", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hourCycle: "h23",
+              timeZone: alongside.timezone,
+            }).format(new Date());
+          } catch {
+            return null;
+          }
+        })()
+      : null;
+
   return (
-    <span
-      className="inline-flex items-center gap-2.5 text-[0.85rem] text-ink-muted"
-      title={place}
-    >
+    <span className="inline-flex items-center gap-2.5 text-[0.85rem] text-ink-muted">
       <Globe aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" />
       {/* The date only appears where there is room. On the dashboard it is
           already the page's eyebrow; everywhere else this is the only place
           that answers "what day is it". */}
-      <span className="hidden xl:inline">{parts?.date ?? "---"}</span>
-      <span className="font-medium text-ink" data-numeric>
+      <span className="hidden xl:inline" title={place}>
+        {parts?.date ?? "---"}
+      </span>
+      <span className="font-medium text-ink" data-numeric title={place}>
         {parts?.time ?? "--:--"}
       </span>
+
+      {other && alongside ? (
+        <>
+          <span aria-hidden="true" className="text-ink-subtle">
+            ·
+          </span>
+          <span className="inline-flex items-center gap-1.5" title={alongside.timezone}>
+            <span className="hidden text-ink-subtle sm:inline">{alongside.label}</span>
+            <span className="font-medium text-lesson-ink" data-numeric>
+              {other}
+            </span>
+          </span>
+        </>
+      ) : null}
     </span>
   );
 }

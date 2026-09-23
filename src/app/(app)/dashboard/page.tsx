@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 
 import { PageContainer } from "@/components/layout/app-shell";
+import { SupportDashboard } from "@/components/admin/support-dashboard";
 import { Reveal, RevealWords } from "@/components/shared/reveal";
 import { Block, BlockHeading, Eyebrow } from "@/components/shared/surface";
-import { CurrentActivityCard } from "@/components/today/current-activity-card";
+import { LiveActivity } from "@/components/today/live-activity";
+import { SchoolLockBanner, SchoolLocked } from "@/components/school-day/school-lock";
 import {
   DayStats,
   DueSoonList,
@@ -17,13 +19,23 @@ import { getActiveTimetable } from "@/lib/data/timetable";
 import { byUrgency, getAssignments, getRevisionTasks, groupAssignments } from "@/lib/data/tasks";
 import { firstNameOf, formatFullDate, greeting } from "@/lib/format";
 import { buildEveningPlan, timeToMinutesSafe } from "@/lib/planner/build-plan";
-import { resolveTemporary } from "@/lib/timetable/resolve-temporary";
-import { formatDurationCompact, toDayOfWeek } from "@/lib/timetable/types";
+import { clockIn, resolveNow } from "@/lib/timetable/resolve";
+import { formatDurationCompact } from "@/lib/timetable/types";
 
 export const metadata: Metadata = { title: "Today" };
 
 export default async function TodayPage() {
   const session = await requireSessionContext();
+
+  /**
+   * A support account gets a different dashboard entirely.
+   *
+   * Showing a parent the student view means showing them their own empty
+   * timetable and their own homework, of which they have none — a page about
+   * nobody. What they actually opened the app for is the child.
+   */
+  if (session.profile?.role === "admin") return <SupportDashboard session={session} />;
+
   const now = new Date();
 
   const [{ entries }, assignments, revision] = await Promise.all([
@@ -33,16 +45,13 @@ export default async function TodayPage() {
   ]);
 
   /**
-   * TEMPORARY: Phase 3B replaces this single call with `resolveNow()`, which
-   * resolves in the student's timezone and drives a live countdown. The page
-   * below does not change — it already renders a `TimetableState`.
-   *
-   * `demoFallback` keeps the card populated outside school hours so the
-   * interface can be reviewed at any time of day.
+   * Her clock, not the server's. On Vercel those are different, and a
+   * dashboard that says "you are in Maths" against the host's timezone is
+   * worse than one that says nothing.
    */
-  const state = resolveTemporary(entries, now, { demoFallback: true });
-
-  const today = toDayOfWeek(now);
+  const timezone = session.profile?.timezone ?? "UTC";
+  const { minutes: nowMinutes, dayOfWeek: today } = clockIn(timezone);
+  const state = resolveNow(entries, nowMinutes, today);
   const todaysEntries = entries.filter((e) => e.dayOfWeek === today);
   const schoolEndsMinutes =
     todaysEntries.length > 0
@@ -55,7 +64,7 @@ export default async function TodayPage() {
     studyUntilMinutes: timeToMinutesSafe(session.profile?.study_until, 21 * 60),
     assignments,
     revision,
-    nowMinutes: now.getHours() * 60 + now.getMinutes(),
+    nowMinutes,
   });
   const groups = groupAssignments(assignments, now);
   const dueSoon = [...groups.overdue, ...groups.dueSoon].sort(byUrgency).slice(0, 5);
@@ -113,6 +122,8 @@ export default async function TodayPage() {
         </h1>
       </header>
 
+      <SchoolLockBanner />
+
       <Reveal>
         <DayStats
           stats={[
@@ -151,7 +162,8 @@ export default async function TodayPage() {
         <Block aria-label="Right now">
           <div className="grid gap-6 lg:gap-8 xl:grid-cols-12">
             <Reveal className="h-full xl:col-span-8">
-              <CurrentActivityCard state={state} />
+              {/* Live: re-resolves on a timer so the countdown counts down. */}
+            <LiveActivity initial={state} />
             </Reveal>
 
             {/* Beside the hero at xl; two across at sm; stacked on a phone. */}
@@ -166,6 +178,7 @@ export default async function TodayPage() {
           </div>
         </Block>
 
+        <SchoolLocked label="Your evening plan unlocks after school">
         <Block id="evening">
           <Reveal>
             <BlockHeading
@@ -196,6 +209,7 @@ export default async function TodayPage() {
             </Reveal>
           </div>
         </Block>
+        </SchoolLocked>
       </div>
 
     </PageContainer>
