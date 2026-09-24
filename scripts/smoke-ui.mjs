@@ -297,6 +297,26 @@ try {
     `HTTP ${asStudent.status} -> ${asStudent.location ?? "-"}`,
   );
 
+  // The report routes are new, so they get their own guard check rather than
+  // inheriting confidence from /admin — a route added later is exactly the
+  // one that gets forgotten.
+  const reportsIndex = await page("/admin/reports");
+  rec(
+    "a student is redirected away from /admin/reports",
+    reportsIndex.status === 307 && (reportsIndex.location ?? "").includes("/dashboard"),
+    `HTTP ${reportsIndex.status} -> ${reportsIndex.location ?? "-"}`,
+  );
+
+  // A student asking for their OWN daily report through the support route must
+  // still be turned away: that page is the support view, not a second copy of
+  // their dashboard.
+  const ownReports = await page(`/admin/${session.user.id}/reports`);
+  rec(
+    "a student cannot reach the support report view of themselves",
+    ownReports.status === 307 && (ownReports.location ?? "").includes("/dashboard"),
+    `HTTP ${ownReports.status} -> ${ownReports.location ?? "-"}`,
+  );
+
   // Signed out, the same pages must still bounce to /login.
   const guarded = await fetch(`${base}/dashboard`, { redirect: "manual" });
   rec(

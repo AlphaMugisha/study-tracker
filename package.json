@@ -20,8 +20,9 @@
     "perf": "node --env-file-if-exists=.env.local scripts/perf.mjs",
     "truncate": "node --env-file-if-exists=.env.local scripts/truncate.mjs",
     "test:resolve": "node --import ./scripts/alias-hook.mjs --test scripts/test-resolve.mjs",
-    "test": "npm run test:planner && npm run test:resolve && npm run test:presence",
-    "test:presence": "node --import ./scripts/alias-hook.mjs --test scripts/test-presence.mjs"
+    "test": "npm run test:planner && npm run test:resolve && npm run test:presence && npm run test:daily",
+    "test:presence": "node --import ./scripts/alias-hook.mjs --test scripts/test-presence.mjs",
+    "test:daily": "node --import ./scripts/alias-hook.mjs --test scripts/test-daily.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

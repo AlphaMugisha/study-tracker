@@ -207,6 +207,15 @@ export async function SupportDashboard({ session }: { session: SessionContext })
                   <Reveal>
                     <WeeklyReportCard report={report} name={name} />
                   </Reveal>
+                  <Reveal index={1}>
+                    <div className="flex justify-end">
+                      <Button asChild variant="outline">
+                        <Link href={`/admin/${link.student_id}/reports`}>
+                          Day by day <ArrowRight aria-hidden="true" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </Reveal>
                 </Block>
 
                 <Block id={`activity-${link.student_id}`}>

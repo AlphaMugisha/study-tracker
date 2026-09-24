@@ -1,6 +1,7 @@
 import {
   CalendarDays,
   ClipboardList,
+  FileText,
   HelpCircle,
   ListChecks,
   Settings,
@@ -45,6 +46,7 @@ export const secondaryNav: NavItem[] = [
  */
 export const adminNav: NavItem[] = [
   { href: "/admin", label: "Students", icon: Users },
+  { href: "/admin/reports", label: "Reports", icon: FileText },
 ];
 
 /**

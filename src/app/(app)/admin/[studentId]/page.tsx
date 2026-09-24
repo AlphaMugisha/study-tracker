@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Activity, NotebookPen } from "lucide-react";
+import { Activity, CalendarRange, NotebookPen } from "lucide-react";
 
 import { PageContainer } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
@@ -11,6 +12,7 @@ import { WeeklyReportCard } from "@/components/admin/weekly-report";
 import { HelpList, HelpMigrationNotice } from "@/components/help/help-list";
 import { Reveal } from "@/components/shared/reveal";
 import { Block, BlockHeading } from "@/components/shared/surface";
+import { Button } from "@/components/ui/button";
 import { DayStats } from "@/components/today/sections";
 import { EmptyState } from "@/components/ui/empty-state";
 import { requireSessionContext } from "@/lib/auth";
@@ -62,6 +64,14 @@ export default async function StudentRecordPage({
         eyebrow="Student record"
         title={`${snapshot.name}.`}
         description="Read-only. They can revoke your access at any time, and they can see that you have it."
+        action={
+          <Button asChild variant="outline">
+            <Link href={`/admin/${studentId}/reports`}>
+              <CalendarRange aria-hidden="true" />
+              Daily reports
+            </Link>
+          </Button>
+        }
       />
 
       <Reveal>
