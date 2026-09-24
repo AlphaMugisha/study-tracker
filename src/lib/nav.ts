@@ -73,3 +73,24 @@ export function primaryNavFor(role: string | undefined): NavItem[] {
 export function isNavItemActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
+
+/**
+ * Which single item is active, when more than one matches.
+ *
+ * `isNavItemActive` on its own is a prefix test, so `/admin/reports` matches
+ * both `/admin` and `/admin/reports` and the sidebar lights up two rows at
+ * once — which reads as a rendering fault rather than as navigation. The
+ * longest matching href wins, because the more specific destination is the
+ * one the reader is actually on.
+ *
+ * Callers pass every item they render, primary and secondary together: the
+ * winner has to be chosen across the whole nav, not within each group.
+ */
+export function activeHrefFor(pathname: string, items: NavItem[]): string | null {
+  let best: string | null = null;
+  for (const item of items) {
+    if (!isNavItemActive(pathname, item.href)) continue;
+    if (best === null || item.href.length > best.length) best = item.href;
+  }
+  return best;
+}

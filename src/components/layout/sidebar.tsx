@@ -7,7 +7,7 @@ import { PanelLeft, Plus } from "lucide-react";
 
 import { LogoMark } from "@/components/layout/logo";
 import {
-  isNavItemActive,
+  activeHrefFor,
   primaryNavFor,
   secondaryNav,
   type NavItem,
@@ -47,6 +47,10 @@ export function Sidebar({
   const primaryItems = primaryNavFor(role);
   const secondaryItems = secondaryNav;
   const pathname = usePathname();
+
+  // Chosen across both groups at once: the most specific destination wins, so
+  // /admin/reports does not light up Students as well.
+  const activeHref = activeHrefFor(pathname, [...primaryItems, ...secondaryItems]);
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
   const toggle = () => {
@@ -130,7 +134,7 @@ export function Sidebar({
           <SidebarLink
             key={item.href}
             item={item}
-            active={isNavItemActive(pathname, item.href)}
+            active={item.href === activeHref}
             collapsed={collapsed}
           />
         ))}
@@ -141,7 +145,7 @@ export function Sidebar({
           <SidebarLink
             key={item.href}
             item={item}
-            active={isNavItemActive(pathname, item.href)}
+            active={item.href === activeHref}
             collapsed={collapsed}
           />
         ))}

@@ -10,7 +10,7 @@ import { LogoMark } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
-  isNavItemActive,
+  activeHrefFor,
   primaryNavFor,
   secondaryNav,
   type NavItem,
@@ -39,6 +39,10 @@ export function NavDrawer({
   const primaryItems = primaryNavFor(role);
   const secondaryItems = secondaryNav;
   const pathname = usePathname();
+
+  // Chosen across both groups at once: the most specific destination wins, so
+  // /admin/reports does not light up Students as well.
+  const activeHref = activeHrefFor(pathname, [...primaryItems, ...secondaryItems]);
   const [open, setOpen] = useState(false);
 
   // Every link closes the drawer on click rather than an effect watching the
@@ -103,7 +107,7 @@ export function NavDrawer({
               <DrawerLink
                 key={item.href}
                 item={item}
-                active={isNavItemActive(pathname, item.href)}
+                active={item.href === activeHref}
                 onNavigate={close}
               />
             ))}
@@ -114,7 +118,7 @@ export function NavDrawer({
               <DrawerLink
                 key={item.href}
                 item={item}
-                active={isNavItemActive(pathname, item.href)}
+                active={item.href === activeHref}
                 onNavigate={close}
               />
             ))}

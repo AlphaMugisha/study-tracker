@@ -10,7 +10,7 @@ import { useScrolled } from "@/components/layout/use-scrolled";
 import { HeaderSupport } from "@/components/layout/header-support";
 import { LiveClock } from "@/components/layout/live-clock";
 import { NavDrawer } from "@/components/layout/nav-drawer";
-import { isNavItemActive, primaryNavFor, secondaryNav } from "@/lib/nav";
+import { activeHrefFor, primaryNavFor, secondaryNav } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 /**
@@ -35,11 +35,15 @@ export function TopBar({
   const primaryItems = primaryNavFor(role);
   const secondaryItems = secondaryNav;
   const pathname = usePathname();
+
+  // Chosen across both groups at once: the most specific destination wins, so
+  // /admin/reports does not light up Students as well.
+  const activeHref = activeHrefFor(pathname, [...primaryItems, ...secondaryItems]);
   const { open, setOpen } = useCommandPalette();
   const scrolled = useScrolled();
 
   const current =
-    [...primaryItems, ...secondaryItems].find((item) => isNavItemActive(pathname, item.href)) ??
+    [...primaryItems, ...secondaryItems].find((item) => item.href === activeHref) ??
     primaryItems[0];
 
   return (
