@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ImageUp, Info, Trash2 } from "lucide-react";
+import { AlertTriangle, ImageUp, Info, Trash2, Upload } from "lucide-react";
 
 import { Field, FormAlert, fieldA11yProps } from "@/components/auth/form-field";
 import { SubmitButton } from "@/components/auth/submit-button";
@@ -49,6 +49,9 @@ export function ImportWizard({
   const router = useRouter();
   const [rows, setRows] = useState<Row[] | null>(null);
   const [name, setName] = useState("My timetable");
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const [analysis, analyse] = useActionState<AnalyseState, FormData>(
     async (prev, formData) => {
@@ -90,51 +93,148 @@ export function ImportWizard({
           what was read.
         </p>
 
-        <form action={analyse} className="mt-9 grid gap-6" noValidate>
+        <form action={analyse} className="mt-9 grid gap-7" noValidate>
           {studentId ? <input type="hidden" name="studentId" value={studentId} /> : null}
           {analysis.formError ? <FormAlert>{analysis.formError}</FormAlert> : null}
 
-          <Field
-            id="classContext"
-            label="Which class?"
-            error={fieldErrors.classContext}
-            hint="As printed on the timetable"
-          >
-            <Input
-              {...fieldA11yProps("classContext", fieldErrors.classContext, "As printed on the timetable")}
-              name="classContext"
-              required
-              placeholder="S3 MCB"
-              className="h-11"
-            />
-            <p className="mt-2.5 text-[0.85rem] leading-relaxed text-ink-subtle">
-              School timetables usually cover every class at once. This is how
+          {/*
+            The long explanation sits OUTSIDE the Field, not inside it. Field
+            renders its hint after its children, so a paragraph passed as a
+            child pushes the hint to the bottom and leaves it stranded under
+            an unrelated block of text.
+          */}
+          <div>
+            <Field
+              id="classContext"
+              label="Which class is she in?"
+              error={fieldErrors.classContext}
+              hint="Exactly as it is printed on the timetable"
+            >
+              <Input
+                {...fieldA11yProps(
+                  "classContext",
+                  fieldErrors.classContext,
+                  "Exactly as it is printed on the timetable",
+                )}
+                name="classContext"
+                required
+                placeholder="S3 MCB"
+                className="h-11"
+              />
+            </Field>
+            <p className="mt-3 max-w-[54ch] text-[0.85rem] leading-relaxed text-ink-subtle">
+              A school timetable usually covers every class at once. This is how
               the reader knows which block of the grid is{" "}
               {studentName ? `${studentName}'s` : "yours"} — without it, it would
               be guessing.
             </p>
-          </Field>
+          </div>
 
-          <Field id="image" label="The timetable" error={fieldErrors.image}>
-            <Input
-              {...fieldA11yProps("image", fieldErrors.image)}
-              name="image"
-              type="file"
-              required
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              className="h-11 cursor-pointer py-2.5 file:mr-4 file:rounded-md file:border-0 file:bg-surface-raised file:px-3 file:py-1.5 file:text-[0.9rem] file:text-ink"
-            />
-            <p className="mt-2.5 text-[0.85rem] text-ink-subtle">
-              {`JPEG, PNG, WebP or GIF, under ${MAX_IMAGE_BYTES / 1_000_000}MB.`}{" "}
-              PDFs are not supported yet.
-            </p>
-          </Field>
+          <div>
+            <p className="mb-2.5 text-[13px] font-medium text-ink">The timetable</p>
 
-          <div className="flex justify-end gap-2">
+            {/*
+              A real target rather than the browser's "Choose File / no file
+              chosen", which is unstyleable past a point and reads as a hole in
+              the page. The input stays a real file input inside the label, so
+              the form posts normally and keyboard focus still works.
+            */}
+            <label
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragging(false);
+                const dropped = e.dataTransfer.files?.[0];
+                if (!dropped || !fileRef.current) return;
+                // Assigning the DataTransfer list is what makes a dropped file
+                // part of the form submission, not just of this component.
+                fileRef.current.files = e.dataTransfer.files;
+                setFileName(dropped.name);
+              }}
+              className={cn(
+                "flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-6 py-10 text-center",
+                "transition-colors duration-200 ease-out-flat",
+                dragging
+                  ? "border-brand bg-brand-soft"
+                  : fieldErrors.image
+                    ? "border-danger/50 bg-danger/5"
+                    : "border-border bg-surface-sunken hover:border-border-strong hover:bg-surface-raised",
+                "focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/40",
+              )}
+            >
+              <input
+                {...fieldA11yProps("image", fieldErrors.image)}
+                ref={fileRef}
+                name="image"
+                type="file"
+                required
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="sr-only"
+                onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
+              />
+
+              <span
+                className={cn(
+                  "grid size-12 place-items-center rounded-xl border border-border",
+                  fileName ? "bg-brand-soft" : "bg-card",
+                )}
+              >
+                <Upload
+                  aria-hidden="true"
+                  className={cn("size-5", fileName ? "text-brand-ink" : "text-ink-subtle")}
+                />
+              </span>
+
+              {fileName ? (
+                <>
+                  <span className="mt-4 max-w-full truncate text-body font-medium text-ink">
+                    {fileName}
+                  </span>
+                  <span className="mt-1.5 text-[0.85rem] text-ink-subtle">
+                    Click to choose a different one
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="mt-4 text-body font-medium text-ink">
+                    Choose a photo, or drop one here
+                  </span>
+                  <span className="mt-1.5 text-[0.85rem] text-ink-subtle">
+                    {`JPEG, PNG, WebP or GIF, under ${MAX_IMAGE_BYTES / 1_000_000}MB`}
+                  </span>
+                </>
+              )}
+            </label>
+
+            {fieldErrors.image ? (
+              <p
+                id="image-error"
+                role="alert"
+                className="mt-2.5 text-[13px] leading-5 text-danger"
+              >
+                {fieldErrors.image}
+              </p>
+            ) : (
+              <p id="image-hint" className="mt-2.5 text-[0.85rem] text-ink-subtle">
+                PDFs are not supported yet — a screenshot of one works.
+              </p>
+            )}
+          </div>
+
+          {/*
+            `w-fit` on the submit: SubmitButton defaults to w-full for the auth
+            forms, and at full width in a justify-end row it pushes Cancel out
+            through the left edge of the card.
+          */}
+          <div className="flex flex-wrap items-center justify-end gap-3">
             <Button asChild type="button" variant="outline">
               <a href={returnTo}>Cancel</a>
             </Button>
-            <SubmitButton pendingLabel="Reading the timetable">
+            <SubmitButton pendingLabel="Reading the timetable" className="w-fit">
               <ImageUp aria-hidden="true" />
               Read it
             </SubmitButton>
@@ -319,8 +419,8 @@ export function ImportWizard({
             <Button type="button" variant="outline" onClick={() => setRows(null)}>
               Start again
             </Button>
-            <SubmitButton pendingLabel="Saving">
-              Save {rows.length} row{rows.length === 1 ? "" : "s"}
+            <SubmitButton pendingLabel="Saving" className="w-fit">
+              {`Save ${rows.length} row${rows.length === 1 ? "" : "s"}`}
             </SubmitButton>
           </div>
         </form>

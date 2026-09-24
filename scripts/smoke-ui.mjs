@@ -267,11 +267,12 @@ try {
     ["/help", ["not the same as", "0006_help_requests.sql", "Nothing on the list."], "any"],
     // Timetable import: the entry point, and step one of the wizard.
     ["/timetable", ["Upload a photo", "/timetable/upload"], "any"],
-    ["/timetable/upload", ["Take a photo of it", "Which class?", "Step 1 of 2", "Read it"]],
+    ["/timetable/upload", ["Take a photo of it", "Which class", "Step 1 of 2", "Read it"]],
     // The class field is the load-bearing input — a school timetable covers
     // every class at once, so without it the reader is guessing whose it is.
-    ["/timetable/upload", ["As printed on the timetable", "which block of the grid"]],
-    ["/timetable/upload", ["PDFs", "3.5MB"]],
+    ["/timetable/upload", ["Exactly as it is printed", "which block of the grid"]],
+    // A real drop target, not the browser's "Choose File / no file chosen".
+    ["/timetable/upload", ["Choose a photo, or drop one here", "under 3.5MB", "PDFs"]],
   ];
 
   for (const [path, needles, mode] of checks) {
@@ -322,6 +323,26 @@ try {
     "a student cannot reach the support report view of themselves",
     ownReports.status === 307 && (ownReports.location ?? "").includes("/dashboard"),
     `HTTP ${ownReports.status} -> ${ownReports.location ?? "-"}`,
+  );
+
+  // SubmitButton defaults to w-full for the auth forms. Left at full width in
+  // a justify-end row it takes 100% and pushes its siblings out through the
+  // left edge of the card, which is what it did here.
+  //
+  // Asserted on the MERGED class list, not on the source: tailwind-merge has
+  // silently dropped a class in this codebase before, so "I passed a
+  // className" is not evidence that the className won. Tokens are compared
+  // exactly rather than by regex — a \b here collapsed into a literal
+  // backspace through two layers of escaping and matched nothing.
+  const wizard = await page("/timetable/upload");
+  const submitTag = wizard.html.match(/<button[^>]*type="submit"[^>]*>/)?.[0] ?? "";
+  const submitClasses = (submitTag.match(/class="([^"]*)"/)?.[1] ?? "").split(/\s+/);
+  rec(
+    "the wizard's submit button is not full width",
+    submitClasses.includes("w-fit") && !submitClasses.includes("w-full"),
+    submitTag === ""
+      ? "no submit button found"
+      : `w-fit:${submitClasses.includes("w-fit")} w-full:${submitClasses.includes("w-full")}`,
   );
 
   // A student must not reach the support-side timetable editor, even for
