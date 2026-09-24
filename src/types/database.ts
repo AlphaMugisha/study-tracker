@@ -19,6 +19,8 @@ export type TaskPriority = "low" | "medium" | "high";
 export type TaskStatus = "not_started" | "in_progress" | "completed";
 export type ExtractionConfidence = "high" | "medium" | "low";
 export type LinkStatus = "pending" | "active" | "revoked";
+/** A thing she has said she does not understand, and whether it is sorted. */
+export type HelpStatus = "open" | "resolved";
 
 /**
  * A closed set of academic events. There is deliberately no member for
@@ -43,7 +45,9 @@ export type ActivityType =
   | "study_session_completed"
   | "support_access_requested"
   | "support_access_granted"
-  | "support_access_revoked";
+  | "support_access_revoked"
+  | "help_logged"
+  | "help_resolved";
 
 /** 1 = Monday … 7 = Sunday. The MVP populates 1–5. */
 export type DayOfWeek = 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -169,6 +173,26 @@ export type AdminStudentLink = {
   updated_at: string;
 };
 
+/**
+ * "I don't understand this."
+ *
+ * Both links are optional on purpose: an entry can hang off one assignment,
+ * a whole subject, both, or neither — "I don't get quadratics" belongs to no
+ * single piece of homework.
+ */
+export type HelpRequest = {
+  id: string;
+  user_id: string;
+  subject_id: string | null;
+  assignment_id: string | null;
+  topic: string;
+  detail: string | null;
+  status: HelpStatus;
+  resolved_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type ActivityLog = {
   id: string;
   /** Whose academic record this belongs to. */
@@ -242,6 +266,17 @@ export type Database = {
          */
         Partial<Pick<AdminStudentLink, "status" | "revoked_at">>
       >;
+      help_requests: Table<
+        HelpRequest,
+        Pick<HelpRequest, "user_id" | "topic"> &
+          Partial<Pick<HelpRequest, "subject_id" | "assignment_id" | "detail">>,
+        /**
+         * `resolved_at` is maintained by a trigger, so it is not writable from
+         * here — a caller setting it by hand could contradict `status`, which
+         * the CHECK constraint in 0006 would then reject anyway.
+         */
+        Partial<Pick<HelpRequest, "topic" | "detail" | "subject_id" | "status">>
+      >;
       /** Append-only: no Update type, because there is no UPDATE path. */
       activity_logs: Table<
         ActivityLog,
@@ -270,6 +305,7 @@ export type Database = {
       task_status: TaskStatus;
       extraction_confidence: ExtractionConfidence;
       link_status: LinkStatus;
+      help_status: HelpStatus;
       activity_type: ActivityType;
     };
     CompositeTypes: Record<never, never>;

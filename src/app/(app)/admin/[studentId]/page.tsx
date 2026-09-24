@@ -5,21 +5,18 @@ import { Activity, NotebookPen } from "lucide-react";
 import { PageContainer } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { ActivityFeed } from "@/components/admin/activity-feed";
+import { StudentHomework } from "@/components/admin/student-homework";
+import { StudentPresence } from "@/components/admin/student-presence";
 import { WeeklyReportCard } from "@/components/admin/weekly-report";
-import { OverdueBadge, PriorityBadge, StatusBadge, SubjectDot } from "@/components/shared/badges";
-import { ItemCard, ItemGrid } from "@/components/shared/item-card";
+import { HelpList, HelpMigrationNotice } from "@/components/help/help-list";
 import { Reveal } from "@/components/shared/reveal";
 import { Block, BlockHeading } from "@/components/shared/surface";
 import { DayStats } from "@/components/today/sections";
 import { EmptyState } from "@/components/ui/empty-state";
 import { requireSessionContext } from "@/lib/auth";
-import { byUrgency, groupAssignments } from "@/lib/tasks/ordering";
 import { getWeeklyReport } from "@/lib/data/report";
+import { getStudentSnapshot } from "@/lib/data/student-view";
 import { getActivityFeed, getLinksAsAdmin, isLive } from "@/lib/data/support";
-import { createClient } from "@/lib/supabase/server";
-import { formatDueLabel, formatOverdueLabel } from "@/lib/format";
-import { formatDuration } from "@/lib/timetable/types";
-import { isOverdue, type Assignment } from "@/types/database";
 
 export const metadata: Metadata = { title: "Student record" };
 
@@ -50,43 +47,33 @@ export default async function StudentRecordPage({
   const link = links.find((l) => l.student_id === studentId && isLive(l));
   if (!link) notFound();
 
-  const now = new Date();
-  const supabase = await createClient();
-
-  const [{ data: rows }, activity, report] = await Promise.all([
-    supabase
-      .from("assignments")
-      .select("*, subjects(name, color_token)")
-      .eq("user_id", studentId)
-      .order("due_date"),
+  const [snapshot, activity, report] = await Promise.all([
+    getStudentSnapshot(studentId, link.counterpartName ?? "This student"),
     getActivityFeed(studentId),
     getWeeklyReport(studentId),
   ]);
 
-  const assignments = ((rows ?? []) as never[]).map((row: Assignment & {
-    subjects: { name: string; color_token: string } | null;
-  }) => ({
-    ...row,
-    subject: row.subjects,
-    overdue: isOverdue(row, now),
-    dueAt: new Date(`${row.due_date}T${row.due_time ?? "23:59:59"}`),
-  }));
-
-  const groups = groupAssignments(assignments, now);
-  const outstanding = [...groups.overdue, ...groups.dueSoon, ...groups.upcoming].sort(
-    byUrgency,
-  );
+  const openHelp = snapshot.help.open;
+  const done = snapshot.recentlyCompleted;
 
   return (
     <PageContainer>
       <PageHeader
         eyebrow="Student record"
-        title={`${link.counterpartName ?? "Student record"}.`}
+        title={`${snapshot.name}.`}
         description="Read-only. They can revoke your access at any time, and they can see that you have it."
       />
 
       <Reveal>
-        <WeeklyReportCard report={report} name={link.counterpartName ?? "This student"} />
+        <StudentPresence
+          name={snapshot.firstName}
+          entries={snapshot.entries}
+          timezone={snapshot.timezone}
+          studyUntilMinutes={snapshot.studyUntilMinutes}
+          settleMinutes={snapshot.settleMinutes}
+          initial={snapshot.presence}
+          lastSeen={snapshot.lastSeen}
+        />
       </Reveal>
 
       <Reveal index={1} className="mt-rhythm block">
@@ -94,19 +81,25 @@ export default async function StudentRecordPage({
           stats={[
             {
               label: "Overdue",
-              value: String(groups.overdue.length),
-              tone: groups.overdue.length > 0 ? "danger" : "default",
+              value: String(snapshot.overdueCount),
+              tone: snapshot.overdueCount > 0 ? "danger" : "default",
               href: `/admin/${studentId}#homework`,
             },
             {
               label: "Outstanding",
-              value: String(outstanding.length),
+              value: String(snapshot.outstanding.length),
               tone: "lesson",
               href: `/admin/${studentId}#homework`,
             },
             {
+              label: "Stuck on",
+              value: String(openHelp.length),
+              tone: openHelp.length > 0 ? "pause" : "brand",
+              href: `/admin/${studentId}#stuck`,
+            },
+            {
               label: "Completed",
-              value: String(groups.completed.length),
+              value: String(snapshot.completedCount),
               tone: "brand",
               href: `/admin/${studentId}#homework`,
             },
@@ -115,58 +108,86 @@ export default async function StudentRecordPage({
       </Reveal>
 
       <div className="mt-rhythm space-y-rhythm md:space-y-rhythm-lg">
+        <Reveal>
+          <WeeklyReportCard report={report} name={snapshot.firstName} />
+        </Reveal>
+
         <Block id="homework">
           <Reveal>
             <BlockHeading
               eyebrow="Homework"
               tone="lesson"
               title="What they owe."
-              count={outstanding.length}
+              count={snapshot.outstanding.length}
             />
           </Reveal>
           <Reveal index={1}>
-            {outstanding.length === 0 ? (
+            {snapshot.outstanding.length === 0 ? (
               <EmptyState
                 icon={NotebookPen}
                 headline="Nothing outstanding."
                 body="Everything they have logged is done."
               />
             ) : (
-              <ItemGrid>
-                {outstanding.map((a, i) => (
-                  <ItemCard
-                    key={a.id}
-                    index={i}
-                    accent={a.overdue ? "danger" : "lesson"}
-                    title={a.title}
-                    trailing={
-                      a.overdue ? (
-                        <OverdueBadge>Overdue</OverdueBadge>
-                      ) : (
-                        <PriorityBadge priority={a.priority} />
-                      )
-                    }
-                    meta={
-                      <>
-                        <span className="inline-flex items-center gap-1.5">
-                          <SubjectDot colorToken={a.subject?.color_token ?? null} />
-                          {a.subject?.name ?? "No subject"}
-                        </span>
-                        <span className={a.overdue ? "font-medium text-danger" : undefined}>
-                          {a.overdue
-                            ? formatOverdueLabel(a.due_date, a.due_time)
-                            : formatDueLabel(a.due_date, a.due_time)}
-                        </span>
-                        <span data-numeric>{formatDuration(a.estimated_minutes)}</span>
-                      </>
-                    }
-                    footer={<StatusBadge status={a.status} />}
-                  />
-                ))}
-              </ItemGrid>
+              <StudentHomework assignments={snapshot.outstanding} />
             )}
           </Reveal>
         </Block>
+
+        <Block id="stuck">
+          <Reveal>
+            <BlockHeading
+              eyebrow="Stuck on"
+              tone={openHelp.length > 0 ? "danger" : "brand"}
+              title="What they say they do not understand."
+              count={openHelp.length}
+              description="Written by them, for them. You cannot add to this list or close anything on it — that is what keeps it honest."
+            />
+          </Reveal>
+          <Reveal index={1}>
+            {snapshot.help.pendingMigration ? (
+              <HelpMigrationNotice />
+            ) : (
+              <HelpList
+                entries={openHelp}
+                readOnly
+                emptyLabel="Nothing flagged. That is not the same as nothing being hard — it means nothing has been written down."
+              />
+            )}
+          </Reveal>
+        </Block>
+
+        {snapshot.help.resolved.length > 0 ? (
+          <Block id="sorted">
+            <Reveal>
+              <BlockHeading
+                eyebrow="Worked out"
+                tone="brand"
+                title="Things they got past."
+                description="Flagged, then closed by them. Worth reading — a topic that keeps coming back is the useful signal here."
+              />
+            </Reveal>
+            <Reveal index={1}>
+              <HelpList entries={snapshot.help.resolved} readOnly />
+            </Reveal>
+          </Block>
+        ) : null}
+
+        {done.length > 0 ? (
+          <Block id="finished">
+            <Reveal>
+              <BlockHeading
+                eyebrow="Finished"
+                tone="brand"
+                title="Recently ticked off."
+                description="The half of the picture that does not show up as a number."
+              />
+            </Reveal>
+            <Reveal index={1}>
+              <StudentHomework assignments={done} />
+            </Reveal>
+          </Block>
+        ) : null}
 
         <Block id="activity">
           <Reveal>

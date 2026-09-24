@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useContext, useMemo, useSyncExternalStore } from "react";
+import { createContext, useContext, useMemo } from "react";
 
+import { useTick } from "@/lib/hooks/use-tick";
 import { clockIn, isAtSchool, resolveNow } from "@/lib/timetable/resolve";
 import type { ResolvedEntry, TimetableState } from "@/lib/timetable/types";
 
@@ -19,25 +20,12 @@ type SchoolDay = {
 const SchoolDayContext = createContext<SchoolDay | null>(null);
 
 /**
- * A ticking clock, shared.
+ * The live school day, shared with every consumer under it.
  *
- * `useSyncExternalStore` over a single interval rather than a state+effect per
- * consumer: one timer for the whole tree, a null server snapshot so the server
- * and the first client paint agree, and no setState-in-effect.
- *
- * It ticks every 20 seconds. The countdown is displayed in whole minutes, so a
- * per-second tick would re-render sixty times to change a digit twice, and a
- * per-minute tick could show a stale minute for up to 59 seconds.
+ * The timer itself lives in `useTick` — the watched-student presence card on
+ * the parent's dashboard needs the same tick against a different timezone, so
+ * the interval is a hook rather than something this provider owns.
  */
-const TICK_MS = 20_000;
-
-function subscribe(onChange: () => void) {
-  const id = setInterval(onChange, TICK_MS);
-  return () => clearInterval(id);
-}
-const getSnapshot = () => Math.floor(Date.now() / TICK_MS);
-const getServerSnapshot = () => null;
-
 export function SchoolDayProvider({
   entries,
   timezone,
@@ -57,7 +45,7 @@ export function SchoolDayProvider({
   initial: { state: TimetableState; nowMinutes: number };
   children: React.ReactNode;
 }) {
-  const tick = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const tick = useTick();
 
   const value = useMemo<SchoolDay>(() => {
     // Before hydration, trust the server's resolution rather than rendering

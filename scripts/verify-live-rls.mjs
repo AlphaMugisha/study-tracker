@@ -162,6 +162,14 @@ async function run() {
   const mine = await call("/rest/v1/assignments?select=id,title", { headers: ava.h });
   rec("a student can read their own assignment", mine.ok && rows(mine) === 1, `rows: ${rows(mine)}`);
 
+  // Student B needs a subject of their own, so the composite-FK checks later
+  // have a real id that belongs to somebody else.
+  const benSubj = await call("/rest/v1/subjects", {
+    headers: ben.h, method: "POST", prefer: "return=representation",
+    body: { user_id: ben.id, name: "Chemistry", short_name: "Chem" },
+  });
+  const benSubjectId = benSubj.ok ? benSubj.body[0].id : null;
+
   // --- isolation between students ------------------------------------------
   console.log(`\n${BOLD}isolation${RESET}`);
 
@@ -358,6 +366,107 @@ ${BOLD}support access (0005)${RESET}`);
   });
   rec("a student cannot create an authorisation link", !studentMintsLink.ok,
       `HTTP ${studentMintsLink.status} ${studentMintsLink.body?.code ?? ""}`);
+
+  // --- 0006: "I don't understand this" --------------------------------------
+  console.log(`
+${BOLD}help requests (0006)${RESET}`);
+
+  // Preflight, same reason as 0005: without it every "an admin cannot write"
+  // check below passes because the TABLE is missing, not because a policy
+  // stopped anything.
+  const probe0006 = await call("/rest/v1/help_requests?select=id&limit=1", { headers: service });
+  const has0006 = probe0006.status !== 404 && probe0006.body?.code !== "PGRST205";
+  rec("migration 0006 is applied", has0006,
+      has0006 ? "help_requests exists" : "run 0006_help_requests.sql");
+
+  if (has0006) {
+    const logged = await call("/rest/v1/help_requests", {
+      headers: ava.h, method: "POST", prefer: "return=representation",
+      body: { user_id: ava.id, topic: "Completing the square", subject_id: subjectId },
+    });
+    rec("a student can log something she does not understand", logged.ok, `HTTP ${logged.status}`);
+    const helpId = logged.ok ? logged.body[0].id : null;
+
+    rec("a new entry starts open with no resolved_at",
+        logged.ok && logged.body[0].status === "open" && logged.body[0].resolved_at === null,
+        `status: ${logged.body?.[0]?.status}`);
+
+    const resolve = await call(`/rest/v1/help_requests?id=eq.${helpId}`, {
+      headers: ava.h, method: "PATCH", prefer: "return=representation",
+      body: { status: "resolved" },
+    });
+    rec("resolving stamps resolved_at from the trigger",
+        resolve.ok && Boolean(resolve.body?.[0]?.resolved_at),
+        `resolved_at: ${resolve.body?.[0]?.resolved_at ?? "null"}`);
+
+    const reopen = await call(`/rest/v1/help_requests?id=eq.${helpId}`, {
+      headers: ava.h, method: "PATCH", prefer: "return=representation",
+      body: { status: "open" },
+    });
+    rec("reopening clears resolved_at again",
+        reopen.ok && reopen.body?.[0]?.resolved_at === null,
+        `resolved_at: ${reopen.body?.[0]?.resolved_at ?? "null"}`);
+
+    const blank = await call("/rest/v1/help_requests", {
+      headers: ava.h, method: "POST", prefer: "return=representation",
+      body: { user_id: ava.id, topic: "   " },
+    });
+    rec("a blank topic is rejected", !blank.ok, `HTTP ${blank.status} ${blank.body?.code ?? ""}`);
+
+    // The composite FK: her entry cannot point at someone else's subject.
+    const crossSubject = await call("/rest/v1/help_requests", {
+      headers: ava.h, method: "POST", prefer: "return=representation",
+      body: { user_id: ava.id, topic: "Borrowed subject", subject_id: benSubjectId },
+    });
+    rec("an entry cannot reference another student's subject",
+        !crossSubject.ok, `HTTP ${crossSubject.status} ${crossSubject.body?.code ?? ""}`);
+
+    const forge = await call("/rest/v1/help_requests", {
+      headers: ava.h, method: "POST", prefer: "return=representation",
+      body: { user_id: ben.id, topic: "Filed under someone else" },
+    });
+    rec("a student cannot file one against another student", !forge.ok,
+        `HTTP ${forge.status} ${forge.body?.code ?? ""}`);
+
+    const nosy = await call(`/rest/v1/help_requests?select=id&user_id=eq.${ava.id}`, {
+      headers: ben.h,
+    });
+    rec("an unrelated student cannot read her list", rows(nosy) === 0, `rows: ${rows(nosy)}`);
+
+    // ben's own entry, to test what the LINKED admin (omar) can do with it.
+    const bens = await call("/rest/v1/help_requests", {
+      headers: ben.h, method: "POST", prefer: "return=representation",
+      body: { user_id: ben.id, topic: "Balancing equations" },
+    });
+    const bensId = bens.ok ? bens.body[0].id : null;
+
+    const adminReads = await call(
+      `/rest/v1/help_requests?select=id,topic&user_id=eq.${ben.id}`, { headers: omar.h },
+    );
+    rec("a linked admin CAN read what the student is stuck on",
+        adminReads.ok && rows(adminReads) === 1, `rows: ${rows(adminReads)}`);
+
+    // The three writes that would make the list worthless to her.
+    const adminAdds = await call("/rest/v1/help_requests", {
+      headers: omar.h, method: "POST", prefer: "return=representation",
+      body: { user_id: ben.id, topic: "You are stuck on this, actually" },
+    });
+    rec("a linked admin cannot ADD to the student's list", !adminAdds.ok,
+        `HTTP ${adminAdds.status} ${adminAdds.body?.code ?? ""}`);
+
+    const adminCloses = await call(`/rest/v1/help_requests?id=eq.${bensId}`, {
+      headers: omar.h, method: "PATCH", prefer: "return=representation",
+      body: { status: "resolved" },
+    });
+    rec("a linked admin cannot CLOSE an item they did not resolve",
+        blocked(adminCloses), `HTTP ${adminCloses.status}, rows ${rows(adminCloses)}`);
+
+    const adminDeletes = await call(`/rest/v1/help_requests?id=eq.${bensId}`, {
+      headers: omar.h, method: "DELETE", prefer: "return=representation",
+    });
+    rec("a linked admin cannot DELETE from the student's list",
+        blocked(adminDeletes), `HTTP ${adminDeletes.status}, rows ${rows(adminDeletes)}`);
+  }
 
   // --- activity log ---------------------------------------------------------
   console.log(`\n${BOLD}activity log${RESET}`);

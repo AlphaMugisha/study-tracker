@@ -116,6 +116,8 @@ const ACTIVITY_LABEL: Record<ActivityType, string> = {
   support_access_requested: "Support access requested",
   support_access_granted: "Granted support access",
   support_access_revoked: "Revoked support access",
+  help_logged: "Flagged something they don't understand",
+  help_resolved: "Worked out something they were stuck on",
 };
 
 export function describeActivity(entry: ActivityLog): {
@@ -141,6 +143,8 @@ export function activityTone(
   if (type.endsWith("_completed")) return "brand";
   if (type.startsWith("assignment")) return "lesson";
   if (type.startsWith("revision") || type.startsWith("study_session")) return "revise";
+  if (type === "help_logged") return "danger";
+  if (type === "help_resolved") return "brand";
   if (type.startsWith("support_access")) return "danger";
   return "pause";
 }

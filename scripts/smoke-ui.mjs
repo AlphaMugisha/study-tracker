@@ -258,15 +258,29 @@ try {
     // presence in some breakpoint we happen to be thinking about.
     ["/dashboard", ["<aside class=\"sticky top-0 flex h-dvh"]],
     ["/settings", ["Settings", "Smoke Tester", "Support access", "Sign out"]],
+    // "Stuck on" — the page, its nav entry, and the way in.
+    ["/help", ["Stuck on", "Things that have not clicked yet", "I am stuck on something"]],
+    ["/dashboard", ["Stuck on", "/help"]],
+    // The migration notice is the one state that must never look like an
+    // empty list. Asserted either way: before 0006 it explains itself, after
+    // 0006 it is gone and the real empty copy shows instead.
+    ["/help", ["not the same as", "0006_help_requests.sql", "Nothing on the list."], "any"],
   ];
 
-  for (const [path, needles] of checks) {
+  for (const [path, needles, mode] of checks) {
     const r = await page(path);
     if (r.status !== 200) {
       rec(`${path} renders`, false, `HTTP ${r.status}${r.location ? ` -> ${r.location}` : ""}`);
       continue;
     }
-    const missing = needles.filter((n) => !r.html.includes(n));
+    // `mode: "any"` is for states that are mutually exclusive by design —
+    // asserting all of them would make the check impossible to satisfy.
+    const missing =
+      mode === "any"
+        ? needles.some((n) => r.html.includes(n))
+          ? []
+          : [`none of: ${needles.join(" | ")}`]
+        : needles.filter((n) => !r.html.includes(n));
     rec(
       `${path} — ${needles.join(", ").slice(0, 60)}`,
       missing.length === 0,

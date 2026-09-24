@@ -1,6 +1,7 @@
 import {
   CalendarDays,
   ClipboardList,
+  HelpCircle,
   ListChecks,
   Settings,
   Sun,
@@ -17,14 +18,19 @@ export type NavItem = {
 };
 
 /**
- * The four things the student actually does. "Today" leads because the
- * product's whole promise is answering "what am I doing right now?".
+ * What the student actually does. "Today" leads because the product's whole
+ * promise is answering "what am I doing right now?".
+ *
+ * "Stuck on" is last and stays in the list rather than hiding under Settings:
+ * a page you have to go looking for is a page nobody uses, and the whole value
+ * of that list is that writing something down is easier than saying it.
  */
 export const primaryNav: NavItem[] = [
   { href: "/dashboard", label: "Today", icon: Sun },
   { href: "/timetable", label: "Timetable", icon: CalendarDays, shortLabel: "Classes" },
   { href: "/homework", label: "Homework", icon: ClipboardList },
   { href: "/plan", label: "Home plan", icon: ListChecks, shortLabel: "Plan" },
+  { href: "/help", label: "Stuck on", icon: HelpCircle, shortLabel: "Stuck" },
 ];
 
 export const secondaryNav: NavItem[] = [

@@ -4,6 +4,8 @@ import { PageContainer } from "@/components/layout/app-shell";
 import { SupportDashboard } from "@/components/admin/support-dashboard";
 import { Reveal, RevealWords } from "@/components/shared/reveal";
 import { Block, BlockHeading, Eyebrow } from "@/components/shared/surface";
+import { HelpDialog } from "@/components/help/help-dialog";
+import { HelpList, HelpMigrationNotice } from "@/components/help/help-list";
 import { LiveActivity } from "@/components/today/live-activity";
 import { SchoolLockBanner, SchoolLocked } from "@/components/school-day/school-lock";
 import {
@@ -15,7 +17,8 @@ import {
   UpNextCard,
 } from "@/components/today/sections";
 import { requireSessionContext, displayName } from "@/lib/auth";
-import { getActiveTimetable } from "@/lib/data/timetable";
+import { getHelpRequests } from "@/lib/data/help";
+import { getActiveTimetable, getSubjects } from "@/lib/data/timetable";
 import { byUrgency, getAssignments, getRevisionTasks, groupAssignments } from "@/lib/data/tasks";
 import { firstNameOf, formatFullDate, greeting } from "@/lib/format";
 import { buildEveningPlan, timeToMinutesSafe } from "@/lib/planner/build-plan";
@@ -38,10 +41,12 @@ export default async function TodayPage() {
 
   const now = new Date();
 
-  const [{ entries }, assignments, revision] = await Promise.all([
+  const [{ entries }, assignments, revision, help, subjects] = await Promise.all([
     getActiveTimetable(),
     getAssignments(now),
     getRevisionTasks(),
+    getHelpRequests(session.user.id),
+    getSubjects(),
   ]);
 
   /**
@@ -210,6 +215,43 @@ export default async function TodayPage() {
           </div>
         </Block>
         </SchoolLocked>
+
+        {/*
+          Outside the school-mode lock, on purpose.
+
+          School mode leaves exactly one thing available: writing something
+          down before it is lost. "I did not follow that" is the same kind of
+          capture as "we were set this" — and it is only ever true DURING the
+          lesson. Locking it until she gets home would mean the list only ever
+          catches what survived the bus ride, which is the half that was never
+          the problem.
+        */}
+        <Block id="stuck">
+          <Reveal>
+            <BlockHeading
+              eyebrow="Stuck on"
+              tone={help.open.length > 0 ? "danger" : "brand"}
+              title={
+                help.open.length > 0
+                  ? "Things that have not clicked yet."
+                  : "Nothing you have flagged."
+              }
+              count={help.open.length}
+              description="Write down what you do not understand. Whoever supports you sees this list, so putting it here counts as asking."
+              action={<HelpDialog subjects={subjects} />}
+            />
+          </Reveal>
+          <Reveal index={1}>
+            {help.pendingMigration ? (
+              <HelpMigrationNotice />
+            ) : (
+              <HelpList
+                entries={help.open.slice(0, 6)}
+                emptyLabel="Nothing on the list. When something does not make sense, put it here rather than hoping it comes up again."
+              />
+            )}
+          </Reveal>
+        </Block>
       </div>
 
     </PageContainer>
