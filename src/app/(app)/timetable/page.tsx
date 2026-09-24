@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarPlus } from "lucide-react";
+import { ImageUp, CalendarPlus } from "lucide-react";
 
 import { PageContainer } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
+import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/shared/reveal";
 import { BlockHeading } from "@/components/shared/surface";
 import { TimetableEntryDialog } from "@/components/timetable/entry-dialog";
@@ -55,11 +56,22 @@ export default async function TimetablePage({
           icon={CalendarPlus}
           headline="No school timetable yet."
           body="Add your lessons one at a time. Naming a subject here creates it, so it is ready to file homework against."
-          action={<TimetableEntryDialog subjects={subjects} defaultDay={selectedDay} />}
+          action={
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Button asChild>
+                <Link href="/timetable/upload">
+                  <ImageUp aria-hidden="true" />
+                  Upload a photo
+                </Link>
+              </Button>
+              <TimetableEntryDialog subjects={subjects} defaultDay={selectedDay} />
+            </div>
+          }
         />
         <p className="mt-5 text-center text-[0.9rem] text-ink-subtle">
-          Importing a timetable from a photo or PDF comes later. This is the manual way,
-          and it is the one that always works.
+          A photo of the timetable is read for you, and you check every row
+          before anything is saved. Entering lessons by hand still works and is
+          the one that never depends on a clear photograph.
         </p>
       </PageContainer>
     );
@@ -77,6 +89,12 @@ export default async function TimetablePage({
               <ViewTab href="/timetable" active={view === "day"} label="Day" />
               <ViewTab href="/timetable?view=week" active={view === "week"} label="Week" />
             </div>
+            <Button asChild variant="outline">
+              <Link href="/timetable/upload">
+                <ImageUp aria-hidden="true" />
+                Replace from photo
+              </Link>
+            </Button>
             <TimetableEntryDialog subjects={subjects} defaultDay={selectedDay} />
           </div>
         }

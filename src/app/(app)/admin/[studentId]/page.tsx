@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Activity, CalendarRange, NotebookPen } from "lucide-react";
+import { Activity, CalendarRange, ImageUp, NotebookPen } from "lucide-react";
 
 import { PageContainer } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
@@ -65,12 +65,20 @@ export default async function StudentRecordPage({
         title={`${snapshot.name}.`}
         description="Read-only. They can revoke your access at any time, and they can see that you have it."
         action={
-          <Button asChild variant="outline">
-            <Link href={`/admin/${studentId}/reports`}>
-              <CalendarRange aria-hidden="true" />
-              Daily reports
-            </Link>
-          </Button>
+          <>
+            <Button asChild variant="outline">
+              <Link href={`/admin/${studentId}/reports`}>
+                <CalendarRange aria-hidden="true" />
+                Daily reports
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href={`/admin/${studentId}/timetable`}>
+                <ImageUp aria-hidden="true" />
+                Set timetable
+              </Link>
+            </Button>
+          </>
         }
       />
 

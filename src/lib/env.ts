@@ -68,7 +68,11 @@ export function getSupabaseServiceRoleKey(): string {
 
 /**
  * Which timetable extraction provider to use.
- * Phase 0-7 run on `mock`; `anthropic` is wired up in Phase 8.
+ *
+ * `anthropic` reads a real photograph and needs ANTHROPIC_API_KEY. `mock`
+ * returns a fixed week and never calls anything — it is the default because
+ * the upload flow, including the review screen it all hinges on, has to be
+ * runnable on a fresh clone with no key and no bill.
  */
 export function getExtractionProvider(): "mock" | "anthropic" {
   return process.env.TIMETABLE_EXTRACTOR === "anthropic" ? "anthropic" : "mock";

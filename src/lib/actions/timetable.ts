@@ -121,9 +121,13 @@ async function ensureActiveVersion(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
 ): Promise<string | null> {
+  // Scoped to the owner explicitly. The SELECT policy returns rows for any
+  // student the caller is linked to, so an unfiltered `maybeSingle()` here
+  // breaks the moment a support account uses this path.
   const { data: existing } = await supabase
     .from("timetable_versions")
     .select("id")
+    .eq("user_id", userId)
     .eq("status", "active")
     .maybeSingle();
   if (existing) return existing.id;
@@ -164,6 +168,7 @@ async function resolveSubject(
   const { data: existing } = await supabase
     .from("subjects")
     .select("id, name")
+    .eq("user_id", userId)
     .ilike("name", wanted);
 
   const match = (existing ?? []).find(
@@ -173,7 +178,8 @@ async function resolveSubject(
 
   const { count } = await supabase
     .from("subjects")
-    .select("id", { count: "exact", head: true });
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
 
   const { data: created, error } = await supabase
     .from("subjects")

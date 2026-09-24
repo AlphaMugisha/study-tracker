@@ -468,6 +468,175 @@ ${BOLD}help requests (0006)${RESET}`);
         blocked(adminDeletes), `HTTP ${adminDeletes.status}, rows ${rows(adminDeletes)}`);
   }
 
+  // --- 0007: a linked admin may edit the TIMETABLE, and only that -----------
+  console.log(`\n${BOLD}support timetable edit (0007)${RESET}`);
+
+  // Preflight again. Without it, every "an admin cannot write X" below passes
+  // because the whole migration is missing rather than because a policy held.
+  const probe0007 = await call("/rest/v1/rpc/can_manage_timetable", {
+    headers: service, method: "POST", body: { target: ben.id },
+  });
+  const has0007 = probe0007.body?.code !== "PGRST202" && probe0007.status !== 404;
+  rec("migration 0007 is applied", has0007,
+      has0007 ? "can_manage_timetable exists" : "run 0007_support_timetable_edit.sql");
+
+  if (has0007) {
+    // omar holds an ACTIVE link to ben from the 0005 section above.
+    const adminVersion = await call("/rest/v1/timetable_versions", {
+      headers: omar.h, method: "POST", prefer: "return=representation",
+      body: {
+        user_id: ben.id, name: "Set by parent", status: "active",
+        source_type: "image", confirmed_at: new Date().toISOString(),
+      },
+    });
+    rec("a linked admin CAN create the student's timetable", adminVersion.ok,
+        `HTTP ${adminVersion.status} ${adminVersion.body?.code ?? ""}`);
+    const adminVersionId = adminVersion.ok ? adminVersion.body[0].id : null;
+
+    const adminSubject = await call("/rest/v1/subjects", {
+      headers: omar.h, method: "POST", prefer: "return=representation",
+      body: { user_id: ben.id, name: "Parent-added Physics", short_name: "Phys" },
+    });
+    // Required: timetable_entries_class_has_subject means a lesson without a
+    // subject cannot be inserted at all.
+    rec("a linked admin CAN create a subject a lesson needs", adminSubject.ok,
+        `HTTP ${adminSubject.status}`);
+    const adminSubjectId = adminSubject.ok ? adminSubject.body[0].id : null;
+
+    const adminEntry = await call("/rest/v1/timetable_entries", {
+      headers: omar.h, method: "POST", prefer: "return=representation",
+      body: {
+        user_id: ben.id, timetable_version_id: adminVersionId,
+        subject_id: adminSubjectId, activity_type: "class",
+        day_of_week: 2, start_time: "08:00", end_time: "09:00",
+      },
+    });
+    rec("a linked admin CAN add a lesson", adminEntry.ok, `HTTP ${adminEntry.status}`);
+    const adminEntryId = adminEntry.ok ? adminEntry.body[0].id : null;
+
+    const adminEdit = await call(`/rest/v1/timetable_entries?id=eq.${adminEntryId}`, {
+      headers: omar.h, method: "PATCH", prefer: "return=representation",
+      body: { room: "B12" },
+    });
+    rec("a linked admin CAN edit a lesson",
+        adminEdit.ok && rows(adminEdit) === 1, `rows: ${rows(adminEdit)}`);
+
+    // --- and now everything that must NOT have opened ------------------------
+    const adminHomework = await call("/rest/v1/assignments", {
+      headers: omar.h, method: "POST", prefer: "return=representation",
+      body: { user_id: ben.id, title: "Set by parent", due_date: today() },
+    });
+    rec("0007 did NOT open homework", !adminHomework.ok,
+        `HTTP ${adminHomework.status} ${adminHomework.body?.code ?? ""}`);
+
+    const adminRevision = await call("/rest/v1/revision_tasks", {
+      headers: omar.h, method: "POST", prefer: "return=representation",
+      body: { user_id: ben.id, title: "Set by parent" },
+    });
+    rec("0007 did NOT open revision", !adminRevision.ok,
+        `HTTP ${adminRevision.status} ${adminRevision.body?.code ?? ""}`);
+
+    const adminSession = await call("/rest/v1/study_sessions", {
+      headers: omar.h, method: "POST", prefer: "return=representation",
+      body: { user_id: ben.id, started_at: new Date().toISOString() },
+    });
+    rec("0007 did NOT open study sessions", !adminSession.ok,
+        `HTTP ${adminSession.status} ${adminSession.body?.code ?? ""}`);
+
+    if (has0006) {
+      const adminHelp = await call("/rest/v1/help_requests", {
+        headers: omar.h, method: "POST", prefer: "return=representation",
+        body: { user_id: ben.id, topic: "Added by parent" },
+      });
+      rec("0007 did NOT open the stuck-on list", !adminHelp.ok,
+          `HTTP ${adminHelp.status} ${adminHelp.body?.code ?? ""}`);
+    }
+
+    const adminRenames = await call(`/rest/v1/profiles?id=eq.${ben.id}`, {
+      headers: omar.h, method: "PATCH", prefer: "return=representation",
+      body: { full_name: "renamed by parent" },
+    });
+    rec("0007 did NOT open the student's profile", blocked(adminRenames),
+        `HTTP ${adminRenames.status}, rows ${rows(adminRenames)}`);
+
+    // Subject DELETE stays shut: subjects cascade into assignments, which is
+    // homework, and homework is not what this migration opened.
+    const adminDeletesSubject = await call(`/rest/v1/subjects?id=eq.${adminSubjectId}`, {
+      headers: omar.h, method: "DELETE", prefer: "return=representation",
+    });
+    rec("0007 did NOT open subject DELETE", blocked(adminDeletesSubject),
+        `HTTP ${adminDeletesSubject.status}, rows ${rows(adminDeletesSubject)}`);
+
+    // --- the audit trail -----------------------------------------------------
+    const adminLogs = await call("/rest/v1/activity_logs", {
+      headers: omar.h, method: "POST", prefer: "return=representation",
+      body: {
+        user_id: ben.id, actor_id: omar.id, activity_type: "timetable_confirmed",
+        entity_type: "timetable_version", entity_id: adminVersionId,
+      },
+    });
+    rec("an edit is recorded against the student, attributed to the admin",
+        adminLogs.ok, `HTTP ${adminLogs.status} ${adminLogs.body?.code ?? ""}`);
+
+    const studentSeesIt = await call(
+      `/rest/v1/activity_logs?select=actor_id&user_id=eq.${ben.id}&actor_id=eq.${omar.id}`,
+      { headers: ben.h },
+    );
+    rec("the STUDENT can see who changed it", rows(studentSeesIt) >= 1,
+        `rows: ${rows(studentSeesIt)}`);
+
+    const forgedActor = await call("/rest/v1/activity_logs", {
+      headers: omar.h, method: "POST", prefer: "return=representation",
+      body: { user_id: ben.id, actor_id: ben.id, activity_type: "assignment_completed" },
+    });
+    rec("an admin cannot attribute an action to the student", !forgedActor.ok,
+        `HTTP ${forgedActor.status} ${forgedActor.body?.code ?? ""}`);
+
+    // --- nobody else ---------------------------------------------------------
+    const strangerAdmin = await call("/rest/v1/timetable_entries", {
+      headers: sara.h, method: "POST", prefer: "return=representation",
+      body: {
+        user_id: ben.id, timetable_version_id: adminVersionId,
+        activity_type: "break", title: "Planted", day_of_week: 3,
+        start_time: "08:00", end_time: "09:00",
+      },
+    });
+    rec("an admin with NO link cannot touch the timetable", !strangerAdmin.ok,
+        `HTTP ${strangerAdmin.status} ${strangerAdmin.body?.code ?? ""}`);
+
+    const studentOnStudent = await call("/rest/v1/timetable_entries", {
+      headers: ava.h, method: "POST", prefer: "return=representation",
+      body: {
+        user_id: ben.id, timetable_version_id: adminVersionId,
+        activity_type: "break", title: "Planted", day_of_week: 4,
+        start_time: "08:00", end_time: "09:00",
+      },
+    });
+    rec("a student cannot touch another student's timetable", !studentOnStudent.ok,
+        `HTTP ${studentOnStudent.status} ${studentOnStudent.body?.code ?? ""}`);
+
+    // --- and revoking closes it ----------------------------------------------
+    const linkRow = await call(
+      `/rest/v1/admin_student_links?select=id&admin_id=eq.${omar.id}&student_id=eq.${ben.id}`,
+      { headers: ben.h },
+    );
+    const omarLinkId = rows(linkRow) > 0 ? linkRow.body[0].id : null;
+
+    if (omarLinkId) {
+      await call(`/rest/v1/admin_student_links?id=eq.${omarLinkId}`, {
+        headers: ben.h, method: "PATCH", body: { status: "revoked" },
+      });
+
+      const afterRevokeWrite = await call(`/rest/v1/timetable_entries?id=eq.${adminEntryId}`, {
+        headers: omar.h, method: "PATCH", prefer: "return=representation",
+        body: { room: "should not happen" },
+      });
+      rec("REVOKING closes timetable editing immediately",
+          blocked(afterRevokeWrite),
+          `HTTP ${afterRevokeWrite.status}, rows ${rows(afterRevokeWrite)}`);
+    }
+  }
+
   // --- activity log ---------------------------------------------------------
   console.log(`\n${BOLD}activity log${RESET}`);
 

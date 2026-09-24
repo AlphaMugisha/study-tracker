@@ -265,6 +265,13 @@ try {
     // empty list. Asserted either way: before 0006 it explains itself, after
     // 0006 it is gone and the real empty copy shows instead.
     ["/help", ["not the same as", "0006_help_requests.sql", "Nothing on the list."], "any"],
+    // Timetable import: the entry point, and step one of the wizard.
+    ["/timetable", ["Upload a photo", "/timetable/upload"], "any"],
+    ["/timetable/upload", ["Take a photo of it", "Which class?", "Step 1 of 2", "Read it"]],
+    // The class field is the load-bearing input — a school timetable covers
+    // every class at once, so without it the reader is guessing whose it is.
+    ["/timetable/upload", ["As printed on the timetable", "which block of the grid"]],
+    ["/timetable/upload", ["PDFs", "3.5MB"]],
   ];
 
   for (const [path, needles, mode] of checks) {
@@ -315,6 +322,17 @@ try {
     "a student cannot reach the support report view of themselves",
     ownReports.status === 307 && (ownReports.location ?? "").includes("/dashboard"),
     `HTTP ${ownReports.status} -> ${ownReports.location ?? "-"}`,
+  );
+
+  // A student must not reach the support-side timetable editor, even for
+  // their own record: that page is the parent's, and 0007 is the only thing
+  // that opens it.
+  const supportTimetable = await page(`/admin/${session.user.id}/timetable`);
+  rec(
+    "a student is redirected away from the support timetable editor",
+    supportTimetable.status === 307 &&
+      (supportTimetable.location ?? "").includes("/dashboard"),
+    `HTTP ${supportTimetable.status} -> ${supportTimetable.location ?? "-"}`,
   );
 
   // Signed out, the same pages must still bounce to /login.
