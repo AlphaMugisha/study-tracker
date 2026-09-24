@@ -35,6 +35,8 @@ export type StudentSnapshot = {
   settleMinutes: number;
   /** Server-resolved so the first paint is never blank. */
   presence: Presence;
+  /** Minutes since midnight in HER timezone, for the clock in the card. */
+  nowMinutes: number;
   /** Already formatted: "Active 12 min ago", or null. */
   lastSeen: string | null;
   /** Outstanding work, most urgent first. */
@@ -136,6 +138,7 @@ export const getStudentSnapshot = cache(async function getStudentSnapshot(
     studyUntilMinutes,
     settleMinutes,
     presence,
+    nowMinutes: minutes,
     lastSeen: describeLastSeen(seen?.created_at ?? null, now),
     outstanding,
     overdueCount: groups.overdue.length,

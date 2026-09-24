@@ -252,8 +252,10 @@ export function DayStats({ stats }: { stats: Stat[] }) {
             href={stat.href}
             className="group/stat min-w-0 px-8 py-9 transition-colors duration-300 ease-out-flat hover:bg-surface-raised focus-visible:bg-surface-raised sm:px-9 sm:py-11"
           >
+            {/* nowrap: a two-line label drops its own number onto a different
+                baseline from the rest of the strip. */}
             <dt className="flex items-center gap-2 text-eyebrow uppercase text-ink-subtle">
-              {stat.label}
+              <span className="whitespace-nowrap">{stat.label}</span>
               <ArrowUpRight
                 aria-hidden="true"
                 className="size-3.5 opacity-0 transition-opacity duration-150 group-hover/stat:opacity-100"

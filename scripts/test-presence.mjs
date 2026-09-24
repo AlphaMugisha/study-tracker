@@ -133,7 +133,25 @@ test("a weekday with no lessons does not claim it is the weekend", () => {
 test("no timetable admits it rather than guessing", () => {
   const p = at(11 * H, 1, []);
   assert.equal(p.kind, "unknown");
-  assert.match(p.detail, /cannot say/);
+  // `known: false` is the load-bearing part, not the wording — the card sizes
+  // the headline off it, so that an absence is never set in display type
+  // alongside real statuses. Asserting the sentence instead would break on
+  // every copy edit while letting the actual regression through.
+  assert.equal(p.known, false);
+  assert.equal(p.progress, null);
+});
+
+test("a real status is marked known, an absence is not", () => {
+  assert.equal(at(8 * H + 20).known, true, "mid-lesson is a real status");
+  assert.equal(at(22 * H + 30).known, true, "asleep is a real inference");
+  assert.equal(at(11 * H, 1, []).known, false, "no timetable is not a status");
+});
+
+test("progress is carried through mid-lesson and null otherwise", () => {
+  // Maths runs 08:00-09:00, so 08:30 is exactly half way.
+  assert.equal(at(8 * H + 30).progress, 0.5);
+  assert.equal(at(5 * H).progress, null);
+  assert.equal(at(10 * H + 50).progress, null);
 });
 
 test("a settle time longer than the travel window still lands on study_time", () => {

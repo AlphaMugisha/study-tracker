@@ -42,6 +42,19 @@ export type Presence = {
   detail: string | null;
   /** Minutes until this state changes, when the timetable says. */
   endsInMinutes: number | null;
+  /**
+   * 0-1 through the current lesson, or null when nothing is running. Drives
+   * the progress bar — "24 min left" alone does not say whether that is most
+   * of the lesson or the tail of it.
+   */
+  progress: number | null;
+  /**
+   * False when this is the app admitting it does not know, rather than a real
+   * status. The card sizes the headline off this: "Should be in class" is the
+   * loudest thing on the page, "No timetable saved" is a non-event and must
+   * not be set in the same display type.
+   */
+  known: boolean;
   /** True while the school-day lock applies to her. */
   atSchool: boolean;
   tone: "lesson" | "brand" | "revise" | "pause" | "muted";
@@ -88,6 +101,8 @@ export function describePresence({
         headline: `Should be on ${current.label.toLowerCase()}`,
         detail: next ? `${next.label} next, at ${next.startLabel}` : `Until ${current.endLabel}`,
         endsInMinutes: remainingMinutes,
+        progress: state.progress,
+        known: true,
         atSchool: true,
         tone: "pause",
         icon: "coffee",
@@ -99,6 +114,8 @@ export function describePresence({
       headline: "Should be in class",
       detail: current.detail ? `${current.label} · ${current.detail}` : current.label,
       endsInMinutes: remainingMinutes,
+      progress: state.progress,
+      known: true,
       atSchool: true,
       tone: "lesson",
       icon: "book",
@@ -111,6 +128,8 @@ export function describePresence({
       headline: "Should be between lessons",
       detail: `${state.next.label} next, at ${state.next.startLabel}`,
       endsInMinutes: state.remainingMinutes,
+      progress: null,
+      known: true,
       atSchool: true,
       tone: "pause",
       icon: "coffee",
@@ -126,6 +145,8 @@ export function describePresence({
         headline: "Should be asleep",
         detail: `${state.next.label} at ${state.next.startLabel}`,
         endsInMinutes: null,
+        progress: null,
+        known: true,
         atSchool: false,
         tone: "muted",
         icon: "moon",
@@ -138,6 +159,8 @@ export function describePresence({
         headline: "Should be heading in",
         detail: `${state.next.label} at ${state.next.startLabel}`,
         endsInMinutes: state.startsInMinutes,
+        progress: null,
+        known: true,
         atSchool: false,
         tone: "brand",
         icon: "walk",
@@ -149,6 +172,8 @@ export function describePresence({
       headline: "Should be getting ready",
       detail: `School starts at ${state.next.startLabel}`,
       endsInMinutes: state.startsInMinutes,
+      progress: null,
+      known: true,
       atSchool: false,
       tone: "brand",
       icon: "sunrise",
@@ -168,6 +193,8 @@ export function describePresence({
       headline: "Should be asleep",
       detail: null,
       endsInMinutes: null,
+      progress: null,
+      known: true,
       atSchool: false,
       tone: "muted",
       icon: "moon",
@@ -184,6 +211,8 @@ export function describePresence({
         headline: "Should be heading home",
         detail: `School finished at ${state.lastEntry.endLabel}`,
         endsInMinutes: Math.max(0, homeAt - nowMinutes),
+        progress: null,
+        known: true,
         atSchool: false,
         tone: "brand",
         icon: "walk",
@@ -196,6 +225,8 @@ export function describePresence({
         headline: "Settling in at home",
         detail: `Homework time from ${label(homeAt)}`,
         endsInMinutes: homeAt - nowMinutes,
+        progress: null,
+        known: true,
         atSchool: false,
         tone: "pause",
         icon: "home",
@@ -210,6 +241,8 @@ export function describePresence({
           studyUntilMinutes - nowMinutes,
         )} left`,
         endsInMinutes: studyUntilMinutes - nowMinutes,
+        progress: null,
+        known: true,
         atSchool: false,
         tone: "revise",
         icon: "pencil",
@@ -221,6 +254,8 @@ export function describePresence({
       headline: "Done for the day",
       detail: `Study window ended at ${label(studyUntilMinutes)}`,
       endsInMinutes: null,
+      progress: null,
+      known: true,
       atSchool: false,
       tone: "muted",
       icon: "star",
@@ -232,8 +267,10 @@ export function describePresence({
     return {
       kind: "unknown",
       headline: "No timetable saved",
-      detail: "Without a timetable the app cannot say where she should be.",
+      detail: "Add her school timetable and this card fills in on its own.",
       endsInMinutes: null,
+      progress: null,
+      known: false,
       atSchool: false,
       tone: "muted",
       icon: "star",
@@ -249,6 +286,8 @@ export function describePresence({
           ? `A free day — her plan can still run to ${label(studyUntilMinutes)}`
           : null,
       endsInMinutes: null,
+      progress: null,
+      known: true,
       atSchool: false,
       tone: "pause",
       icon: "home",
@@ -260,6 +299,8 @@ export function describePresence({
     headline: "Not sure",
     detail: null,
     endsInMinutes: null,
+    progress: null,
+    known: false,
     atSchool: false,
     tone: "muted",
     icon: "star",

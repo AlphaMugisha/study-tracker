@@ -72,6 +72,7 @@ export default async function StudentRecordPage({
           studyUntilMinutes={snapshot.studyUntilMinutes}
           settleMinutes={snapshot.settleMinutes}
           initial={snapshot.presence}
+          initialNowMinutes={snapshot.nowMinutes}
           lastSeen={snapshot.lastSeen}
         />
       </Reveal>

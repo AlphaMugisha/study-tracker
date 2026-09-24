@@ -8,8 +8,8 @@ import { StudentPresence } from "@/components/admin/student-presence";
 import { WeeklyReportCard } from "@/components/admin/weekly-report";
 import { HelpList, HelpMigrationNotice } from "@/components/help/help-list";
 import { Reveal, RevealWords } from "@/components/shared/reveal";
+import { StatRail } from "@/components/shared/stat-rail";
 import { Block, BlockHeading, Eyebrow, Surface } from "@/components/shared/surface";
-import { DayStats } from "@/components/today/sections";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { displayName, type SessionContext } from "@/lib/auth";
@@ -76,8 +76,13 @@ export async function SupportDashboard({ session }: { session: SessionContext })
 
             return (
               <div key={link.id} className="space-y-rhythm md:space-y-rhythm-lg">
+                {/*
+                  7/5 at xl and stretched, not stacked. `items-stretch` is what
+                  makes the rail end level with the card — without it the
+                  numbers sit in a short box with dead space under it.
+                */}
                 <Block aria-label={`Right now — ${name}`}>
-                  <div className="grid gap-6 lg:gap-8 xl:grid-cols-12">
+                  <div className="grid items-stretch gap-6 lg:gap-8 xl:grid-cols-12">
                     <Reveal className="h-full xl:col-span-7">
                       {/* Live: re-resolves on a timer, in HER timezone. */}
                       <StudentPresence
@@ -87,22 +92,25 @@ export async function SupportDashboard({ session }: { session: SessionContext })
                         studyUntilMinutes={snapshot.studyUntilMinutes}
                         settleMinutes={snapshot.settleMinutes}
                         initial={snapshot.presence}
+                        initialNowMinutes={snapshot.nowMinutes}
                         lastSeen={snapshot.lastSeen}
                       />
                     </Reveal>
 
                     <Reveal index={1} className="h-full xl:col-span-5">
-                      <DayStats
+                      <StatRail
                         stats={[
                           {
                             label: "Outstanding",
                             value: String(snapshot.outstanding.length),
+                            hint: "Homework she has logged and not finished",
                             tone: "lesson" as const,
                             href: `/admin/${link.student_id}#homework`,
                           },
                           {
                             label: "Overdue",
                             value: String(snapshot.overdueCount),
+                            hint: "Past its due date",
                             tone:
                               snapshot.overdueCount > 0
                                 ? ("danger" as const)
@@ -112,6 +120,7 @@ export async function SupportDashboard({ session }: { session: SessionContext })
                           {
                             label: "Stuck on",
                             value: String(openHelp.length),
+                            hint: "Things she says she does not understand",
                             tone: openHelp.length > 0 ? ("pause" as const) : ("brand" as const),
                             href: `/admin/${link.student_id}#stuck`,
                           },
