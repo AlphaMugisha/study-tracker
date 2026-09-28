@@ -69,11 +69,20 @@ export function getSupabaseServiceRoleKey(): string {
 /**
  * Which timetable extraction provider to use.
  *
- * `anthropic` reads a real photograph and needs ANTHROPIC_API_KEY. `mock`
- * returns a fixed week and never calls anything — it is the default because
- * the upload flow, including the review screen it all hinges on, has to be
- * runnable on a fresh clone with no key and no bill.
+ * `anthropic` and `google` both read a real photograph, and need
+ * ANTHROPIC_API_KEY or GEMINI_API_KEY respectively. They differ in what they
+ * cost rather than in what they return: Anthropic bills per call, while
+ * Google's AI Studio tier is free and pays for itself by training on what you
+ * send it — which, for a photograph with a child's timetable and her
+ * teachers' names on it, is a choice somebody should make deliberately.
+ *
+ * `mock` returns a fixed week and never calls anything. It stays the default
+ * because the upload flow, including the review screen it all hinges on, has
+ * to be runnable on a fresh clone with no key and no bill.
  */
-export function getExtractionProvider(): "mock" | "anthropic" {
-  return process.env.TIMETABLE_EXTRACTOR === "anthropic" ? "anthropic" : "mock";
+export function getExtractionProvider(): "mock" | "anthropic" | "google" {
+  const configured = process.env.TIMETABLE_EXTRACTOR;
+  if (configured === "anthropic") return "anthropic";
+  if (configured === "google") return "google";
+  return "mock";
 }

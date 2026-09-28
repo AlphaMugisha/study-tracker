@@ -13,6 +13,7 @@ import assert from "node:assert/strict";
 
 import { normaliseTime, normaliseEntries, findClashes } from "@/lib/timetable/extract.ts";
 import { rowProblem } from "@/lib/timetable/review.ts";
+import { toGeminiSchema } from "@/lib/timetable/gemini.ts";
 
 function row(over = {}) {
   return {
@@ -180,4 +181,60 @@ test("a row with no name of any kind cannot be saved", () => {
     rowProblem(row({ activityType: "break", subject: null, title: "Lunch" })),
     null,
   );
+});
+
+/*
+  The Gemini request schema.
+
+  Getting this wrong is a total, silent failure: the API rejects the whole
+  request for a reason that names no field, so every upload fails identically
+  whatever the photo. Worth pinning, because the two edits it makes exist only
+  because Gemini accepts a subset of JSON Schema and zod emits the rest.
+*/
+test("a nullable field is rewritten as anyOf, which is the composition Gemini takes", () => {
+  const converted = toGeminiSchema({
+    type: "object",
+    properties: { subject: { type: ["string", "null"], description: "keep me" } },
+  });
+
+  assert.deepEqual(converted.properties.subject.anyOf, [
+    { type: "string" },
+    { type: "null" },
+  ]);
+  assert.equal("type" in converted.properties.subject, false);
+  // Everything alongside it survives — this rewrites one key, not the object.
+  assert.equal(converted.properties.subject.description, "keep me");
+  assert.equal(converted.type, "object");
+});
+
+test("$schema is dropped wherever it appears, and nesting is followed", () => {
+  const converted = toGeminiSchema({
+    $schema: "https://json-schema.org/draft/2020-12/schema",
+    type: "object",
+    properties: {
+      entries: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: { room: { type: ["string", "null"] } },
+        },
+      },
+    },
+  });
+
+  assert.equal("$schema" in converted, false);
+  assert.deepEqual(converted.properties.entries.items.properties.room.anyOf, [
+    { type: "string" },
+    { type: "null" },
+  ]);
+});
+
+test("a plain single type is left exactly as it was", () => {
+  const converted = toGeminiSchema({
+    type: "string",
+    enum: ["class", "break"],
+    minimum: 1,
+  });
+
+  assert.deepEqual(converted, { type: "string", enum: ["class", "break"], minimum: 1 });
 });

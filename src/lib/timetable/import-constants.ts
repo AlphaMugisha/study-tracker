@@ -88,5 +88,5 @@ export const resultSchema = z.object({
 export type ExtractedEntry = z.infer<typeof entrySchema>;
 export type ExtractionResult = z.infer<typeof resultSchema> & {
   /** Which provider produced this, so the review screen can say so. */
-  provider: "anthropic" | "mock";
+  provider: "anthropic" | "google" | "mock";
 };

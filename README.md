@@ -63,6 +63,31 @@ The two values you need:
 `NEXT_PUBLIC_*` values are inlined at build time — restart the dev server after
 editing `.env.local`.
 
+#### Who reads the timetable photo
+
+Uploading a photo of a timetable is the one feature that calls out to somebody
+else's model. `TIMETABLE_EXTRACTOR` decides which, and all three return the
+same shape — the review screen, the confirmation and the engine underneath
+cannot tell them apart.
+
+| Value | Key | What it costs |
+|---|---|---|
+| `mock` | none | Nothing. Returns a fixed sample week without touching the network. The default, so the upload flow and its review screen work on a fresh clone. The review screen says when it is in use. |
+| `anthropic` | `ANTHROPIC_API_KEY` | Billed per call, well under a cent per timetable. Get a key at [console.anthropic.com](https://console.anthropic.com/settings/keys). |
+| `google` | `GEMINI_API_KEY` | Free tier, no card, lower rate limits. Get a key at [aistudio.google.com](https://aistudio.google.com/apikey). |
+
+Read the last row twice before choosing it. Google's free tier is free because
+input is used to improve their models, and what you are sending is a
+photograph of a child's week with her teachers' names printed across it. That
+may be a fine trade for a school's own timetable and a bad one for a family's;
+either way it should be a decision rather than a default, which is why neither
+paid provider is the default either.
+
+An Anthropic key on an account with no credit is the confusing failure: it
+authenticates perfectly and then fails every request. The balance belongs to
+the account rather than to the key, so issuing a new key changes nothing —
+the upload screen says so rather than telling you to retake the photograph.
+
 ### 4. Decide about email confirmation
 
 **Authentication → Sign In / Providers → Email**, in the Supabase dashboard.

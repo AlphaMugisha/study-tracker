@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 
 import { getExtractionProvider } from "@/lib/env";
+import { ExtractionError, extractWithGemini } from "@/lib/timetable/gemini";
 import { findClashes, normaliseTime } from "@/lib/timetable/review";
 import {
   MAX_IMAGE_BYTES,
@@ -218,7 +219,27 @@ function mockResult(input: ExtractionInput): ExtractionResult {
 }
 
 export async function extractTimetable(input: ExtractionInput): Promise<ExtractionResult> {
-  if (getExtractionProvider() === "mock") return mockResult(input);
+  const provider = getExtractionProvider();
+  if (provider === "mock") return mockResult(input);
+
+  /*
+    The same two prompts either way.
+
+    What a timetable is, how to read a time, when to admit to a guess — none of
+    that is Anthropic's or Google's, and letting the two paths drift apart is
+    how you end up debugging a reading difference that turns out to be a
+    sentence somebody only updated in one place.
+  */
+  const system = input.scope === "single" ? SYSTEM_SINGLE : SYSTEM_SHARED;
+
+  if (provider === "google") {
+    return extractWithGemini({
+      data: input.data,
+      mediaType: input.mediaType,
+      system,
+      instruction: instruction(input),
+    });
+  }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -248,7 +269,7 @@ export async function extractTimetable(input: ExtractionInput): Promise<Extracti
     // Reading a dense grid and deciding which block belongs to one class is
     // exactly the kind of work worth thinking about before answering.
     thinking: { type: "adaptive" },
-    system: input.scope === "single" ? SYSTEM_SINGLE : SYSTEM_SHARED,
+    system,
     messages: [
       {
         role: "user",
@@ -331,6 +352,10 @@ function instruction(input: ExtractionInput): string {
  * in a moment, and waiting is the one thing that cannot fix either.
  */
 export function describeExtractionFailure(error: unknown): string {
+  // The Google path classifies at the point the status code still exists, so
+  // it arrives with its sentence already written.
+  if (error instanceof ExtractionError) return error.userMessage;
+
   if (error instanceof Error && error.message.includes("ANTHROPIC_API_KEY")) {
     return "Timetable reading is not configured on this server. Set ANTHROPIC_API_KEY, or put TIMETABLE_EXTRACTOR back to mock to use the flow with sample data.";
   }
