@@ -23,8 +23,28 @@ import { resultSchema, type ExtractionResult } from "@/lib/timetable/import-cons
  * ---------------------------------------------------------------------------
  */
 
-/** The current Flash model: multimodal, on the free tier, quick on a grid. */
-const MODEL = "gemini-3.8-flash";
+/**
+ * Models to try, in order, until one answers.
+ *
+ * Not a preference list — a queue. The free tier returns 503
+ * `service_unavailable` on whichever model is currently busy, and the
+ * flagship is the busiest of them: on the afternoon this was written
+ * `gemini-3.8-flash` was refusing every request while 3.7 and 3.6 answered
+ * in a few seconds. One model hard-coded means the upload screen is down
+ * whenever that model is, for a reason nobody here can fix or wait out.
+ *
+ * Ordered by what actually answered rather than by capability, because each
+ * attempt on a busy model costs about eight seconds before it gives up, and
+ * reading a grid is not work that needs the flagship. The flagship is last
+ * rather than absent so a day when the others are the busy ones still works.
+ */
+const MODELS = ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.8-flash"];
+
+/** One name in GEMINI_MODEL pins the lot, for pinning a known-good model. */
+function modelsToTry(): string[] {
+  const pinned = process.env.GEMINI_MODEL?.trim();
+  return pinned ? [pinned] : MODELS;
+}
 
 const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/interactions";
 
@@ -105,38 +125,59 @@ export async function extractWithGemini(input: GeminiInput): Promise<ExtractionR
     );
   }
 
-  let response: Response;
-  try {
-    response = await fetch(ENDPOINT, {
-      method: "POST",
-      headers: { "x-goog-api-key": apiKey, "content-type": "application/json" },
-      body: JSON.stringify({
-        model: MODEL,
-        // The rules go in as the first turn rather than as a separate system
-        // field: one documented shape, used the same way every time.
-        input: [
-          { type: "text", text: input.system },
-          { type: "image", data: input.data, mime_type: input.mediaType },
-          { type: "text", text: input.instruction },
-        ],
-        response_format: {
-          type: "text",
-          mime_type: "application/json",
-          schema: RESPONSE_SCHEMA,
-        },
-      }),
+  const bodyFor = (model: string) =>
+    JSON.stringify({
+      model,
+      // The rules go in as the first turn rather than as a separate system
+      // field: one documented shape, used the same way every time.
+      input: [
+        { type: "text", text: input.system },
+        { type: "image", data: input.data, mime_type: input.mediaType },
+        { type: "text", text: input.instruction },
+      ],
+      response_format: {
+        type: "text",
+        mime_type: "application/json",
+        schema: RESPONSE_SCHEMA,
+      },
     });
-  } catch (error) {
-    throw new ExtractionError(
-      "The timetable reader could not be reached. Check this server's connection and try again.",
-      error instanceof Error ? error.message : undefined,
+
+  let response: Response | null = null;
+  let lastFailure: ExtractionError | null = null;
+
+  for (const model of modelsToTry()) {
+    let attempt: Response;
+    try {
+      attempt = await fetch(ENDPOINT, {
+        method: "POST",
+        headers: { "x-goog-api-key": apiKey, "content-type": "application/json" },
+        body: bodyFor(model),
+      });
+    } catch (error) {
+      throw new ExtractionError(
+        "The timetable reader could not be reached. Check this server's connection and try again.",
+        error instanceof Error ? error.message : undefined,
+      );
+    }
+
+    if (attempt.ok) {
+      response = attempt;
+      break;
+    }
+
+    lastFailure = await failureFor(attempt, model);
+    // A busy model is the next model's problem; a rejected key is nobody's.
+    if (attempt.status !== 503 && attempt.status !== 429) throw lastFailure;
+  }
+
+  if (!response) {
+    throw (
+      lastFailure ??
+      new ExtractionError("The timetable reader could not be reached. Try again in a moment.")
     );
   }
 
-  if (!response.ok) throw await failureFor(response);
-
-  const body = (await response.json()) as { output_text?: unknown };
-  const text = typeof body.output_text === "string" ? body.output_text : "";
+  const text = outputTextOf(await response.json());
 
   if (!text.trim()) {
     throw new ExtractionError(
@@ -175,7 +216,7 @@ export async function extractWithGemini(input: GeminiInput): Promise<ExtractionR
 }
 
 /** Status codes, translated. The body usually carries a usable reason too. */
-async function failureFor(response: Response): Promise<ExtractionError> {
+async function failureFor(response: Response, model: string): Promise<ExtractionError> {
   const detail = await response.text().catch(() => "");
 
   if (response.status === 400 && /api key/i.test(detail)) {
@@ -198,15 +239,46 @@ async function failureFor(response: Response): Promise<ExtractionError> {
   }
   if (response.status >= 500) {
     return new ExtractionError(
-      "Google's timetable reader is having trouble. Try again in a moment.",
-      detail.slice(0, 300),
+      "Google's models are all busy right now — that is the free tier, not your key or your photo. Try again in a few minutes.",
+      `${model}: ${detail.slice(0, 300)}`,
     );
   }
 
   return new ExtractionError(
     "The timetable could not be read. Try again, or try a clearer photo.",
-    `${response.status}: ${detail.slice(0, 300)}`,
+    `${model} ${response.status}: ${detail.slice(0, 300)}`,
   );
+}
+
+/**
+ * Dig the model's text out of the reply.
+ *
+ * `output_text` is a convenience property on Google's own SDK objects, not a
+ * field on the wire — the REST body has no such key, and reading it gives an
+ * empty string on a perfectly good response. What is actually there is a list
+ * of steps, of which the interesting one is `model_output`; the others are the
+ * model's own thinking, which arrives as an opaque signature with no text in
+ * it at all. `output_text` is still checked first, in case a future shape
+ * grows one.
+ */
+function outputTextOf(body: unknown): string {
+  if (!body || typeof body !== "object") return "";
+
+  const reply = body as {
+    output_text?: unknown;
+    steps?: Array<{ type?: unknown; content?: Array<{ type?: unknown; text?: unknown }> }>;
+  };
+
+  if (typeof reply.output_text === "string" && reply.output_text.trim()) {
+    return reply.output_text;
+  }
+
+  return (reply.steps ?? [])
+    .filter((step) => step.type === "model_output")
+    .flatMap((step) => step.content ?? [])
+    .filter((part) => part.type === "text" && typeof part.text === "string")
+    .map((part) => part.text as string)
+    .join("");
 }
 
 /**
