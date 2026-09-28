@@ -11,8 +11,10 @@ import {
   normaliseEntries,
   MAX_IMAGE_BYTES,
   SUPPORTED_MEDIA_TYPES,
+  TIMETABLE_SCOPES,
   type ExtractedEntry,
   type ExtractionResult,
+  type TimetableScope,
 } from "@/lib/timetable/extract";
 
 /**
@@ -41,6 +43,8 @@ export type AnalyseState = {
   clashCount?: number;
   studentId?: string;
   studentName?: string;
+  /** Echoed back so step two can record how the image was read. */
+  scope?: TimetableScope;
 };
 
 export type ConfirmState = {
@@ -109,8 +113,17 @@ export async function analyseTimetableAction(
   const classContext = String(formData.get("classContext") ?? "").trim();
   const requested = formData.get("studentId");
 
+  // Anything that is not a scope we recognise falls back to `shared`, which is
+  // the mode that asks more questions rather than fewer.
+  const rawScope = String(formData.get("scope") ?? "");
+  const scope: TimetableScope = TIMETABLE_SCOPES.includes(rawScope as TimetableScope)
+    ? (rawScope as TimetableScope)
+    : "shared";
+
   const fieldErrors: Record<string, string> = {};
-  if (!classContext) {
+  // Only the shared grid needs a class name to find the right block. Demanding
+  // one for a single-class sheet turns an optional label into a gate.
+  if (!classContext && scope === "shared") {
     fieldErrors.classContext = "Say which class you are in — the timetable covers several.";
   } else if (classContext.length > 80) {
     fieldErrors.classContext = "That is a little long for a class name.";
@@ -142,7 +155,8 @@ export async function analyseTimetableAction(
     result = await extractTimetable({
       data,
       mediaType: image.type as never,
-      classContext,
+      classContext: classContext || null,
+      scope,
     });
   } catch (error) {
     // The key being missing or the API being down are different problems from
@@ -172,7 +186,10 @@ export async function analyseTimetableAction(
 
   if (entries.length === 0) {
     return {
-      formError: `Nothing readable was found for "${classContext}". Check the class name matches what is printed on the timetable.`,
+      formError:
+        scope === "shared"
+          ? `Nothing readable was found for "${classContext}". Check the class name matches what is printed on the timetable.`
+          : "No lessons could be read from that image. If it is a grid covering several classes, choose the other option and name the class.",
     };
   }
 
@@ -182,6 +199,7 @@ export async function analyseTimetableAction(
     clashCount: findClashes(entries).length,
     studentId: target.id,
     studentName: target.name,
+    scope,
   };
 }
 
@@ -210,6 +228,12 @@ export async function confirmTimetableAction(
   const payload = formData.get("entries");
   const requested = formData.get("studentId");
   const name = String(formData.get("name") ?? "").trim() || "My timetable";
+  // Carried through from step one only so the saved version records how it was
+  // read. Nothing about the write depends on it.
+  const rawScope = String(formData.get("scope") ?? "");
+  const scope: TimetableScope = TIMETABLE_SCOPES.includes(rawScope as TimetableScope)
+    ? (rawScope as TimetableScope)
+    : "shared";
 
   let rows: z.infer<typeof confirmEntrySchema>[];
   try {
@@ -251,7 +275,7 @@ export async function confirmTimetableAction(
       status: "active",
       source_type: "image",
       confirmed_at: new Date().toISOString(),
-      extraction_meta: { confirmedBy: target.onBehalf ? "support" : "student" },
+      extraction_meta: { confirmedBy: target.onBehalf ? "support" : "student", scope },
     })
     .select("id")
     .single();

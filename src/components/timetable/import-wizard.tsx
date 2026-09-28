@@ -2,7 +2,7 @@
 
 import { useActionState, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ImageUp, Info, Trash2, Upload } from "lucide-react";
+import { AlertTriangle, ImageUp, Info, LayoutGrid, Rows3, Trash2, Upload } from "lucide-react";
 
 import { Field, FormAlert, fieldA11yProps } from "@/components/auth/form-field";
 import { SubmitButton } from "@/components/auth/submit-button";
@@ -15,7 +15,11 @@ import {
   type AnalyseState,
   type ConfirmState,
 } from "@/lib/actions/timetable-import";
-import { MAX_IMAGE_BYTES, type ExtractedEntry } from "@/lib/timetable/import-constants";
+import {
+  MAX_IMAGE_BYTES,
+  type ExtractedEntry,
+  type TimetableScope,
+} from "@/lib/timetable/import-constants";
 import { DAY_NAMES } from "@/lib/timetable/types";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +38,36 @@ import { cn } from "@/lib/utils";
 const EMPTY_ANALYSE: AnalyseState = {};
 const EMPTY_CONFIRM: ConfirmState = {};
 
+/**
+ * The two shapes a timetable photo comes in, in the words of the person
+ * holding the photo rather than the words of the prompt that reads it.
+ *
+ * This is asked first and answered by looking at the picture, because it
+ * decides both what the reader is told to do and whether a class name is
+ * needed at all. Guessing it from the image was tempting and wrong: the two
+ * failure modes are silent in opposite directions, and the person uploading
+ * can tell them apart at a glance.
+ */
+const SCOPE_OPTIONS: Array<{
+  value: TimetableScope;
+  icon: typeof Rows3;
+  label: string;
+  detail: string;
+}> = [
+  {
+    value: "single",
+    icon: Rows3,
+    label: "Just one class",
+    detail: "Periods down the side, days across the top, and every lesson on it is hers.",
+  },
+  {
+    value: "shared",
+    icon: LayoutGrid,
+    label: "Several classes at once",
+    detail: "The whole year on one sheet, a block per class. You will name which block is hers.",
+  },
+];
+
 type Row = ExtractedEntry & { key: string };
 
 export function ImportWizard({
@@ -48,6 +82,7 @@ export function ImportWizard({
 }) {
   const router = useRouter();
   const [rows, setRows] = useState<Row[] | null>(null);
+  const [scope, setScope] = useState<TimetableScope>("single");
   const [name, setName] = useState("My timetable");
   const [fileName, setFileName] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -98,6 +133,65 @@ export function ImportWizard({
           {analysis.formError ? <FormAlert>{analysis.formError}</FormAlert> : null}
 
           {/*
+            Asked before the file, because the answer changes what the next
+            field is for. A class name is the whole job on a shared grid and
+            a label on a single-class sheet, and a form that asks for it the
+            same way in both cases teaches the wrong thing about it.
+          */}
+          <fieldset>
+            <legend className="mb-2.5 text-[13px] font-medium text-ink">
+              What does the timetable cover?
+            </legend>
+
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              {SCOPE_OPTIONS.map((option) => {
+                const active = scope === option.value;
+                return (
+                  <label
+                    key={option.value}
+                    className={cn(
+                      "flex cursor-pointer gap-3 rounded-xl border p-4 transition-colors duration-200 ease-out-flat",
+                      "focus-within:ring-2 focus-within:ring-brand/40",
+                      active
+                        ? "border-brand/55 bg-brand-soft"
+                        : "border-border bg-surface-sunken hover:border-border-strong hover:bg-surface-raised",
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="scope"
+                      value={option.value}
+                      checked={active}
+                      onChange={() => setScope(option.value)}
+                      className="sr-only"
+                    />
+                    <option.icon
+                      aria-hidden="true"
+                      className={cn(
+                        "mt-0.5 size-4 shrink-0",
+                        active ? "text-brand-ink" : "text-ink-subtle",
+                      )}
+                    />
+                    <span>
+                      <span
+                        className={cn(
+                          "block text-body font-medium",
+                          active ? "text-brand-ink" : "text-ink",
+                        )}
+                      >
+                        {option.label}
+                      </span>
+                      <span className="mt-1 block text-[0.85rem] leading-relaxed text-ink-subtle">
+                        {option.detail}
+                      </span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          {/*
             The long explanation sits OUTSIDE the Field, not inside it. Field
             renders its hint after its children, so a paragraph passed as a
             child pushes the hint to the bottom and leaves it stranded under
@@ -106,27 +200,40 @@ export function ImportWizard({
           <div>
             <Field
               id="classContext"
-              label="Which class is she in?"
+              label={
+                scope === "single"
+                  ? "What is the class called?"
+                  : studentName
+                    ? `Which class is ${studentName} in?`
+                    : "Which class are you in?"
+              }
               error={fieldErrors.classContext}
-              hint="Exactly as it is printed on the timetable"
+              hint={
+                scope === "single"
+                  ? "Optional — it only names the saved timetable"
+                  : "Exactly as it is printed on the timetable"
+              }
             >
               <Input
                 {...fieldA11yProps(
                   "classContext",
                   fieldErrors.classContext,
-                  "Exactly as it is printed on the timetable",
+                  scope === "single"
+                    ? "Optional — it only names the saved timetable"
+                    : "Exactly as it is printed on the timetable",
                 )}
                 name="classContext"
-                required
+                required={scope === "shared"}
                 placeholder="S3 MCB"
                 className="h-11"
               />
             </Field>
             <p className="mt-3 max-w-[54ch] text-[0.85rem] leading-relaxed text-ink-subtle">
-              A school timetable usually covers every class at once. This is how
-              the reader knows which block of the grid is{" "}
-              {studentName ? `${studentName}'s` : "yours"} — without it, it would
-              be guessing.
+              {scope === "single"
+                ? "Every cell on the sheet is read. There is no other class to tell it apart from, so this is just what the timetable gets called."
+                : `A school timetable usually covers every class at once. This is how the reader knows which block of the grid is ${
+                    studentName ? `${studentName}'s` : "yours"
+                  } — without it, it would be guessing.`}
             </p>
           </div>
 
@@ -332,7 +439,9 @@ export function ImportWizard({
               <li
                 key={row.key}
                 className={cn(
-                  "grid gap-3 rounded-xl border p-4 sm:grid-cols-[7rem_7rem_1fr_8rem_auto] sm:items-center",
+                  // Six columns is one too many for sm, so the row stacks
+                  // until md rather than squeezing every input to nothing.
+                  "grid gap-3 rounded-xl border p-4 md:grid-cols-[6rem_6rem_minmax(0,1fr)_6.5rem_6.5rem_auto] md:items-center",
                   row.confidence === "low"
                     ? "border-pause/50 bg-pause/6"
                     : "border-border bg-surface-sunken",
@@ -372,6 +481,19 @@ export function ImportWizard({
                   onChange={(e) => update(row.key, { room: e.target.value || null })}
                   className="h-10"
                 />
+                {/*
+                  A single-class timetable prints the teacher in every cell,
+                  and the reader now returns it. Without a field here it would
+                  be saved unseen — the one piece of an entry that nobody could
+                  correct, on the screen whose whole purpose is correcting.
+                */}
+                <Input
+                  aria-label="Teacher"
+                  value={row.teacher ?? ""}
+                  placeholder="Teacher"
+                  onChange={(e) => update(row.key, { teacher: e.target.value || null })}
+                  className="h-10"
+                />
                 <Button
                   type="button"
                   variant="ghost"
@@ -392,6 +514,9 @@ export function ImportWizard({
 
         <form action={confirm} className="grid gap-6">
           {studentId ? <input type="hidden" name="studentId" value={studentId} /> : null}
+          {/* Recorded on the saved version, so a week that came back odd can
+              later be traced to how the image was read. */}
+          <input type="hidden" name="scope" value={scope} />
           <input
             type="hidden"
             name="entries"

@@ -6,16 +6,20 @@ import {
   MAX_IMAGE_BYTES,
   resultSchema,
   SUPPORTED_MEDIA_TYPES,
+  TIMETABLE_SCOPES,
   type ExtractedEntry,
   type ExtractionResult,
   type SupportedMediaType,
+  type TimetableScope,
 } from "@/lib/timetable/import-constants";
 
 export {
   MAX_IMAGE_BYTES,
   SUPPORTED_MEDIA_TYPES,
+  TIMETABLE_SCOPES,
   type ExtractedEntry,
   type ExtractionResult,
+  type TimetableScope,
 };
 
 /**
@@ -41,21 +45,26 @@ export type ExtractionInput = {
   /** Raw image bytes, base64 encoded (no data: prefix). */
   data: string;
   mediaType: SupportedMediaType;
-  /** "S3 MCB", "Grade 10 Blue" — whatever she calls her class. */
-  classContext: string;
+  /**
+   * "S3 MCB", "Grade 10 Blue" — whatever she calls her class. Required when
+   * the grid covers several classes; optional, and used only as a label, when
+   * the whole image is already one class's timetable.
+   */
+  classContext: string | null;
+  /** Whether the image is one class's timetable or the whole school's grid. */
+  scope: TimetableScope;
 };
 
-const SYSTEM = `You read photographs of school timetables and return them as structured data.
-
-The single most important thing: a school timetable is usually a grid covering MANY classes at once — one block of rows or columns per class, with the class name printed alongside. You will be told which class the student is in. Return ONLY that class's lessons. Returning another class's lessons is worse than returning nothing, because it looks correct and is not.
-
-If you cannot find the named class on the image, set readable to false and say so in problem. Do not fall back to "the first class" or "the whole grid" — guessing which child this belongs to is the one mistake that cannot be caught by looking.
-
-Reading the grid:
-- Times are often in a header row or a left column, and often written as 8.30, 8:30, 0830 or 8h30. Normalise everything to 24-hour HH:MM.
+/**
+ * The rules that do not depend on what kind of photograph this is: how to read
+ * a time, what counts as one entry, and when to admit to a guess.
+ */
+const READING_RULES = `Reading the grid:
+- Times are often in a header row or a left column, and often written as 8.30, 8:30, 0830 or 8h30. Normalise everything to 24-hour HH:MM. Watch the AM/PM: a period labelled 1:30-2:20 PM is 13:30 to 14:20, not 01:30.
 - If a lesson's end time is not printed, infer it from the next period's start, and mark that row's confidence as medium.
-- A double period shown as one merged cell is ONE entry spanning both slots, not two.
+- A double period is ONE entry spanning both slots, not two. That is true whether it is drawn as a single merged cell or as two consecutive cells holding the same subject and teacher — read those as one lesson running from the first slot's start to the second slot's end.
 - Break, lunch, assembly, registration and games are real rows: return them with activityType break or other. The student's day is not only lessons, and the app uses them.
+- A name in brackets under a subject is the teacher. Put it in teacher, not in subject.
 - Expand subject abbreviations where you are confident (MATHS to Mathematics, PHY to Physics, ENG to English). If an abbreviation is ambiguous, keep it as printed and mark confidence low.
 - Empty cells, free periods and study periods are worth returning as free or study.
 
@@ -64,13 +73,53 @@ Confidence is not decoration. Mark a row low whenever you had to guess: a blurre
 Put anything else worth a second look in notes — an edge cut off by the photo, two lessons that appear to clash, a day that looks incomplete.`;
 
 /**
+ * The school-wide grid: many classes on one sheet.
+ *
+ * Almost all of the difficulty is in the first paragraph. Reading a cell
+ * correctly but reading the wrong block of cells produces a plausible,
+ * complete, entirely wrong week, and that is not a mistake anybody catches by
+ * glancing at the review screen.
+ */
+const SYSTEM_SHARED = `You read photographs of school timetables and return them as structured data.
+
+The single most important thing: this timetable is a grid covering MANY classes at once — one block of rows or columns per class, with the class name printed alongside. You will be told which class the student is in. Return ONLY that class's lessons. Returning another class's lessons is worse than returning nothing, because it looks correct and is not.
+
+If you cannot find the named class on the image, set readable to false and say so in problem. Do not fall back to "the first class" or "the whole grid" — guessing which child this belongs to is the one mistake that cannot be caught by looking.
+
+${READING_RULES}`;
+
+/**
+ * One class's own timetable — the sheet pinned inside that classroom.
+ *
+ * Here the danger runs the other way. There is no block to pick out, so
+ * hunting for one and finding nothing is how a perfectly legible image comes
+ * back empty. Take everything, including the bands that run the full width of
+ * the week.
+ */
+const SYSTEM_SINGLE = `You read photographs of school timetables and return them as structured data.
+
+This image is ONE class's timetable — periods down one side, days of the week across the other, and nothing on the page belonging to any other class. Return every cell of it. Do not look for a class name to filter by and do not leave anything out: if it is printed in the grid, it is this student's.
+
+- A row or band that spans the full width of the week — SHORT BREAK, LUNCH BREAK, OFFICE HOURS, assembly — applies to every day it stretches across. Return it once per day, not once in total.
+- If a class or form name is printed as a heading, put it in className. It is a label, not a filter.
+
+${READING_RULES}`;
+
+/**
  * A fixture, for running the flow without an API key or a bill.
  *
  * It is deliberately imperfect: one low-confidence row and one note, so the
  * review screen is exercised in the state that actually matters rather than
  * on a page where everything is green.
+ *
+ * The single-class sample is the wider of the two — five full days, teachers,
+ * and breaks that run across the whole week — because that is the shape the
+ * new mode has to survive, and a three-row fixture would never show that the
+ * review screen scrolls.
  */
-function mockResult(classContext: string): ExtractionResult {
+function mockResult(input: ExtractionInput): ExtractionResult {
+  const { classContext, scope } = input;
+
   const lesson = (
     dayOfWeek: number,
     startTime: string,
@@ -78,6 +127,7 @@ function mockResult(classContext: string): ExtractionResult {
     subject: string,
     room: string | null,
     confidence: "high" | "medium" | "low" = "high",
+    teacher: string | null = null,
   ): ExtractedEntry => ({
     dayOfWeek,
     startTime,
@@ -86,7 +136,7 @@ function mockResult(classContext: string): ExtractionResult {
     subject,
     title: null,
     room,
-    teacher: null,
+    teacher,
     confidence,
   });
 
@@ -101,6 +151,44 @@ function mockResult(classContext: string): ExtractionResult {
     teacher: null,
     confidence: "high",
   });
+
+  if (scope === "single") {
+    // One class's week: the same two breaks every day, which is the part of
+    // this shape most likely to come back missing from a real read.
+    const week = [1, 2, 3, 4, 5];
+    const morning = [
+      ["Embedded System Software", "Willy"],
+      ["Advanced Networking", "Felix"],
+      ["Data Structures (DSA)", "Eric"],
+      ["Software Engineering", "Felix"],
+      ["Web3", "Emmanuel"],
+    ];
+    const afternoon = [
+      ["Software Engineering", "Felix"],
+      ["Advanced English", "Christine"],
+      ["Applied Math II", "Jean Bosco"],
+      ["Applied Physics II", "Jean De Dieu"],
+      ["Development of 3D Models", "Willy"],
+    ];
+
+    return {
+      provider: "mock",
+      readable: true,
+      problem: null,
+      className: classContext || "S3 MCB",
+      entries: week.flatMap((day, i) => [
+        lesson(day, "08:00", "09:40", morning[i][0], null, "high", morning[i][1]),
+        br(day, "09:40", "10:00", "Short break"),
+        lesson(day, "10:00", "11:40", afternoon[i][0], null, day === 4 ? "low" : "high", afternoon[i][1]),
+        br(day, "12:30", "13:30", "Lunch break"),
+        lesson(day, "13:30", "15:10", morning[(i + 2) % 5][0], null, "high", morning[(i + 2) % 5][1]),
+      ]),
+      notes: [
+        "This is sample data — TIMETABLE_EXTRACTOR is set to mock, so the image was not read.",
+        "The last period on Thursday was hard to read. Check it against the photo.",
+      ],
+    };
+  }
 
   return {
     provider: "mock",
@@ -128,7 +216,7 @@ function mockResult(classContext: string): ExtractionResult {
 }
 
 export async function extractTimetable(input: ExtractionInput): Promise<ExtractionResult> {
-  if (getExtractionProvider() === "mock") return mockResult(input.classContext);
+  if (getExtractionProvider() === "mock") return mockResult(input);
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -145,7 +233,7 @@ export async function extractTimetable(input: ExtractionInput): Promise<Extracti
     // Reading a dense grid and deciding which block belongs to one class is
     // exactly the kind of work worth thinking about before answering.
     thinking: { type: "adaptive" },
-    system: SYSTEM,
+    system: input.scope === "single" ? SYSTEM_SINGLE : SYSTEM_SHARED,
     messages: [
       {
         role: "user",
@@ -154,10 +242,7 @@ export async function extractTimetable(input: ExtractionInput): Promise<Extracti
             type: "image",
             source: { type: "base64", media_type: input.mediaType, data: input.data },
           },
-          {
-            type: "text",
-            text: `This student is in: ${input.classContext}\n\nReturn that class's timetable only.`,
-          },
+          { type: "text", text: instruction(input) },
         ],
       },
     ],
@@ -177,6 +262,24 @@ export async function extractTimetable(input: ExtractionInput): Promise<Extracti
   }
 
   return { ...parsed, provider: "anthropic" };
+}
+
+/**
+ * The one turn of user text, which differs by mode more than the prompt does.
+ *
+ * In single-class mode the class name is a hint at most — telling the model to
+ * "return that class's timetable only" would invite it to filter a grid that
+ * has nothing to filter, and come back with an empty week from an image where
+ * every cell was legible.
+ */
+function instruction(input: ExtractionInput): string {
+  if (input.scope === "single") {
+    return input.classContext
+      ? `This timetable belongs to one class: ${input.classContext}. Every cell on the image is theirs — read the whole grid.`
+      : "This timetable belongs to a single class. Every cell on the image is theirs — read the whole grid.";
+  }
+
+  return `This student is in: ${input.classContext}\n\nReturn that class's timetable only.`;
 }
 
 // ---------------------------------------------------------------------------

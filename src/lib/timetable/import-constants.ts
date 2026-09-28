@@ -21,6 +21,25 @@ export const SUPPORTED_MEDIA_TYPES = [
 
 export type SupportedMediaType = (typeof SUPPORTED_MEDIA_TYPES)[number];
 
+/**
+ * What the photograph actually contains.
+ *
+ * `shared` is the school-noticeboard grid: every class in the year on one
+ * sheet, with the class name printed alongside each block. Reading it is a
+ * two-step job — find the right block, then read it — and getting the first
+ * step wrong produces a timetable that looks perfect and belongs to somebody
+ * else, so that mode demands a class name.
+ *
+ * `single` is one class's own timetable: periods down the side, days across
+ * the top, and nothing on the page belonging to anyone else. There is no block
+ * to pick, so a class name is decoration and the reader should take the whole
+ * grid. Asking for one anyway is how you get "nothing readable was found for
+ * S3 MCB" from an image whose every cell was legible.
+ */
+export const TIMETABLE_SCOPES = ["single", "shared"] as const;
+
+export type TimetableScope = (typeof TIMETABLE_SCOPES)[number];
+
 export const entrySchema = z.object({
   dayOfWeek: z
     .number()

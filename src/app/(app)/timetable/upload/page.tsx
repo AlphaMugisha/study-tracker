@@ -23,7 +23,7 @@ export default async function UploadTimetablePage() {
       <PageHeader
         eyebrow="Timetable"
         title="Take a photo of it."
-        description="Rather than typing out every lesson, upload the timetable and check what comes back. You get the last word on every row."
+        description="Rather than typing out every lesson, upload the timetable and check what comes back. One class's own sheet or the whole year's grid — say which, and you get the last word on every row."
       />
       <Reveal>
         <ImportWizard returnTo="/timetable" />
