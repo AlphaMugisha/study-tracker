@@ -18,7 +18,6 @@ export const metadata: Metadata = { title: "Timetable" };
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-const DAYS = [1, 2, 3, 4, 5] as const;
 
 export default async function TimetablePage({
   searchParams,
@@ -36,9 +35,25 @@ export default async function TimetablePage({
 
   const view = params.view === "week" ? "week" : "day";
   const requested = Number(params.day);
-  // Weekends fall back to Monday rather than showing an empty day.
-  const selectedDay =
-    requested >= 1 && requested <= 5 ? requested : todayIndex >= 6 ? 1 : todayIndex;
+
+  /*
+    Five days, plus any weekend day the timetable actually uses.
+
+    Both this picker and the week grid used to be a fixed Monday-to-Friday
+    list, so a Saturday lesson — which the extraction, the database and the
+    countdown all handle — could be saved and then never seen again here.
+  */
+  const days = [1, 2, 3, 4, 5, 6, 7].filter(
+    (day) => day <= 5 || entries.some((e) => e.dayOfWeek === day),
+  );
+
+  // A weekend with nothing on it falls back to Monday rather than showing an
+  // empty day.
+  const selectedDay = days.includes(requested)
+    ? requested
+    : days.includes(todayIndex)
+      ? todayIndex
+      : 1;
 
   const dayEntries = entries
     .filter((e) => e.dayOfWeek === selectedDay)
@@ -106,7 +121,7 @@ export default async function TimetablePage({
               wrapping, so the row always reads as one control. */}
           <div className="-mx-5 mb-6 overflow-x-auto px-5 sm:mx-0 sm:px-0">
             <div className="inline-flex gap-1.5">
-              {DAYS.map((day) => {
+              {days.map((day) => {
                 const active = day === selectedDay;
                 return (
                   <Link

@@ -12,6 +12,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { normaliseTime, normaliseEntries, findClashes } from "@/lib/timetable/extract.ts";
+import { rowProblem } from "@/lib/timetable/review.ts";
 
 function row(over = {}) {
   return {
@@ -152,4 +153,31 @@ test("an empty extraction is handled, not crashed on", () => {
   assert.deepEqual(entries, []);
   assert.deepEqual(dropped, []);
   assert.deepEqual(findClashes([]), []);
+});
+
+/*
+  `rowProblem` is what holds the save button shut on the review screen. It has
+  to agree with `normaliseEntries` about what is unsaveable — a row the server
+  would drop but the browser waves through is the half-written week these
+  checks exist to prevent.
+*/
+test("a row a person could type is judged the same way the server judges it", () => {
+  assert.equal(rowProblem(row()), null);
+  assert.equal(rowProblem(row({ startTime: "8.30", endTime: "9.20" })), null);
+
+  assert.match(rowProblem(row({ startTime: "half eight" })), /start time/i);
+  assert.match(rowProblem(row({ endTime: "" })), /end time/i);
+  assert.match(rowProblem(row({ startTime: "10:00", endTime: "09:00" })), /ends before/i);
+  assert.match(rowProblem(row({ startTime: "09:00", endTime: "09:00" })), /ends before/i);
+});
+
+test("a row with no name of any kind cannot be saved", () => {
+  assert.match(rowProblem(row({ subject: null, title: null })), /needs a name/i);
+  assert.match(rowProblem(row({ subject: "   ", title: null })), /needs a name/i);
+
+  // A break carries its name in title, not subject, and is perfectly fine.
+  assert.equal(
+    rowProblem(row({ activityType: "break", subject: null, title: "Lunch" })),
+    null,
+  );
 });

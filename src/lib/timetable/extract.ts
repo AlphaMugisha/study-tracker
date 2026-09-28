@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 
 import { getExtractionProvider } from "@/lib/env";
+import { findClashes, normaliseTime } from "@/lib/timetable/review";
 import {
   MAX_IMAGE_BYTES,
   resultSchema,
@@ -21,6 +22,13 @@ export {
   type ExtractionResult,
   type TimetableScope,
 };
+
+/*
+  Re-exported rather than moved out of sight. These live in `review.ts` now
+  because the review screen needs them too and cannot import this file, but
+  every existing caller — and the tests — still reaches for them here.
+*/
+export { findClashes, normaliseTime };
 
 /**
  * Reading a school timetable out of a photograph.
@@ -345,55 +353,4 @@ export function normaliseEntries(entries: ExtractedEntry[]): {
 
   kept.sort((a, b) => a.dayOfWeek - b.dayOfWeek || a.startTime.localeCompare(b.startTime));
   return { entries: kept, dropped };
-}
-
-/** `"8.30"`, `"0830"`, `"8h30"`, `"08:30:00"` → `"08:30"`. Null if hopeless. */
-export function normaliseTime(value: string): string | null {
-  const raw = value.trim();
-
-  const colon = raw.match(/^(\d{1,2})\s*[:.h]\s*(\d{2})/i);
-  const bare = raw.match(/^(\d{2})(\d{2})$/);
-  const hourOnly = raw.match(/^(\d{1,2})$/);
-
-  let h: number;
-  let m: number;
-
-  if (colon) {
-    h = Number(colon[1]);
-    m = Number(colon[2]);
-  } else if (bare) {
-    h = Number(bare[1]);
-    m = Number(bare[2]);
-  } else if (hourOnly) {
-    h = Number(hourOnly[1]);
-    m = 0;
-  } else {
-    return null;
-  }
-
-  // A trailing pm on an hour below 12 is the one am/pm case worth handling:
-  // school timetables that use it are otherwise unreadable as 24-hour.
-  if (/p\.?m/i.test(raw) && h < 12) h += 12;
-  if (/a\.?m/i.test(raw) && h === 12) h = 0;
-
-  if (!Number.isInteger(h) || !Number.isInteger(m)) return null;
-  if (h < 0 || h > 23 || m < 0 || m > 59) return null;
-
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-}
-
-/** Rows that overlap each other, which the database will reject as 23P01. */
-export function findClashes(entries: ExtractedEntry[]): Array<[ExtractedEntry, ExtractedEntry]> {
-  const clashes: Array<[ExtractedEntry, ExtractedEntry]> = [];
-
-  for (let i = 0; i < entries.length; i += 1) {
-    for (let j = i + 1; j < entries.length; j += 1) {
-      const a = entries[i];
-      const b = entries[j];
-      if (a.dayOfWeek !== b.dayOfWeek) continue;
-      if (a.startTime < b.endTime && b.startTime < a.endTime) clashes.push([a, b]);
-    }
-  }
-
-  return clashes;
 }

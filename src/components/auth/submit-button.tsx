@@ -19,15 +19,23 @@ export function SubmitButton({
   children,
   pendingLabel,
   className,
+  disabled,
 }: {
   children: React.ReactNode;
   pendingLabel: string;
   className?: string;
+  /** Held shut for a reason of the form's own, on top of the pending state. */
+  disabled?: boolean;
 }) {
   const { pending } = useFormStatus();
 
   return (
-    <Button type="submit" size="lg" className={cn("w-full", className)} disabled={pending}>
+    <Button
+      type="submit"
+      size="lg"
+      className={cn("w-full", className)}
+      disabled={pending || disabled}
+    >
       {pending ? (
         <>
           <Loader2 aria-hidden="true" className="animate-spin" />

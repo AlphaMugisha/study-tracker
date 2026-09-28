@@ -103,7 +103,7 @@ export function DaySchedule({
 }
 
 /**
- * Monday–Friday side by side on desktop, stacked on mobile. Deliberately not
+ * The school week side by side on desktop, stacked on mobile. Deliberately not
  * time-proportional: a proportional grid buys prettiness and costs legibility
  * at the widths a student actually uses.
  */
@@ -114,7 +114,18 @@ export function WeekGrid({
   entries: ResolvedEntry[];
   today: number;
 }) {
-  const days = [1, 2, 3, 4, 5];
+  /*
+    Five days, unless the timetable says otherwise.
+
+    The extraction has always been able to return a Saturday — the schema
+    takes 1 through 7 and so does the database — and the review screen can now
+    have one typed into it directly. A fixed Monday-to-Friday list meant those
+    rows saved, drove the countdown correctly, and then appeared nowhere on
+    this page, which reads as data loss rather than as a layout decision.
+  */
+  const days = [1, 2, 3, 4, 5, 6, 7].filter(
+    (day) => day <= 5 || entries.some((e) => e.dayOfWeek === day),
+  );
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
