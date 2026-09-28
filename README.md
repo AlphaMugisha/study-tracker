@@ -76,6 +76,15 @@ cannot tell them apart.
 | `anthropic` | `ANTHROPIC_API_KEY` | Billed per call, well under a cent per timetable. Get a key at [console.anthropic.com](https://console.anthropic.com/settings/keys). |
 | `google` | `GEMINI_API_KEY` | Free tier, no card, lower rate limits. Get a key at [aistudio.google.com](https://aistudio.google.com/apikey). |
 
+Either provider reads a photo, a screenshot or a PDF — the school's own PDF
+needs no screenshotting first. A healthy read takes twenty to sixty seconds.
+
+The free tier is genuinely contended: models return `503 service_unavailable`
+when busy, and at times every one of them is. The reader tries each in turn
+within a two-minute budget and then says so plainly, because that failure
+looks exactly like a bad key or a bad photo and is neither. `GEMINI_MODEL`
+pins one if you would rather not have it hunt.
+
 Read the last row twice before choosing it. Google's free tier is free because
 input is used to improve their models, and what you are sending is a
 photograph of a child's week with her teachers' names printed across it. That

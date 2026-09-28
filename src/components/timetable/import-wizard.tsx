@@ -32,8 +32,9 @@ import {
   type ConfirmState,
 } from "@/lib/actions/timetable-import";
 import {
-  MAX_IMAGE_BYTES,
+  MAX_UPLOAD_BYTES,
   SUPPORTED_MEDIA_TYPES,
+  SUPPORTED_UPLOAD_LABEL,
   type ExtractedEntry,
   type TimetableScope,
 } from "@/lib/timetable/import-constants";
@@ -152,7 +153,7 @@ export function ImportWizard({
    * An oversized photo therefore never reached the code that would have said
    * "that image is 8.2MB"; the page crashed with "Body exceeded 1 MB limit"
    * instead, naming no file and suggesting nothing to do about it. Raising the
-   * cap to match MAX_IMAGE_BYTES only moves that crash to a bigger number, so
+   * cap to match MAX_UPLOAD_BYTES only moves that crash to a bigger number, so
    * the size has to be refused before it is sent.
    */
   const chooseFile = (file: File | null) => {
@@ -160,13 +161,13 @@ export function ImportWizard({
 
     if (!file) return setFileError(null);
     if (!SUPPORTED_MEDIA_TYPES.includes(file.type as never)) {
-      return setFileError("Use a JPEG, PNG, WebP or GIF. PDFs are not supported yet.");
+      return setFileError(`Use a ${SUPPORTED_UPLOAD_LABEL.replace(" or ", ", ")}.`);
     }
-    if (file.size > MAX_IMAGE_BYTES) {
+    if (file.size > MAX_UPLOAD_BYTES) {
       return setFileError(
-        `That photo is ${(file.size / 1_000_000).toFixed(1)}MB, and the limit is ${
-          MAX_IMAGE_BYTES / 1_000_000
-        }MB. A screenshot of it, or a smaller photo, will go through.`,
+        `That file is ${(file.size / 1_000_000).toFixed(1)}MB, and the limit is ${
+          MAX_UPLOAD_BYTES / 1_000_000
+        }MB. A screenshot, or a smaller photo, will go through.`,
       );
     }
     setFileError(null);
@@ -211,8 +212,8 @@ export function ImportWizard({
           {studentName ? `Upload ${studentName}'s timetable.` : "Upload your timetable."}
         </h2>
         <p className="mt-4 max-w-[52ch] text-body text-ink-muted">
-          A photo or screenshot works. Nothing is saved until you have checked
-          what was read.
+          A photo, a screenshot or the school&apos;s PDF all work. Nothing is
+          saved until you have checked what was read.
         </p>
 
         <form action={analyse} className="mt-9 grid gap-7" noValidate>
@@ -366,7 +367,7 @@ export function ImportWizard({
                 name="image"
                 type="file"
                 required
-                accept="image/jpeg,image/png,image/webp,image/gif"
+                accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
                 className="sr-only"
                 onChange={(e) => chooseFile(e.target.files?.[0] ?? null)}
               />
@@ -398,10 +399,10 @@ export function ImportWizard({
               ) : (
                 <>
                   <span className="mt-4 text-body font-medium text-ink">
-                    Choose a photo, or drop one here
+                    Choose a photo or PDF, or drop one here
                   </span>
                   <span className="mt-1.5 text-[0.85rem] text-ink-subtle">
-                    {`JPEG, PNG, WebP or GIF, under ${MAX_IMAGE_BYTES / 1_000_000}MB`}
+                    {`${SUPPORTED_UPLOAD_LABEL}, under ${MAX_UPLOAD_BYTES / 1_000_000}MB`}
                   </span>
                 </>
               )}
@@ -417,7 +418,7 @@ export function ImportWizard({
               </p>
             ) : (
               <p id="image-hint" className="mt-2.5 text-[0.85rem] text-ink-subtle">
-                PDFs are not supported yet — a screenshot of one works.
+                A PDF is read directly — there is no need to screenshot it first.
               </p>
             )}
           </div>

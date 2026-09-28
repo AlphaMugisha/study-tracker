@@ -5,9 +5,11 @@ import { getExtractionProvider } from "@/lib/env";
 import { ExtractionError, extractWithGemini } from "@/lib/timetable/gemini";
 import { findClashes, normaliseTime } from "@/lib/timetable/review";
 import {
-  MAX_IMAGE_BYTES,
+  isPdf,
+  MAX_UPLOAD_BYTES,
   resultSchema,
   SUPPORTED_MEDIA_TYPES,
+  SUPPORTED_UPLOAD_LABEL,
   TIMETABLE_SCOPES,
   type ExtractedEntry,
   type ExtractionResult,
@@ -16,8 +18,10 @@ import {
 } from "@/lib/timetable/import-constants";
 
 export {
-  MAX_IMAGE_BYTES,
+  isPdf,
+  MAX_UPLOAD_BYTES,
   SUPPORTED_MEDIA_TYPES,
+  SUPPORTED_UPLOAD_LABEL,
   TIMETABLE_SCOPES,
   type ExtractedEntry,
   type ExtractionResult,
@@ -79,7 +83,7 @@ const READING_RULES = `Reading the grid:
 
 Confidence is not decoration. Mark a row low whenever you had to guess: a blurred cell, a time you inferred, an abbreviation you are not sure of, a teacher code you cannot expand. The person checking this will read the low rows and skim the high ones, so an over-confident row is the one that gets through wrong.
 
-Put anything else worth a second look in notes — an edge cut off by the photo, two lessons that appear to clash, a day that looks incomplete.`;
+Put anything else worth a second look in notes — an edge cut off by the photo, a page that appears to continue elsewhere, two lessons that appear to clash, a day that looks incomplete.`;
 
 /**
  * The school-wide grid: many classes on one sheet.
@@ -89,11 +93,11 @@ Put anything else worth a second look in notes — an edge cut off by the photo,
  * complete, entirely wrong week, and that is not a mistake anybody catches by
  * glancing at the review screen.
  */
-const SYSTEM_SHARED = `You read photographs of school timetables and return them as structured data.
+const SYSTEM_SHARED = `You read school timetables — photographs, screenshots and PDF pages — and return them as structured data.
 
 The single most important thing: this timetable is a grid covering MANY classes at once — one block of rows or columns per class, with the class name printed alongside. You will be told which class the student is in. Return ONLY that class's lessons. Returning another class's lessons is worse than returning nothing, because it looks correct and is not.
 
-If you cannot find the named class on the image, set readable to false and say so in problem. Do not fall back to "the first class" or "the whole grid" — guessing which child this belongs to is the one mistake that cannot be caught by looking.
+If you cannot find the named class anywhere on the page, set readable to false and say so in problem. Do not fall back to "the first class" or "the whole grid" — guessing which child this belongs to is the one mistake that cannot be caught by looking.
 
 ${READING_RULES}`;
 
@@ -107,7 +111,7 @@ ${READING_RULES}`;
  */
 const SYSTEM_SINGLE = `You read photographs of school timetables and return them as structured data.
 
-This image is ONE class's timetable — periods down one side, days of the week across the other, and nothing on the page belonging to any other class. Return every cell of it. Do not look for a class name to filter by and do not leave anything out: if it is printed in the grid, it is this student's.
+This is ONE class's timetable — periods down one side, days of the week across the other, and nothing on the page belonging to any other class. Return every cell of it. Do not look for a class name to filter by and do not leave anything out: if it is printed in the grid, it is this student's.
 
 - A row or band that spans the full width of the week — SHORT BREAK, LUNCH BREAK, OFFICE HOURS, assembly — applies to every day it stretches across. Return it once per day, not once in total.
 - If a class or form name is printed as a heading, put it in className. It is a label, not a filter.
@@ -274,10 +278,34 @@ export async function extractTimetable(input: ExtractionInput): Promise<Extracti
       {
         role: "user",
         content: [
-          {
-            type: "image",
-            source: { type: "base64", media_type: input.mediaType, data: input.data },
-          },
+          /*
+            A PDF is a document block, not an image one, and the media_type on
+            an image block is typed to the image types alone — so this is a
+            branch the compiler insists on rather than a stylistic one. Worth
+            saying because the two shapes look interchangeable at a glance and
+            are not: sending a PDF as an image is rejected, and sending a
+            photograph as a document is too.
+          */
+          isPdf(input.mediaType)
+            ? {
+                type: "document" as const,
+                source: {
+                  type: "base64" as const,
+                  media_type: "application/pdf" as const,
+                  data: input.data,
+                },
+              }
+            : {
+                type: "image" as const,
+                source: {
+                  type: "base64" as const,
+                  media_type: input.mediaType as Exclude<
+                    SupportedMediaType,
+                    "application/pdf"
+                  >,
+                  data: input.data,
+                },
+              },
           { type: "text", text: instruction(input) },
         ],
       },
@@ -333,8 +361,8 @@ export async function extractTimetable(input: ExtractionInput): Promise<Extracti
 function instruction(input: ExtractionInput): string {
   if (input.scope === "single") {
     return input.classContext
-      ? `This timetable belongs to one class: ${input.classContext}. Every cell on the image is theirs — read the whole grid.`
-      : "This timetable belongs to a single class. Every cell on the image is theirs — read the whole grid.";
+      ? `This timetable belongs to one class: ${input.classContext}. Every cell of it is theirs — read the whole grid.`
+      : "This timetable belongs to a single class. Every cell of it is theirs — read the whole grid.";
   }
 
   return `This student is in: ${input.classContext}\n\nReturn that class's timetable only.`;

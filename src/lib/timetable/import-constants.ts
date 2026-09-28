@@ -9,17 +9,39 @@ import { z } from "zod";
  * are plain values and shapes, safe anywhere.
  */
 
-/** The API rejects images over ~5MB once base64-encoded; this leaves headroom. */
-export const MAX_IMAGE_BYTES = 3_500_000;
+/**
+ * The ceiling on an upload, whatever kind it is.
+ *
+ * Both providers accept considerably more than this — Anthropic 32MB a
+ * request, Google 50MB a document — so the limit here is about the Server
+ * Action's body rather than about either of them. It is named for what it
+ * covers rather than for images, because it stopped being images-only the
+ * day PDFs were accepted, and a constant called MAX_IMAGE_BYTES guarding a
+ * PDF is the kind of thing that gets "fixed" by somebody who trusts the name.
+ */
+export const MAX_UPLOAD_BYTES = 3_500_000;
 
 export const SUPPORTED_MEDIA_TYPES = [
   "image/jpeg",
   "image/png",
   "image/gif",
   "image/webp",
+  "application/pdf",
 ] as const;
 
 export type SupportedMediaType = (typeof SUPPORTED_MEDIA_TYPES)[number];
+
+/**
+ * A PDF is sent as a document rather than as an image by both providers, and
+ * neither will take it the other way round. One predicate so the two request
+ * builders cannot disagree about what counts.
+ */
+export function isPdf(mediaType: string): boolean {
+  return mediaType === "application/pdf";
+}
+
+/** "JPEG, PNG, WebP, GIF or PDF" — the accepted list, in a sentence. */
+export const SUPPORTED_UPLOAD_LABEL = "JPEG, PNG, WebP, GIF or PDF";
 
 /**
  * What the photograph actually contains.

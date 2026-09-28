@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-import { MAX_IMAGE_BYTES } from "./src/lib/timetable/import-constants";
+import { MAX_UPLOAD_BYTES } from "./src/lib/timetable/import-constants";
 
 const nextConfig: NextConfig = {
   experimental: {
@@ -12,13 +12,13 @@ const nextConfig: NextConfig = {
       "Body exceeded 1 MB limit" instead, which names no file and suggests no
       fix to the person holding the phone.
 
-      Derived from MAX_IMAGE_BYTES rather than written as "4mb" so the two
+      Derived from MAX_UPLOAD_BYTES rather than written as "4mb" so the two
       cannot drift apart. The limit applies to the raw body, so it has to
       clear the image plus the multipart boundaries, part headers and the
       other fields; the docs suggest 10–20KB for that, and 256KB is cheap
       insurance against a long filename or a verbose boundary.
     */
-    serverActions: { bodySizeLimit: MAX_IMAGE_BYTES + 256_000 },
+    serverActions: { bodySizeLimit: MAX_UPLOAD_BYTES + 256_000 },
   },
 };
 

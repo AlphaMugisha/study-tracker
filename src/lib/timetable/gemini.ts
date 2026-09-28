@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { resultSchema, type ExtractionResult } from "@/lib/timetable/import-constants";
+import { isPdf, resultSchema, type ExtractionResult } from "@/lib/timetable/import-constants";
 
 /**
  * Reading a timetable with Gemini instead of Claude.
@@ -47,6 +47,23 @@ function modelsToTry(): string[] {
 }
 
 const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/interactions";
+
+/**
+ * How long to let one model think before giving up on it and trying the next.
+ *
+ * A read of a photograph comes back in twenty-odd seconds. A busy model can
+ * take forty just to say it is busy, and three of those in a row is a minute
+ * and a half of somebody watching a spinner before being told to try later.
+ *
+ * So both ends are bounded. `PER_MODEL` stops one slow model from eating the
+ * lot; `TOTAL` is the promise made to whoever is waiting, and the reason the
+ * queue stops early rather than dutifully trying a third model it no longer
+ * has time for. The total matters more than it looks: in production this runs
+ * inside a Server Action, and a platform that kills the function at its own
+ * limit produces a blank failure instead of a sentence.
+ */
+const PER_MODEL_TIMEOUT_MS = 60_000;
+const TOTAL_BUDGET_MS = 120_000;
 
 /**
  * A failure with a sentence already written for the person who caused it.
@@ -108,7 +125,7 @@ const RESPONSE_SCHEMA = toGeminiSchema(
 );
 
 export type GeminiInput = {
-  /** Base64 image bytes, no data: prefix. */
+  /** Base64 bytes of the image or PDF, no data: prefix. */
   data: string;
   mediaType: string;
   /** The same reading rules the Anthropic path uses. */
@@ -132,7 +149,14 @@ export async function extractWithGemini(input: GeminiInput): Promise<ExtractionR
       // field: one documented shape, used the same way every time.
       input: [
         { type: "text", text: input.system },
-        { type: "image", data: input.data, mime_type: input.mediaType },
+        // Same split as the Anthropic path, for the same reason: a PDF goes in
+        // as a document and an image as an image, and neither provider will
+        // take one dressed as the other.
+        {
+          type: isPdf(input.mediaType) ? "document" : "image",
+          data: input.data,
+          mime_type: input.mediaType,
+        },
         { type: "text", text: input.instruction },
       ],
       response_format: {
@@ -144,21 +168,49 @@ export async function extractWithGemini(input: GeminiInput): Promise<ExtractionR
 
   let response: Response | null = null;
   let lastFailure: ExtractionError | null = null;
+  const deadline = Date.now() + TOTAL_BUDGET_MS;
 
   for (const model of modelsToTry()) {
+    const remaining = deadline - Date.now();
+    // Starting an attempt there is no time left to finish only delays the
+    // answer; the previous model's failure is already the true one.
+    if (remaining < 5_000) {
+      console.warn(`[timetable] out of budget before ${model}`);
+      break;
+    }
+
+    const startedAt = Date.now();
     let attempt: Response;
+
     try {
       attempt = await fetch(ENDPOINT, {
         method: "POST",
         headers: { "x-goog-api-key": apiKey, "content-type": "application/json" },
         body: bodyFor(model),
+        signal: AbortSignal.timeout(Math.min(PER_MODEL_TIMEOUT_MS, remaining)),
       });
     } catch (error) {
+      // A timeout is this model being too slow, which is the same kind of
+      // problem as it being busy: move on rather than give up.
+      if (error instanceof Error && error.name === "TimeoutError") {
+        lastFailure = new ExtractionError(
+          "The timetable reader took too long. Try again in a few minutes.",
+          `${model}: timed out after ${PER_MODEL_TIMEOUT_MS}ms`,
+        );
+        console.warn(`[timetable] ${model} timed out after ${PER_MODEL_TIMEOUT_MS}ms`);
+        continue;
+      }
       throw new ExtractionError(
         "The timetable reader could not be reached. Check this server's connection and try again.",
         error instanceof Error ? error.message : undefined,
       );
     }
+
+    // Logged because the only way to tell a slow model from a busy one, after
+    // the fact, is to have written down which answered and how long it took.
+    console.warn(
+      `[timetable] ${model} → ${attempt.status} in ${Date.now() - startedAt}ms`,
+    );
 
     if (attempt.ok) {
       response = attempt;

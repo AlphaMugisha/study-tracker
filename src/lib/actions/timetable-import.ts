@@ -10,8 +10,9 @@ import {
   extractTimetable,
   findClashes,
   normaliseEntries,
-  MAX_IMAGE_BYTES,
+  MAX_UPLOAD_BYTES,
   SUPPORTED_MEDIA_TYPES,
+  SUPPORTED_UPLOAD_LABEL,
   TIMETABLE_SCOPES,
   type ExtractedEntry,
   type ExtractionResult,
@@ -130,12 +131,12 @@ export async function analyseTimetableAction(
     fieldErrors.classContext = "That is a little long for a class name.";
   }
   if (!(file instanceof File) || file.size === 0) {
-    fieldErrors.image = "Choose a photo of the timetable.";
+    fieldErrors.image = "Choose a photo or PDF of the timetable.";
   } else if (!SUPPORTED_MEDIA_TYPES.includes(file.type as never)) {
-    fieldErrors.image = "Use a JPEG, PNG, WebP or GIF. PDFs are not supported yet.";
-  } else if (file.size > MAX_IMAGE_BYTES) {
-    fieldErrors.image = `That image is ${(file.size / 1_000_000).toFixed(1)}MB. Keep it under ${
-      MAX_IMAGE_BYTES / 1_000_000
+    fieldErrors.image = `Use a ${SUPPORTED_UPLOAD_LABEL.replace(" or ", ", ")}.`;
+  } else if (file.size > MAX_UPLOAD_BYTES) {
+    fieldErrors.image = `That file is ${(file.size / 1_000_000).toFixed(1)}MB. Keep it under ${
+      MAX_UPLOAD_BYTES / 1_000_000
     }MB.`;
   }
 
