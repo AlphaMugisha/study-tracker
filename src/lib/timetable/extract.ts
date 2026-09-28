@@ -319,6 +319,44 @@ function instruction(input: ExtractionInput): string {
   return `This student is in: ${input.classContext}\n\nReturn that class's timetable only.`;
 }
 
+/**
+ * Turn whatever the SDK threw into a sentence worth showing someone.
+ *
+ * It lives here because this is the module that already imports the SDK, and
+ * the distinctions only exist in its typed error classes. The action that
+ * calls it used to collapse everything except a missing key into "the reader
+ * could not be reached — try again in a moment", which is a fair description
+ * of exactly one of these. For the rest it is wrong about the cause and wrong
+ * about the remedy: an exhausted balance and a rejected key do not come back
+ * in a moment, and waiting is the one thing that cannot fix either.
+ */
+export function describeExtractionFailure(error: unknown): string {
+  if (error instanceof Error && error.message.includes("ANTHROPIC_API_KEY")) {
+    return "Timetable reading is not configured on this server. Set ANTHROPIC_API_KEY, or put TIMETABLE_EXTRACTOR back to mock to use the flow with sample data.";
+  }
+
+  // Billing arrives as an ordinary 400 rather than as its own error class,
+  // so the message is the only thing that distinguishes it from a malformed
+  // request — and it is the failure most likely to be hit in practice.
+  if (error instanceof Anthropic.APIError && /credit balance/i.test(String(error.message))) {
+    return "The Anthropic account behind this server is out of credit, so the timetable could not be read. Add credit in the Anthropic console, or put TIMETABLE_EXTRACTOR back to mock. A new API key will not help — the balance belongs to the account, not the key.";
+  }
+
+  if (error instanceof Anthropic.AuthenticationError) {
+    return "The Anthropic API key was rejected. Check ANTHROPIC_API_KEY, or put TIMETABLE_EXTRACTOR back to mock.";
+  }
+
+  if (error instanceof Anthropic.PermissionDeniedError) {
+    return "That API key is not allowed to use this model. Check the key's permissions in the Anthropic console.";
+  }
+
+  if (error instanceof Anthropic.RateLimitError) {
+    return "The timetable reader is rate limited right now. Wait a minute and try again — this one really does pass.";
+  }
+
+  return "The timetable reader could not be reached. Try again in a moment.";
+}
+
 // ---------------------------------------------------------------------------
 // Cleaning up what comes back
 // ---------------------------------------------------------------------------

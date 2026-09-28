@@ -6,6 +6,7 @@ import { z } from "zod";
 import { logActivity } from "@/lib/activity";
 import { createClient } from "@/lib/supabase/server";
 import {
+  describeExtractionFailure,
   extractTimetable,
   findClashes,
   normaliseEntries,
@@ -159,19 +160,11 @@ export async function analyseTimetableAction(
       scope,
     });
   } catch (error) {
-    // The key being missing or the API being down are different problems from
-    // an unreadable photo, and saying "try a clearer picture" to someone whose
-    // API key is unset wastes their afternoon.
-    const message = error instanceof Error ? error.message : "";
-    if (message.includes("ANTHROPIC_API_KEY")) {
-      return {
-        formError:
-          "Timetable reading is not configured on this server. Set ANTHROPIC_API_KEY, or leave TIMETABLE_EXTRACTOR on mock to try the flow with sample data.",
-      };
-    }
-    return {
-      formError: "The timetable reader could not be reached. Try again in a moment.",
-    };
+    // A missing key, an empty balance and an unreadable photo are different
+    // problems, and saying "try a clearer picture" to someone whose account is
+    // out of credit wastes their afternoon. `describeExtractionFailure` knows
+    // the SDK's error classes; this action does not need to.
+    return { formError: describeExtractionFailure(error) };
   }
 
   if (!result.readable) {
