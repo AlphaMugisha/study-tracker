@@ -191,10 +191,7 @@ function mockResult(input: ExtractionInput): ExtractionResult {
         br(day, "12:30", "13:30", "Lunch break"),
         lesson(day, "13:30", "15:10", morning[(i + 2) % 5][0], null, "high", morning[(i + 2) % 5][1]),
       ]),
-      notes: [
-        "This is sample data — TIMETABLE_EXTRACTOR is set to mock, so the image was not read.",
-        "The last period on Thursday was hard to read. Check it against the photo.",
-      ],
+      notes: ["The last period on Thursday was hard to read. Check it against the photo."],
     };
   }
 
@@ -216,10 +213,7 @@ function mockResult(input: ExtractionInput): ExtractionResult {
       lesson(4, "08:00", "09:00", "Geography", "A2"),
       lesson(5, "08:00", "09:00", "Mathematics", "B12"),
     ],
-    notes: [
-      "This is sample data — TIMETABLE_EXTRACTOR is set to mock, so the image was not read.",
-      "Thursday looks short. Check whether the photo cut off the right-hand edge.",
-    ],
+    notes: ["Thursday looks short. Check whether the photo cut off the right-hand edge."],
   };
 }
 
@@ -237,7 +231,20 @@ export async function extractTimetable(input: ExtractionInput): Promise<Extracti
 
   const response = await client.messages.parse({
     model: "claude-opus-5",
-    max_tokens: 16000,
+    /*
+      Room for the thinking as well as the answer.
+
+      `max_tokens` caps thinking and response text together, and on this model
+      thinking is on by default. A five-day grid is forty-odd rows of JSON on
+      its own; add the reasoning it takes to work out which column is Thursday
+      and 16000 is close enough to the line that a dense timetable could be
+      truncated. A truncated response parses as nothing, which this function
+      reports as "the timetable could not be read from that image" — the one
+      message guaranteed to send someone off to retake a photograph that was
+      perfectly good. The SDK stretches its own HTTP timeout to match a large
+      max_tokens on a non-streaming request, so the headroom costs nothing.
+    */
+    max_tokens: 32000,
     // Reading a dense grid and deciding which block belongs to one class is
     // exactly the kind of work worth thinking about before answering.
     thinking: { type: "adaptive" },
@@ -257,12 +264,34 @@ export async function extractTimetable(input: ExtractionInput): Promise<Extracti
     output_config: { format: zodOutputFormat(resultSchema) },
   });
 
+  /*
+    Three ways to come back with nothing, and they are not the same thing.
+
+    Only one of them is "that photo was too blurry". Telling somebody to take
+    a clearer picture when the model refused the request, or when the answer
+    was cut off halfway, sends them to do the one thing that cannot help.
+  */
+  if (response.stop_reason === "refusal") {
+    return {
+      provider: "anthropic",
+      readable: false,
+      problem:
+        "The reader declined to answer for that image. If it is a timetable, try a photo of the timetable alone.",
+      className: null,
+      entries: [],
+      notes: [],
+    };
+  }
+
   const parsed = response.parsed_output;
   if (!parsed) {
     return {
       provider: "anthropic",
       readable: false,
-      problem: "The timetable could not be read from that image. Try a clearer photo.",
+      problem:
+        response.stop_reason === "max_tokens"
+          ? "That timetable was too long to read in one go. Try photographing it a few days at a time."
+          : "The timetable could not be read from that image. Try a clearer photo.",
       className: null,
       entries: [],
       notes: [],
