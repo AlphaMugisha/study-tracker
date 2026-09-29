@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ImageUp, CalendarPlus } from "lucide-react";
+import { ImageUp, CalendarPlus, ListPlus } from "lucide-react";
 
 import { PageContainer } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
@@ -70,7 +70,7 @@ export default async function TimetablePage({
         <EmptyState
           icon={CalendarPlus}
           headline="No school timetable yet."
-          body="Add your lessons one at a time. Naming a subject here creates it, so it is ready to file homework against."
+          body="Photograph it, type the week out in one go, or add lessons one at a time. Naming a subject creates it, so it is ready to file homework against."
           action={
             <div className="flex flex-wrap items-center justify-center gap-3">
               <Button asChild>
@@ -79,14 +79,20 @@ export default async function TimetablePage({
                   Upload a photo
                 </Link>
               </Button>
+              <Button asChild variant="outline">
+                <Link href="/timetable/upload?mode=typed">
+                  <ListPlus aria-hidden="true" />
+                  Type them out
+                </Link>
+              </Button>
               <TimetableEntryDialog subjects={subjects} defaultDay={selectedDay} />
             </div>
           }
         />
         <p className="mt-5 text-center text-[0.9rem] text-ink-subtle">
-          A photo of the timetable is read for you, and you check every row
-          before anything is saved. Entering lessons by hand still works and is
-          the one that never depends on a clear photograph.
+          A photo is read for you and you check every row before anything is
+          saved. Typing the week out — one lesson to a line — skips the reading
+          entirely, and is the one that never depends on having a clear copy.
         </p>
       </PageContainer>
     );
