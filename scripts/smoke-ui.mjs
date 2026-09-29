@@ -265,14 +265,29 @@ try {
     // empty list. Asserted either way: before 0006 it explains itself, after
     // 0006 it is gone and the real empty copy shows instead.
     ["/help", ["not the same as", "0006_help_requests.sql", "Nothing on the list."], "any"],
-    // Timetable import: the entry point, and step one of the wizard.
+    // Timetable import: both entry points, and step one of the wizard.
     ["/timetable", ["Upload a photo", "/timetable/upload"], "any"],
-    ["/timetable/upload", ["Take a photo of it", "Which class", "Step 1 of 2", "Read it"]],
-    // The class field is the load-bearing input — a school timetable covers
-    // every class at once, so without it the reader is guessing whose it is.
-    ["/timetable/upload", ["Exactly as it is printed", "which block of the grid"]],
-    // A real drop target, not the browser's "Choose File / no file chosen".
-    ["/timetable/upload", ["Choose a photo, or drop one here", "under 3.5MB", "PDFs"]],
+    ["/timetable", ["Type them out", "mode=typed"], "any"],
+    ["/timetable/upload", ["Take a photo of it", "Step 1 of 2", "Read it"]],
+    /*
+      Which kind of timetable this is decides whether a class name is the
+      load-bearing input or a label. The chooser itself is what must always
+      be there — the two branches of copy behind it are asserted through the
+      default, which is a single class, because that is what most people are
+      holding when they arrive.
+    */
+    ["/timetable/upload", ["What does the timetable cover?", "Just one class", "Several classes at once"]],
+    ["/timetable/upload", ["What is the class called?", "only names the saved timetable"]],
+    // A real drop target, not the browser's "Choose File / no file chosen",
+    // and it takes a PDF without anybody screenshotting one first.
+    ["/timetable/upload", ["Choose a photo or PDF, or drop one here", "under 3.5MB", "read directly"]],
+    /*
+      Typing a week out instead. `?mode=typed` has to open on that tab: the
+      timetable page links straight at it, and a link that lands on the photo
+      form is the feature being unreachable for anybody who followed it.
+    */
+    ["/timetable/upload?mode=typed", ["Type out the week", "One lesson per line", "Check these"]],
+    ["/timetable/upload?mode=typed", ["Mon 08:00-09:40 Java (Faustin)", "spreadsheet"]],
   ];
 
   for (const [path, needles, mode] of checks) {
