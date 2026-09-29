@@ -65,7 +65,22 @@ export function DaySchedule({
               </span>
             }
             title={entry.label}
-            meta={entry.detail ? <span>{entry.detail}</span> : null}
+            /*
+              Room and teacher, each on its own, rather than `detail` — which
+              is a single display string holding the room when there is one
+              and the teacher only when there is not. Every lesson on a
+              timetable read from a photograph carries a teacher, and on any
+              row that also named a room the teacher was fetched, stored, and
+              then shown to nobody.
+            */
+            meta={
+              entry.room || entry.teacher ? (
+                <>
+                  {entry.room ? <span>{entry.room}</span> : null}
+                  {entry.teacher ? <span>{entry.teacher}</span> : null}
+                </>
+              ) : null
+            }
             footer={
               editable ? (
                 <>
