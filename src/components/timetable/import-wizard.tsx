@@ -564,10 +564,12 @@ export function ImportWizard({
 
         {analysis.result?.provider === "mock" ? (
           <Notice tone="pause" icon={Info}>
-            This is sample data. <code className="text-ink">TIMETABLE_EXTRACTOR</code>{" "}
-            is set to <code className="text-ink">mock</code>, so the image was not
-            actually read. Set it to <code className="text-ink">anthropic</code> with
-            an API key to read real timetables.
+            This is sample data — not your timetable.{" "}
+            <code className="text-ink">TIMETABLE_EXTRACTOR</code> is set to{" "}
+            <code className="text-ink">mock</code> on the server, so nothing was
+            read. Set it to <code className="text-ink">google</code> with a free
+            key from Google AI Studio, or <code className="text-ink">anthropic</code>{" "}
+            with a funded key, and upload again.
           </Notice>
         ) : null}
 

@@ -47,15 +47,57 @@ const MODELS = [
   // twenty reads is counted per model rather than per key. Each name here is
   // another twenty timetables a day, and a lite model reading the week
   // correctly beats a better one that is out of allowance until tomorrow.
-  "gemini-3.5-flash",
   "gemini-3.5-flash-lite",
   "gemini-3.1-flash-lite",
+  // Last on evidence rather than on capability: this one answered 503 on one
+  // afternoon and then hung to the full timeout on the next morning, which is
+  // the most expensive way to be unavailable.
+  "gemini-3.5-flash",
 ];
 
 /** One name in GEMINI_MODEL pins the lot, for pinning a known-good model. */
-function modelsToTry(): string[] {
+function configuredModels(): string[] {
   const pinned = process.env.GEMINI_MODEL?.trim();
   return pinned ? [pinned] : MODELS;
+}
+
+/**
+ * Models known to be unavailable, and the moment it is worth asking again.
+ *
+ * A model that has spent its twenty-a-day will say so every time for the rest
+ * of the day, and a model that hangs tends to hang again. Neither fact is
+ * remembered anywhere, so without this every upload re-discovers them from
+ * scratch: on the morning this was written that was three refusals and a
+ * sixty-second timeout — eighty seconds of a ninety-second wait — before
+ * reaching the model that was going to answer all along.
+ *
+ * Module scope, so it lasts as long as the server process and no longer. It
+ * is a cache of a fact that expires, not a record of anything, and being
+ * wrong about it costs one wasted attempt rather than a wrong answer.
+ */
+const sidelined = new Map<string, number>();
+
+function sideline(model: string, ms: number, why: string) {
+  sidelined.set(model, Date.now() + ms);
+  console.warn(`[timetable] ${model} set aside for ${Math.round(ms / 1000)}s (${why})`);
+}
+
+/**
+ * The queue, minus anything currently set aside.
+ *
+ * If that leaves nothing, the sidelines are forgotten and the full list comes
+ * back: a stale note about yesterday's quota must never be the reason nobody
+ * can upload a timetable today.
+ */
+function modelsToTry(): string[] {
+  const all = configuredModels();
+  const now = Date.now();
+  const available = all.filter((model) => (sidelined.get(model) ?? 0) <= now);
+
+  if (available.length > 0) return available;
+
+  sidelined.clear();
+  return all;
 }
 
 const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/interactions";
@@ -210,7 +252,8 @@ export async function extractWithGemini(input: GeminiInput): Promise<ExtractionR
           "The timetable reader took too long. Try again in a few minutes.",
           `${model}: timed out after ${PER_MODEL_TIMEOUT_MS}ms`,
         );
-        console.warn(`[timetable] ${model} timed out after ${PER_MODEL_TIMEOUT_MS}ms`);
+        // The most expensive way for a model to fail, and the most repeatable.
+        sideline(model, 5 * 60_000, "timed out");
         continue;
       }
       throw new ExtractionError(
@@ -231,8 +274,19 @@ export async function extractWithGemini(input: GeminiInput): Promise<ExtractionR
     }
 
     lastFailure = await failureFor(attempt, model);
+
     // A busy model is the next model's problem; a rejected key is nobody's.
     if (attempt.status !== 503 && attempt.status !== 429) throw lastFailure;
+
+    if (attempt.status === 429) {
+      // A daily cap is spent until the day turns over, but "the day" is in a
+      // timezone this code does not know, so it is half an hour at a time
+      // rather than a guess at midnight somewhere.
+      const daily = /per day/i.test(lastFailure.message);
+      sideline(model, daily ? 30 * 60_000 : 60_000, daily ? "daily quota" : "rate limited");
+    } else {
+      sideline(model, 60_000, "busy");
+    }
   }
 
   if (!response) {

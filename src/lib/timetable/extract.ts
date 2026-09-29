@@ -224,6 +224,17 @@ function mockResult(input: ExtractionInput): ExtractionResult {
 
 export async function extractTimetable(input: ExtractionInput): Promise<ExtractionResult> {
   const provider = getExtractionProvider();
+
+  /*
+    Logged on every read, because "why am I seeing sample data" is a question
+    the screen cannot answer on its own. The review screen reports the
+    provider that produced the result it is holding, which may have been
+    produced before the environment was last changed — so a stale tab and a
+    misconfigured server look identical from the browser. This line is the
+    server saying what it actually did, at the moment it did it.
+  */
+  console.warn(`[timetable] reading via ${provider} (scope: ${input.scope})`);
+
   if (provider === "mock") return mockResult(input);
 
   /*
