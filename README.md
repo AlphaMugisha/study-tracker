@@ -10,15 +10,24 @@ moment she opens it:
 
 ## Status
 
-**Phase 2 — database.** The full academic schema, RLS, and the admin/student
-authorisation model, on top of the Phase 1 account system. The feature pages
-(`/timetable`, `/homework`, `/plan`, `/settings`) are still labelled
-placeholders — Phase 2 built the database those features will use, not the
-features themselves.
+The feature pages are built, not placeholders. `/dashboard` answers the four
+questions above from the live timetable; `/timetable` reads a week in from a
+photo, a PDF or typed lines and lets every row be corrected before it is
+saved; `/homework`, `/plan`, `/help` and `/settings` are working screens on
+top of the Phase 2 schema. `/admin` carries the linked-adult side: a
+student's day, her reports, and the one thing a support account may write.
 
-See [docs/DATABASE.md](docs/DATABASE.md) for the schema, the RLS model, the
-- [Deploying to Vercel](docs/DEPLOY.md) — env vars, and the Supabase redirect allowlist that silently breaks auth if missed.
-admin authorisation handshake and the seed data.
+What is deliberately not there yet: nothing reads a timetable on a schedule,
+there are no notifications, and the only write a linked adult can make is the
+timetable itself — homework, revision, sessions and the help list stay
+owner-only, enforced by RLS rather than by the interface hiding them.
+
+Reference:
+
+- [docs/DATABASE.md](docs/DATABASE.md) — the schema, the RLS model, the admin
+  authorisation handshake, and the seed data.
+- [docs/DEPLOY.md](docs/DEPLOY.md) — env vars, and the Supabase redirect
+  allowlist that silently breaks auth if it is missed.
 
 ## Setup
 
@@ -172,11 +181,18 @@ npm run dev
 | `/forgot-password` | signed out | **Live** |
 | `/reset-password` | recovery link | **Live** |
 | `/auth/callback` | any | **Live** — email link handler |
-| `/dashboard` | signed in | Placeholder — Phases 5–7 |
-| `/timetable` | signed in | Placeholder — Phase 4 |
-| `/homework` | signed in | Placeholder — Phase 6 |
-| `/plan` | signed in | Placeholder — Phase 7 |
-| `/settings` | signed in | Placeholder — Phases 1 and 9 |
+| `/dashboard` | signed in | **Live** — what is on now, what is next, what is left |
+| `/timetable` | signed in | **Live** — the week, by day or in full |
+| `/timetable/upload` | signed in | **Live** — photo, PDF or typed; `?mode=typed` opens on typing |
+| `/homework` | signed in | **Live** |
+| `/plan` | signed in | **Live** — the evening, sized to what is left of it |
+| `/help` | signed in | **Live** — the list of things she is stuck on |
+| `/settings` | signed in | **Live** — subjects, account, support access |
+| `/admin` | admin | **Live** — linked students |
+| `/admin/[studentId]` | linked admin | **Live** — one student's day |
+| `/admin/[studentId]/timetable` | linked admin | **Live** — the only write a support account has |
+| `/admin/[studentId]/reports` | linked admin | **Live** |
+| `/admin/reports` | admin | **Live** |
 | `/styleguide` | any | **Live** — design reference |
 
 ## Layout of the code
