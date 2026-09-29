@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/shared/reveal";
 import { BlockHeading } from "@/components/shared/surface";
+import { CopyWeek } from "@/components/timetable/copy-week";
 import { TimetableEntryDialog } from "@/components/timetable/entry-dialog";
 import { DaySchedule, WeekGrid } from "@/components/timetable/schedule";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -110,6 +111,10 @@ export default async function TimetablePage({
               <ViewTab href="/timetable" active={view === "day"} label="Day" />
               <ViewTab href="/timetable?view=week" active={view === "week"} label="Week" />
             </div>
+            {/* Copies the week in the same lines the typing tab reads, so a
+                term's worth of corrections is one paste rather than forty
+                trips through the dialog. */}
+            <CopyWeek entries={entries} />
             <Button asChild variant="outline">
               <Link href="/timetable/upload">
                 <ImageUp aria-hidden="true" />
