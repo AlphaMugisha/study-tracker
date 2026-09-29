@@ -274,6 +274,22 @@ export function ImportWizard({
               type="button"
               role="tab"
               aria-selected={mode === value}
+              /*
+                Roving tabindex, which is what a tablist owes a keyboard.
+                With both buttons tabbable, Tab walks between the two tabs
+                instead of moving on into the panel they control; with the
+                arrow keys wired up, Tab leaves the group and the arrows
+                choose within it, which is the behaviour the role promises.
+              */
+              tabIndex={mode === value ? 0 : -1}
+              onKeyDown={(e) => {
+                if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+                e.preventDefault();
+                const next = mode === "photo" ? "typed" : "photo";
+                setMode(next);
+                const group = e.currentTarget.parentElement;
+                group?.querySelectorAll("button")[next === "photo" ? 0 : 1]?.focus();
+              }}
               onClick={() => setMode(value)}
               className={cn(
                 "inline-flex items-center gap-2 rounded-md px-3.5 py-2 text-[13px] font-medium",
