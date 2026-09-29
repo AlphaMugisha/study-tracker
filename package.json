@@ -20,13 +20,14 @@
     "perf": "node --env-file-if-exists=.env.local scripts/perf.mjs",
     "truncate": "node --env-file-if-exists=.env.local scripts/truncate.mjs",
     "test:resolve": "node --import ./scripts/alias-hook.mjs --test scripts/test-resolve.mjs",
-    "test": "npm run test:planner && npm run test:resolve && npm run test:presence && npm run test:daily && npm run test:nav && npm run test:extract && npm run test:pending && npm run test:parse",
+    "test": "npm run test:planner && npm run test:resolve && npm run test:presence && npm run test:daily && npm run test:nav && npm run test:extract && npm run test:pending && npm run test:parse && npm run test:gemini",
     "test:presence": "node --import ./scripts/alias-hook.mjs --test scripts/test-presence.mjs",
     "test:daily": "node --import ./scripts/alias-hook.mjs --test scripts/test-daily.mjs",
     "test:nav": "node --import ./scripts/alias-hook.mjs --test scripts/test-nav.mjs",
     "test:extract": "node --import ./scripts/alias-hook.mjs --test scripts/test-extract.mjs",
     "test:pending": "node --import ./scripts/alias-hook.mjs --test scripts/test-pending.mjs",
-    "test:parse": "node --import ./scripts/alias-hook.mjs --test scripts/test-parse-lines.mjs"
+    "test:parse": "node --import ./scripts/alias-hook.mjs --test scripts/test-parse-lines.mjs",
+    "test:gemini": "node --import ./scripts/alias-hook.mjs --test scripts/test-gemini-errors.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",

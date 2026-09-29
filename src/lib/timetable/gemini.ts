@@ -334,54 +334,55 @@ export async function extractWithGemini(input: GeminiInput): Promise<ExtractionR
   return { ...checked.data, provider: "google" };
 }
 
-/** Status codes, translated. The body usually carries a usable reason too. */
-async function failureFor(response: Response, model: string): Promise<ExtractionError> {
-  const detail = await response.text().catch(() => "");
+/**
+ * What a failed response means, in one sentence, for the person who caused it.
+ *
+ * Pure and exported so it can be tested. Every branch here was written after
+ * watching the wrong sentence appear in front of somebody — most of them are
+ * indistinguishable from each other by status code alone, and the one that
+ * matters most is two different limits sharing a 429. Getting these wrong is
+ * not cosmetic: it sends people to retry something that cannot succeed, or to
+ * replace a key that was never the problem.
+ */
+export function describeHttpFailure(status: number, detail: string): string {
+  if (status === 400 && /api key/i.test(detail)) {
+    return "That Google API key was rejected. Check GEMINI_API_KEY against the key in Google AI Studio.";
+  }
 
-  if (response.status === 400 && /api key/i.test(detail)) {
-    return new ExtractionError(
-      "That Google API key was rejected. Check GEMINI_API_KEY against the key in Google AI Studio.",
-      detail.slice(0, 300),
-    );
+  if (status === 401 || status === 403) {
+    return "The Google API key was refused. Check that it is enabled for the Gemini API.";
   }
-  if (response.status === 401 || response.status === 403) {
-    return new ExtractionError(
-      "The Google API key was refused. Check that it is enabled for the Gemini API.",
-      detail.slice(0, 300),
-    );
-  }
-  if (response.status === 429) {
+
+  if (status === 429) {
     /*
-      Two different limits arrive as the same status code, and telling them
-      apart matters more than anything else in this function.
-
       A per-minute burst really does clear in a minute. The free tier's other
       limit is twenty requests per day, per model — and "wait a minute and try
       again" is a lie to somebody who will sit there retrying an upload that
-      cannot succeed again until tomorrow. Google says which it is in the body
-      and even gives a retry delay, so both are quoted rather than guessed at.
+      cannot succeed again until tomorrow. Google says which it is in the body,
+      and gives a delay for the burst case, so both are quoted not guessed.
     */
-    const daily = /per day/i.test(detail);
+    if (/per day/i.test(detail)) {
+      return "That Google key has used up its free quota for today — it is twenty reads a day on each model, and this one is spent. It resets tomorrow. Switching TIMETABLE_EXTRACTOR to anthropic, or pinning a different model with GEMINI_MODEL, works in the meantime.";
+    }
+
     const retryIn = detail.match(/retry in (\d+)s/i)?.[1];
-
-    return new ExtractionError(
-      daily
-        ? "That Google key has used up its free quota for today — it is twenty reads a day on each model, and this one is spent. It resets tomorrow. Switching TIMETABLE_EXTRACTOR to anthropic, or pinning a different model with GEMINI_MODEL, works in the meantime."
-        : `The free tier's rate limit was hit.${
-            retryIn ? ` Google suggests trying again in ${retryIn} seconds.` : " Wait a minute and try again."
-          }`,
-      detail.slice(0, 300),
-    );
-  }
-  if (response.status >= 500) {
-    return new ExtractionError(
-      "Google's models are all busy right now — that is the free tier, not your key or your photo. Try again in a few minutes.",
-      `${model}: ${detail.slice(0, 300)}`,
-    );
+    return `The free tier's rate limit was hit.${
+      retryIn ? ` Google suggests trying again in ${retryIn} seconds.` : " Wait a minute and try again."
+    }`;
   }
 
+  if (status >= 500) {
+    return "Google's models are all busy right now — that is the free tier, not your key or your photo. Try again in a few minutes.";
+  }
+
+  return "The timetable could not be read. Try again, or try a clearer photo.";
+}
+
+/** Reads the body, then hands the decision to the pure function above. */
+async function failureFor(response: Response, model: string): Promise<ExtractionError> {
+  const detail = await response.text().catch(() => "");
   return new ExtractionError(
-    "The timetable could not be read. Try again, or try a clearer photo.",
+    describeHttpFailure(response.status, detail),
     `${model} ${response.status}: ${detail.slice(0, 300)}`,
   );
 }
