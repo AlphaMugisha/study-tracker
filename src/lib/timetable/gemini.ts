@@ -83,21 +83,33 @@ function sideline(model: string, ms: number, why: string) {
 }
 
 /**
- * The queue, minus anything currently set aside.
+ * The queue, minus anything currently set aside — and never empty.
  *
- * If that leaves nothing, the sidelines are forgotten and the full list comes
- * back: a stale note about yesterday's quota must never be the reason nobody
- * can upload a timetable today.
+ * Pure, exported and tested, because the dangerous case is silent: if every
+ * model ends up set aside at once, the naive version of this returns nothing,
+ * the loop body never runs, and every upload fails instantly with whatever
+ * error happened to be left over from last time. A stale note about
+ * yesterday's quota must never be the reason nobody can upload today, so an
+ * empty result means forget the notes and try everything.
+ *
+ * `expired` comes back so the caller can drop what it no longer needs; this
+ * function does not mutate the map it is given.
  */
-function modelsToTry(): string[] {
-  const all = configuredModels();
-  const now = Date.now();
+export function availableModels(
+  all: string[],
+  sidelined: ReadonlyMap<string, number>,
+  now: number,
+): { models: string[]; cleared: boolean } {
   const available = all.filter((model) => (sidelined.get(model) ?? 0) <= now);
+  return available.length > 0
+    ? { models: available, cleared: false }
+    : { models: all, cleared: true };
+}
 
-  if (available.length > 0) return available;
-
-  sidelined.clear();
-  return all;
+function modelsToTry(): string[] {
+  const { models, cleared } = availableModels(configuredModels(), sidelined, Date.now());
+  if (cleared) sidelined.clear();
+  return models;
 }
 
 const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/interactions";

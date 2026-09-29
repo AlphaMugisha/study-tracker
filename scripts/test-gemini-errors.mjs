@@ -99,3 +99,61 @@ test("every branch returns a non-empty sentence", () => {
     assert.match(said, /\.$/, `${status} should end in a full stop`);
   }
 });
+
+/*
+  Which models are worth asking, given what is known about them.
+
+  The dangerous case here is silent. If everything ends up set aside at once
+  — an afternoon where the free tier refuses across the board — the obvious
+  version of this returns an empty list, the loop body never runs, and every
+  upload fails instantly with whatever error was left over from last time.
+  Nobody would be able to upload a timetable until the server was restarted.
+*/
+import { availableModels } from "@/lib/timetable/gemini.ts";
+
+const ALL = ["a", "b", "c"];
+const NOW = 1_000_000;
+
+test("nothing set aside means try everything, in order", () => {
+  const { models, cleared } = availableModels(ALL, new Map(), NOW);
+  assert.deepEqual(models, ALL);
+  assert.equal(cleared, false);
+});
+
+test("a model set aside is skipped, and order is otherwise kept", () => {
+  const { models } = availableModels(ALL, new Map([["b", NOW + 60_000]]), NOW);
+  assert.deepEqual(models, ["a", "c"]);
+});
+
+test("a sideline that has expired is over", () => {
+  const { models } = availableModels(ALL, new Map([["b", NOW - 1]]), NOW);
+  assert.deepEqual(models, ALL);
+  // Exactly now counts as expired: a note timed to the millisecond should
+  // not keep a model out for one more attempt.
+  assert.deepEqual(availableModels(ALL, new Map([["b", NOW]]), NOW).models, ALL);
+});
+
+test("everything set aside falls back to everything, rather than to nothing", () => {
+  const all = new Map(ALL.map((m) => [m, NOW + 60_000]));
+  const { models, cleared } = availableModels(ALL, all, NOW);
+  assert.deepEqual(models, ALL, "an empty queue would fail every upload instantly");
+  assert.equal(cleared, true, "the caller has to know to forget the stale notes");
+});
+
+test("it does not mutate the notes it was given", () => {
+  const notes = new Map([["b", NOW + 60_000]]);
+  availableModels(ALL, notes, NOW);
+  assert.equal(notes.size, 1);
+  assert.equal(notes.get("b"), NOW + 60_000);
+});
+
+test("a note about a model that is no longer in the list is harmless", () => {
+  const { models } = availableModels(ALL, new Map([["gone", NOW + 60_000]]), NOW);
+  assert.deepEqual(models, ALL);
+});
+
+test("a single pinned model is never sidelined into an empty queue", () => {
+  const { models, cleared } = availableModels(["only"], new Map([["only", NOW + 60_000]]), NOW);
+  assert.deepEqual(models, ["only"]);
+  assert.equal(cleared, true);
+});
