@@ -764,7 +764,7 @@ export function ImportWizard({
                 className={cn(
                   // Six columns is one too many for sm, so the row stacks
                   // until md rather than squeezing every input to nothing.
-                  "grid gap-3 rounded-xl border p-4 md:grid-cols-[6rem_6rem_minmax(0,1fr)_6.5rem_6.5rem_auto] md:items-center",
+                  "grid gap-3 rounded-xl border p-4 md:grid-cols-[5.5rem_5.5rem_7rem_minmax(0,1fr)_6rem_6rem_auto] md:items-center",
                   // Unsaveable outranks unsure: a row that is merely hard to
                   // read still saves, and one the database will reject does not.
                   rowProblem(row)
@@ -790,6 +790,43 @@ export function ImportWizard({
                   className="h-10"
                   data-numeric
                 />
+                {/*
+                  The type was readable and not correctable. A lesson that
+                  came back as a break — from the reader, or from the typed
+                  list, where any subject with the word "study" in its name
+                  is a candidate — could be deleted and retyped in the form
+                  below, and nothing else. Every other field on the row was
+                  editable, which made this one look like a fact rather than
+                  a guess. Switching to or from a lesson moves the name
+                  across too: the database requires a lesson to name a
+                  subject, and requires anything else to carry a title.
+                */}
+                <Select
+                  value={row.activityType}
+                  onValueChange={(value) => {
+                    const next = value as ExtractedEntry["activityType"];
+                    const name = row.subject ?? row.title ?? "";
+                    update(row.key, {
+                      activityType: next,
+                      subject: next === "class" ? name : null,
+                      title: next === "class" ? null : name,
+                    });
+                  }}
+                >
+                  <SelectTrigger
+                    className="h-10 w-full"
+                    aria-label={`What ${row.subject ?? row.title ?? "this row"} is`}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ACTIVITY_KINDS.map((kind) => (
+                      <SelectItem key={kind.value} value={kind.value}>
+                        {kind.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Input
                   aria-label={row.activityType === "class" ? "Subject" : "What this is"}
                   value={row.subject ?? row.title ?? ""}
