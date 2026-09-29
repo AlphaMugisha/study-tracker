@@ -39,6 +39,7 @@ export function AssignmentDialog({
   assignment,
   trigger,
   defaultOpen = false,
+  defaultSubjectId,
 }: {
   subjects: Subject[];
   /** Absent means create. */
@@ -46,6 +47,16 @@ export function AssignmentDialog({
   trigger?: React.ReactNode;
   /** Set by /homework?new=1 so the sidebar action is one click from anywhere. */
   defaultOpen?: boolean;
+  /**
+   * Subject to open on, for a new assignment.
+   *
+   * Set by the timetable, where the lesson being looked at already answers
+   * "which subject" — homework is handed out at the end of one, and picking
+   * it again from a list of twelve is asking a question the screen already
+   * knows the answer to. Ignored when editing: an existing assignment's own
+   * subject is the only right answer there.
+   */
+  defaultSubjectId?: string | null;
 }) {
   const isEdit = Boolean(assignment);
   const [open, setOpen] = useState(defaultOpen);
@@ -106,7 +117,7 @@ export function AssignmentDialog({
           <Field id="subjectId" label="Subject">
             <Select
               name="subjectId"
-              defaultValue={assignment?.subject_id ?? NO_SUBJECT}
+              defaultValue={assignment?.subject_id ?? defaultSubjectId ?? NO_SUBJECT}
             >
               <SelectTrigger id="subjectId" className="h-10 w-full">
                 <SelectValue placeholder="Choose a subject" />

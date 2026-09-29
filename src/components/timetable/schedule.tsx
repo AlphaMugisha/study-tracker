@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { CalendarPlus, Pencil } from "lucide-react";
+import { CalendarPlus, NotebookPen, Pencil } from "lucide-react";
 
+import { AssignmentDialog } from "@/components/homework/assignment-dialog";
 import { activityStyle, ActivityChip } from "@/components/shared/badges";
 import { ItemCard, ItemGrid, type ItemAccent } from "@/components/shared/item-card";
 import { DeleteEntryButton } from "@/components/timetable/entry-actions";
@@ -103,9 +104,39 @@ export function DaySchedule({
                   />
                   <DeleteEntryButton id={entry.id} label={entry.label} />
                   {entry.subjectId ? (
-                    <Button asChild size="sm" variant="ghost" className="ml-auto">
-                      <Link href={`/homework?subject=${entry.subjectId}`}>Homework</Link>
-                    </Button>
+                    <>
+                      {/*
+                        Homework is set at the end of a lesson, and this is the
+                        screen showing the lesson. Opening the dialog from here
+                        with the subject already chosen removes the one step
+                        that has a wrong answer: picking it back out of a list
+                        of twelve, having just been looking at it.
+                      */}
+                      <AssignmentDialog
+                        subjects={subjects}
+                        defaultSubjectId={entry.subjectId}
+                        trigger={
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="ml-auto"
+                            aria-label={`Set homework for ${entry.label}`}
+                          >
+                            <NotebookPen aria-hidden="true" />
+                            Set homework
+                          </Button>
+                        }
+                      />
+                      <Button asChild size="sm" variant="ghost">
+                        <Link
+                          href={`/homework?subject=${entry.subjectId}`}
+                          aria-label={`See ${entry.label} homework`}
+                        >
+                          See all
+                        </Link>
+                      </Button>
+                    </>
                   ) : null}
                 </>
               ) : null
