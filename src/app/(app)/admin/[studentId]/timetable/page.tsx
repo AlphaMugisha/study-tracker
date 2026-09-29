@@ -47,7 +47,7 @@ export default async function SupportTimetablePage({
       <PageHeader
         eyebrow="Set timetable"
         title={`${firstName}'s school week.`}
-        description={`Upload a photo of the timetable and check what was read. This replaces whatever ${firstName} has now.`}
+        description={`Upload a photo of the timetable, or type the week out a line at a time. Either way you check every row, and either way it replaces whatever ${firstName} has now.`}
       />
 
       <Reveal>
