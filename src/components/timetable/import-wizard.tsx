@@ -662,10 +662,33 @@ export function ImportWizard({
         </h2>
         <p className="mt-4 max-w-[62ch] text-body text-ink-muted">
           {lessons} lesson{lessons === 1 ? "" : "s"} across {days.length} day
-          {days.length === 1 ? "" : "s"}. Everything here is editable — fix
-          anything that is wrong, delete anything that is not{" "}
-          {studentName ? `${studentName}'s` : "yours"}.
+          {days.length === 1 ? "" : "s"}. Everything here is editable
+          {source === "manual" ? (
+            <> — correct anything that came out wrong.</>
+          ) : (
+            <>
+              {" "}
+              — fix anything that is wrong, delete anything that is not{" "}
+              {studentName ? `${studentName}'s` : "yours"}.
+            </>
+          )}
         </p>
+
+        {/*
+          Where these rows came from, said plainly, before anything else.
+
+          The screen has had four possible authors for a while — a fixture,
+          two different models, and the person reading it — and named none of
+          them unless the fixture happened to be in use. That gap cost real
+          time: a stale tab showing sample data and a server misconfigured to
+          produce it look identical, and the only way to tell them apart was
+          to go and read the server log.
+        */}
+        <Provenance
+          provider={source === "manual" ? "typed" : analysis.result?.provider}
+          elapsedMs={analysis.elapsedMs}
+          rows={rows.length}
+        />
 
         {analysis.result?.provider === "mock" ? (
           <Notice tone="pause" icon={Info}>
@@ -1022,6 +1045,45 @@ export function ImportWizard({
         </form>
       </Surface>
     </div>
+  );
+}
+
+/**
+ * One line naming who produced these rows, and how long it took them.
+ *
+ * Deliberately quiet — it is the answer to a question that only gets asked
+ * when something looks wrong, and it should not compete with the rows for
+ * attention on the occasions nothing is.
+ */
+function Provenance({
+  provider,
+  elapsedMs,
+  rows,
+}: {
+  provider: "anthropic" | "google" | "mock" | "typed" | undefined;
+  elapsedMs?: number;
+  rows: number;
+}) {
+  const who = {
+    typed: "Typed out by you",
+    google: "Read by Gemini",
+    anthropic: "Read by Claude",
+    mock: "Sample data — nothing was read",
+    undefined: "Read",
+  }[provider ?? "undefined"];
+
+  const took =
+    provider === "typed" || elapsedMs === undefined
+      ? null
+      : ` in ${(elapsedMs / 1000).toFixed(1)}s`;
+
+  return (
+    <p className="mt-5 text-[0.85rem] text-ink-subtle">
+      {who}
+      {took}
+      {" · "}
+      <span data-numeric>{rows}</span> row{rows === 1 ? "" : "s"}
+    </p>
   );
 }
 

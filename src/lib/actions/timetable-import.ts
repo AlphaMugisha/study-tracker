@@ -44,6 +44,15 @@ export type AnalyseState = {
   studentName?: string;
   /** Echoed back so step two can record how the image was read. */
   scope?: TimetableScope;
+  /**
+   * How long the read took, in milliseconds.
+   *
+   * Shown on the review screen next to who did the reading. Between a mock
+   * provider, two real ones and a queue of models that may or may not have
+   * been busy, "where did these rows come from and did anything actually
+   * happen" is a question the screen could not answer about its own contents.
+   */
+  elapsedMs?: number;
 };
 
 export type ConfirmState = {
@@ -149,6 +158,7 @@ export async function analyseTimetableAction(
   const image = file as File;
   const data = Buffer.from(await image.arrayBuffer()).toString("base64");
 
+  const startedAt = Date.now();
   let result: ExtractionResult;
   try {
     result = await extractTimetable({
@@ -190,6 +200,7 @@ export async function analyseTimetableAction(
     studentId: target.id,
     studentName: target.name,
     scope,
+    elapsedMs: Date.now() - startedAt,
   };
 }
 
