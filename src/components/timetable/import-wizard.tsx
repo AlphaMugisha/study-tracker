@@ -15,6 +15,7 @@ import {
 
 import { Field, FormAlert, fieldA11yProps } from "@/components/auth/form-field";
 import { SubmitButton } from "@/components/auth/submit-button";
+import { FormPendingOverlay } from "@/components/shared/pending-overlay";
 import { Eyebrow, Surface } from "@/components/shared/surface";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -217,6 +218,20 @@ export function ImportWizard({
         </p>
 
         <form action={analyse} className="mt-9 grid gap-7" noValidate>
+          {/*
+            The read is the one thing here that takes long enough to look
+            broken. Measured at twenty-odd seconds for a photograph and up to
+            two minutes when the free tier is busy, which is well past the
+            point where a disabled button stops being a reassurance.
+          */}
+          <FormPendingOverlay
+            title="Reading the timetable"
+            stages={[
+              { after: 12, text: "A full week is a lot of cells. It reads them all before answering." },
+              { after: 40, text: "Still going. A busy free tier adds a minute to this more often than not." },
+              { after: 90, text: "Close to the limit now. If this gives up, it is the tier being busy — not your photo." },
+            ]}
+          />
           {studentId ? <input type="hidden" name="studentId" value={studentId} /> : null}
           {analysis.formError ? <FormAlert>{analysis.formError}</FormAlert> : null}
 
@@ -843,6 +858,15 @@ export function ImportWizard({
         {confirmation.formError ? <FormAlert>{confirmation.formError}</FormAlert> : null}
 
         <form action={confirm} className="grid gap-6">
+          {/*
+            Shorter than the read, but it writes subjects, a version and every
+            row in one go — and a second click during it would archive the
+            timetable it is halfway through creating.
+          */}
+          <FormPendingOverlay
+            title="Saving the timetable"
+            stages={[{ after: 10, text: "Creating the subjects it needs as it goes." }]}
+          />
           {studentId ? <input type="hidden" name="studentId" value={studentId} /> : null}
           {/* Recorded on the saved version, so a week that came back odd can
               later be traced to how the image was read. */}
