@@ -38,7 +38,19 @@ import { isPdf, resultSchema, type ExtractionResult } from "@/lib/timetable/impo
  * reading a grid is not work that needs the flagship. The flagship is last
  * rather than absent so a day when the others are the busy ones still works.
  */
-const MODELS = ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.8-flash"];
+const MODELS = [
+  "gemini-3.7-flash",
+  "gemini-3.6-flash",
+  "gemini-3.8-flash",
+  // The lite models are last because they are the slowest and the least
+  // capable, but they are in the list because the free tier's daily cap of
+  // twenty reads is counted per model rather than per key. Each name here is
+  // another twenty timetables a day, and a lite model reading the week
+  // correctly beats a better one that is out of allowance until tomorrow.
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite",
+];
 
 /** One name in GEMINI_MODEL pins the lot, for pinning a known-good model. */
 function modelsToTry(): string[] {
@@ -173,7 +185,8 @@ export async function extractWithGemini(input: GeminiInput): Promise<ExtractionR
   for (const model of modelsToTry()) {
     const remaining = deadline - Date.now();
     // Starting an attempt there is no time left to finish only delays the
-    // answer; the previous model's failure is already the true one.
+    // answer; the previous model's failure is already the true one. This is
+    // what keeps a six-model queue from becoming a six-minute wait.
     if (remaining < 5_000) {
       console.warn(`[timetable] out of budget before ${model}`);
       break;
@@ -284,8 +297,25 @@ async function failureFor(response: Response, model: string): Promise<Extraction
     );
   }
   if (response.status === 429) {
+    /*
+      Two different limits arrive as the same status code, and telling them
+      apart matters more than anything else in this function.
+
+      A per-minute burst really does clear in a minute. The free tier's other
+      limit is twenty requests per day, per model — and "wait a minute and try
+      again" is a lie to somebody who will sit there retrying an upload that
+      cannot succeed again until tomorrow. Google says which it is in the body
+      and even gives a retry delay, so both are quoted rather than guessed at.
+    */
+    const daily = /per day/i.test(detail);
+    const retryIn = detail.match(/retry in (\d+)s/i)?.[1];
+
     return new ExtractionError(
-      "The free Gemini tier's rate limit was hit. Wait a minute and try again — this one does pass.",
+      daily
+        ? "That Google key has used up its free quota for today — it is twenty reads a day on each model, and this one is spent. It resets tomorrow. Switching TIMETABLE_EXTRACTOR to anthropic, or pinning a different model with GEMINI_MODEL, works in the meantime."
+        : `The free tier's rate limit was hit.${
+            retryIn ? ` Google suggests trying again in ${retryIn} seconds.` : " Wait a minute and try again."
+          }`,
       detail.slice(0, 300),
     );
   }

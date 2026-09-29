@@ -79,11 +79,19 @@ cannot tell them apart.
 Either provider reads a photo, a screenshot or a PDF — the school's own PDF
 needs no screenshotting first. A healthy read takes twenty to sixty seconds.
 
-The free tier is genuinely contended: models return `503 service_unavailable`
-when busy, and at times every one of them is. The reader tries each in turn
-within a two-minute budget and then says so plainly, because that failure
-looks exactly like a bad key or a bad photo and is neither. `GEMINI_MODEL`
-pins one if you would rather not have it hunt.
+Two things about the free tier are worth knowing before you rely on it.
+
+It is genuinely contended: models return `503 service_unavailable` when busy,
+and at times every one of them is. And it allows **twenty reads a day on each
+model** — counted per model rather than per key, which is why the reader works
+through a list of six rather than calling one. Between them that is about a
+hundred and twenty timetables a day; a day of heavy testing can still finish
+them, and the quota resets rather than clearing in a minute.
+
+Either way the reader tries each model in turn within a two-minute budget and
+then says which of the two it ran into, because both failures look exactly
+like a bad key or a bad photo and are neither. `GEMINI_MODEL` pins one if you
+would rather it did not hunt.
 
 Read the last row twice before choosing it. Google's free tier is free because
 input is used to improve their models, and what you are sending is a
