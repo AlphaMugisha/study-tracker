@@ -113,7 +113,7 @@ export default async function TimetablePage({
             <Button asChild variant="outline">
               <Link href="/timetable/upload">
                 <ImageUp aria-hidden="true" />
-                Replace from photo
+                Replace
               </Link>
             </Button>
             <TimetableEntryDialog subjects={subjects} defaultDay={selectedDay} />
