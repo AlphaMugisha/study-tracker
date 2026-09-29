@@ -15,8 +15,17 @@ export const metadata: Metadata = { title: "Upload timetable" };
  * never get entered at all — and an app that does not know the school day
  * cannot answer the one question it exists to answer.
  */
-export default async function UploadTimetablePage() {
+export default async function UploadTimetablePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await requireSessionContext();
+
+  // `?mode=typed` opens on the typing tab, so the timetable page can link at
+  // the thing itself rather than at a page where it has to be found first.
+  const params = await searchParams;
+  const mode = params.mode === "typed" ? "typed" : "photo";
 
   return (
     <PageContainer>
@@ -26,7 +35,7 @@ export default async function UploadTimetablePage() {
         description="Rather than typing out every lesson, upload the timetable and check what comes back. One class's own sheet or the whole year's grid — say which, and you get the last word on every row."
       />
       <Reveal>
-        <ImportWizard returnTo="/timetable" />
+        <ImportWizard returnTo="/timetable" initialMode={mode} />
       </Reveal>
     </PageContainer>
   );

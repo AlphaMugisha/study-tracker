@@ -129,16 +129,19 @@ export function ImportWizard({
   studentId,
   studentName,
   returnTo,
+  initialMode = "photo",
 }: {
   /** Omitted when a student is uploading their own. */
   studentId?: string;
   studentName?: string;
   returnTo: string;
+  /** Which tab opens first, so a link can point straight at typing. */
+  initialMode?: "photo" | "typed";
 }) {
   const router = useRouter();
   const [rows, setRows] = useState<Row[] | null>(null);
   const [scope, setScope] = useState<TimetableScope>("single");
-  const [mode, setMode] = useState<"photo" | "typed">("photo");
+  const [mode, setMode] = useState<"photo" | "typed">(initialMode);
   const [typed, setTyped] = useState("");
   const [typedProblems, setTypedProblems] = useState<ParsedLine[] | null>(null);
   // What the saved version will record about how it was produced.
