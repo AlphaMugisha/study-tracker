@@ -16,6 +16,15 @@ export type ResolvedEntry = {
   label: string;
   /** Secondary line: room, teacher, or the subject when a title is present. */
   detail: string | null;
+  /**
+   * Who teaches it, kept separately from `detail`.
+   *
+   * `detail` is a display string that may or may not be the teacher depending
+   * on what else the row has. Anything that needs the teacher as a fact — the
+   * text export, for one — cannot use it, and the column was being fetched
+   * and then thrown away.
+   */
+  teacher: string | null;
   subjectName: string | null;
   /** Lets a lesson link to that subject's homework. */
   subjectId: string | null;

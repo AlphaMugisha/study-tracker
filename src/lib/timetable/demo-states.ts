@@ -16,6 +16,7 @@ function entry(partial: Partial<ResolvedEntry> & { label: string }): ResolvedEnt
     activityType: partial.activityType ?? "class",
     label: partial.label,
     detail: partial.detail ?? null,
+    teacher: partial.teacher ?? null,
     subjectName: partial.subjectName ?? null,
     subjectId: partial.subjectId ?? null,
     colorToken: partial.colorToken ?? "chart-1",

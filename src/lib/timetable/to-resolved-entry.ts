@@ -32,6 +32,7 @@ export function toResolvedEntry(row: {
     activityType: row.activity_type,
     label,
     detail,
+    teacher: row.teacher,
     subjectName,
     subjectId: row.subject_id,
     colorToken: row.subjects?.color_token ?? null,
