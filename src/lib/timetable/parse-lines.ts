@@ -49,12 +49,30 @@ const DAYS: Array<[RegExp, number]> = [
   [/^(sun|sunday)$/i, 7],
 ];
 
-/** Words that mean a row is not a taught lesson, so the type is not guessed. */
+/**
+ * Names that mean a row is not a taught lesson.
+ *
+ * Anchored to the whole name, not matched as a word inside it, and that is
+ * the entire point. Looking for the word "study" anywhere turns "Study of
+ * Religion" into a study period, "Tea Ceremony" into a break and "Free
+ * Composition" into a free — and a row that is not a lesson carries no
+ * subject, so those are taught subjects that can never have homework filed
+ * against them. Guessing wrongly in this direction is expensive and quiet.
+ *
+ * The cost of anchoring is a break written in some way not listed here
+ * arriving as a lesson, which is visible on the review screen and one click
+ * to fix. That is the right way round.
+ */
 const KINDS: Array<[RegExp, ExtractedEntry["activityType"]]> = [
-  [/\b(break|lunch|recess|assembly|registration|office hours|tea)\b/i, "break"],
-  [/\b(self[-\s]?study|supervised study|prep|study)\b/i, "study"],
-  [/\b(free|no lesson|spare)\b/i, "free"],
-  [/\b(club|clubs|games|sport|pe practice|activity|guidance)\b/i, "other"],
+  [/^(short |long |morning |afternoon |mid[-\s]?morning )?(break|recess|breaktime)$/i, "break"],
+  [/^(lunch|lunch ?break|lunchtime|dinner)$/i, "break"],
+  [/^(assembly|registration|form time|tutor time|office hours|tea|tea break)$/i, "break"],
+  [/^(supervised |silent |private )?(self[-\s]?)?study( period| hall| time)?$/i, "study"],
+  [/^(prep|homework club)$/i, "study"],
+  [/^(free|free period|no lesson|spare|spare period)$/i, "free"],
+  [/^(student[-\s]?led )?clubs?( .*)?$/i, "other"],
+  [/^(games|sport|activities|activity|enrichment)$/i, "other"],
+  [/^(career |careers )?guidance$/i, "other"],
 ];
 
 /**

@@ -75,6 +75,58 @@ test("no teacher is null rather than an empty string", () => {
   assert.equal(e.teacher, null);
 });
 
+/*
+  Guessing the wrong way here is expensive and quiet.
+
+  A row that is not a lesson carries no subject, so a taught subject typed as
+  a break can never have homework filed against it and nothing on the screen
+  says why. Matching the word "study" anywhere in a name did exactly that to
+  five real subject names.
+*/
+test("a subject that merely contains the word is still a lesson", () => {
+  for (const name of [
+    "Study of Religion",
+    "Study Skills",
+    "Free Composition",
+    "Tea Ceremony",
+    "Prep School History",
+    "Media Studies",
+    "Breakfast Cookery",
+    "Physical Education",
+    "Sports Science",
+  ]) {
+    const e = one(`Mon 08:00-09:00 ${name}`);
+    assert.equal(e.activityType, "class", name);
+    assert.equal(e.subject, name, name);
+  }
+});
+
+test("the shapes a break is actually written in are still caught", () => {
+  for (const [name, kind] of [
+    ["Break", "break"],
+    ["Short break", "break"],
+    ["SHORT BREAK", "break"],
+    ["Mid-morning break", "break"],
+    ["Lunch", "break"],
+    ["Lunch Break", "break"],
+    ["Office Hours", "break"],
+    ["Assembly", "break"],
+    ["Registration", "break"],
+    ["Study", "study"],
+    ["Supervised Self-Study", "study"],
+    ["Private study", "study"],
+    ["Prep", "study"],
+    ["Free", "free"],
+    ["Free period", "free"],
+    ["Student Led Clubs", "other"],
+    ["Clubs", "other"],
+    ["Games", "other"],
+    ["Career Guidance", "other"],
+  ]) {
+    assert.equal(one(`Mon 08:00-09:00 ${name}`).activityType, kind, name);
+  }
+});
+
 test("breaks and study periods are typed, not filed as lessons", () => {
   assert.equal(one("Mon 09:40-10:00 Short Break").activityType, "break");
   assert.equal(one("Mon 12:30-13:30 Lunch Break").activityType, "break");
