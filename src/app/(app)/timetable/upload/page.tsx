@@ -31,8 +31,12 @@ export default async function UploadTimetablePage({
     <PageContainer>
       <PageHeader
         eyebrow="Timetable"
-        title="Take a photo of it."
-        description="Rather than typing out every lesson, upload the timetable and check what comes back. One class's own sheet or the whole year's grid — say which, and you get the last word on every row."
+        title={mode === "typed" ? "Type out the week." : "Take a photo of it."}
+        description={
+          mode === "typed"
+            ? "One lesson to a line, in whatever shorthand you already use. It lands on the same review screen a photo does, and you get the last word on every row."
+            : "Upload the timetable and check what comes back. One class's own sheet or the whole year's grid — say which, and you get the last word on every row."
+        }
       />
       <Reveal>
         <ImportWizard returnTo="/timetable" initialMode={mode} />
