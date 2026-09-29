@@ -8,7 +8,6 @@ import { createClient } from "@/lib/supabase/server";
 import {
   describeExtractionFailure,
   extractTimetable,
-  findClashes,
   normaliseEntries,
   MAX_UPLOAD_BYTES,
   SUPPORTED_MEDIA_TYPES,
@@ -41,8 +40,6 @@ export type AnalyseState = {
   result?: ExtractionResult;
   /** Rows that could never have been saved, with the reason. */
   dropped?: Array<{ entry: ExtractedEntry; reason: string }>;
-  /** Pairs that overlap — the database would reject the second of each. */
-  clashCount?: number;
   studentId?: string;
   studentName?: string;
   /** Echoed back so step two can record how the image was read. */
@@ -190,7 +187,6 @@ export async function analyseTimetableAction(
   return {
     result: { ...result, entries },
     dropped,
-    clashCount: findClashes(entries).length,
     studentId: target.id,
     studentName: target.name,
     scope,
