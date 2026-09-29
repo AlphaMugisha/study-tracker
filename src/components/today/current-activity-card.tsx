@@ -23,6 +23,17 @@ import { cn } from "@/lib/utils";
  * temporary resolver for `resolveNow()` this component does not change — the
  * countdown simply starts ticking and starts being right about timezones.
  */
+/**
+ * "B12 · Willy", or whichever of the two the row actually has.
+ *
+ * Falls back to `detail` for anything that is not a lesson, where that field
+ * carries the subject name rather than a place or a person.
+ */
+function whereAndWho(entry: ResolvedEntry): string | null {
+  const parts = [entry.room, entry.teacher].filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : entry.detail;
+}
+
 export function CurrentActivityCard({ state }: { state: TimetableState }) {
   if (state.kind === "in_activity") return <LivePanel state={state} />;
 
@@ -153,8 +164,15 @@ function LivePanel({
             <h2 id="current-activity-heading" className="mt-8 text-headline text-balance">
               {current.label}
             </h2>
-            {current.detail ? (
-              <p className="mt-4 text-body-lg opacity-75">{current.detail}</p>
+            {/*
+              Room and teacher, not `detail` — which holds the room when there
+              is one and the teacher only when there is not. This is the
+              largest thing on the dashboard and the answer to "what am I
+              doing right now", and on every lesson that named a room it was
+              declining to say who was teaching it.
+            */}
+            {whereAndWho(current) ? (
+              <p className="mt-4 text-body-lg opacity-75">{whereAndWho(current)}</p>
             ) : null}
 
             {next ? (
