@@ -38,6 +38,7 @@ export function ItemCard({
   footer,
   active = false,
   muted = false,
+  dense = false,
   index = 0,
   className,
 }: {
@@ -54,6 +55,16 @@ export function ItemCard({
   footer?: React.ReactNode;
   active?: boolean;
   muted?: boolean;
+  /**
+   * One line instead of two: time, dot, label and trailing value side by side.
+   *
+   * The stacked card is right for a grid of two or three across, where each
+   * one has room to breathe. In a narrow column it is mostly air — a card tall
+   * enough for a paragraph holding "Short break", five of which fill a screen
+   * that could have shown fifteen. A chronological list is read by scanning
+   * down the times, and that is easier the closer together they are.
+   */
+  dense?: boolean;
   /** Drives the entrance stagger. */
   index?: number;
   className?: string;
@@ -62,17 +73,63 @@ export function ItemCard({
   const interactive = Boolean(href);
 
   const shell = cn(
-    "group/item flex h-full flex-col rounded-xl border border-border p-5",
+    "group/item flex rounded-xl border border-border",
     "transition-[transform,box-shadow,border-color,background-color] duration-200 ease-out-flat",
+    dense ? "items-center gap-3 px-4 py-3" : "h-full flex-col p-5",
     muted ? "bg-transparent" : "bg-surface-sunken shadow-card",
+    // The lift is a card gesture. On a row it drags the whole list upward one
+    // line at a time, which reads as the list twitching rather than as hover.
     interactive &&
-      "hover:-translate-y-1 hover:bg-surface-raised hover:shadow-card-hover",
+      (dense
+        ? "hover:bg-surface-raised"
+        : "hover:-translate-y-1 hover:bg-surface-raised hover:shadow-card-hover"),
     interactive && a.edge,
     active && "border-brand/60 bg-brand-soft",
     className,
   );
 
-  const body = (
+  const denseBody = (
+    <>
+      {lead ? (
+        <span
+          className={cn(
+            "shrink-0 text-[0.95rem] font-semibold tracking-[-0.02em]",
+            muted ? "text-ink-subtle" : "text-ink",
+          )}
+          data-numeric
+        >
+          {lead}
+        </span>
+      ) : null}
+
+      {accent !== "none" ? (
+        <span aria-hidden="true" className={cn("size-2 shrink-0 rounded-full", a.dot)} />
+      ) : null}
+
+      <div className="min-w-0 flex-1">
+        <p
+          className={cn(
+            "truncate text-body font-medium transition-colors duration-150 ease-out-flat",
+            muted ? "text-ink-muted" : "text-ink",
+            interactive && a.hover,
+          )}
+        >
+          {title}
+        </p>
+        {meta ? (
+          <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-3 text-[0.8rem] text-ink-subtle">
+            {meta}
+          </div>
+        ) : null}
+      </div>
+
+      {trailing ? (
+        <span className="shrink-0 text-right tabular-nums">{trailing}</span>
+      ) : null}
+    </>
+  );
+
+  const stackedBody = (
     <>
       {lead || trailing ? (
         <div className="mb-4 flex items-baseline justify-between gap-3">
@@ -126,6 +183,7 @@ export function ItemCard({
     </>
   );
 
+  const body = dense ? denseBody : stackedBody;
   const style = { animationDelay: `${Math.min(index, 8) * 45}ms` } as const;
 
   if (!href) {
@@ -154,14 +212,30 @@ export function ItemCard({
  */
 export function ItemGrid({
   children,
+  dense = false,
   className,
 }: {
   children: React.ReactNode;
+  /**
+   * A single tight column, for `dense` cards.
+   *
+   * Deliberately not two across even when there is room: these lists are in
+   * time order, and columns turn reading down a day into reading down half a
+   * day and then jumping back up. The density comes from the rows being one
+   * line tall, not from folding the order in half.
+   */
+  dense?: boolean;
   className?: string;
 }) {
   return (
     <div className="@container">
-      <ul className={cn("grid grid-cols-1 gap-3 @md:grid-cols-2 @3xl:grid-cols-3", className)}>
+      <ul
+        className={cn(
+          "grid grid-cols-1",
+          dense ? "gap-1.5" : "gap-3 @md:grid-cols-2 @3xl:grid-cols-3",
+          className,
+        )}
+      >
         {children}
       </ul>
     </div>

@@ -197,17 +197,23 @@ export function RestOfDay({ entries }: { entries: ResolvedEntry[] }) {
           Nothing else timetabled. The rest of the day is yours.
         </p>
       ) : (
-        <ItemGrid>
+        /*
+          Dense, because this is a list of times read by scanning downward.
+          As stacked cards it showed five items in a column that had room for
+          fifteen, most of each card being the space around two words.
+        */
+        <ItemGrid dense>
           {entries.map((entry, i) => (
             <ItemCard
               key={entry.id}
+              dense
               index={i}
               muted={entry.activityType !== "class"}
               accent={ACTIVITY_ACCENT[entry.activityType] ?? "none"}
               href={entry.subjectId ? `/homework?subject=${entry.subjectId}` : null}
               lead={entry.startLabel}
               trailing={
-                <span className="text-[0.85rem] text-ink-subtle" data-numeric>
+                <span className="text-[0.8rem] text-ink-subtle" data-numeric>
                   {formatDuration(entry.durationMinutes)}
                 </span>
               }
