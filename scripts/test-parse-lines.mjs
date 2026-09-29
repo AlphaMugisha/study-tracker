@@ -152,3 +152,66 @@ test("empty input is an empty result, not a crash", () => {
   assert.deepEqual(entries, []);
   assert.deepEqual(problems, []);
 });
+
+/*
+  Out and back in again.
+
+  The format only earns the "copy it out, fix it, paste it back" workflow if
+  a row survives the trip. Every field the parser can read has to be one the
+  formatter writes — which is why the format has notation for a room at all.
+*/
+import { toTimetableLines } from "@/lib/timetable/parse-lines.ts";
+
+const WEEK = [
+  { dayOfWeek: 1, startTime: "08:00", endTime: "09:40", subject: "Embedded System Software", title: null, teacher: "Willy", room: null },
+  { dayOfWeek: 1, startTime: "09:40", endTime: "10:00", subject: null, title: "Short break", teacher: null, room: null },
+  { dayOfWeek: 2, startTime: "10:00", endTime: "11:40", subject: "Advanced Database", title: null, teacher: "Eric", room: "Lab 2" },
+  { dayOfWeek: 4, startTime: "10:00", endTime: "12:30", subject: "Data Structures (DSA)", title: null, teacher: "Eric", room: null },
+  { dayOfWeek: 5, startTime: "13:30", endTime: "15:10", subject: "Development of 3D Models", title: null, teacher: "Willy", room: "B12" },
+];
+
+test("a week written out is a week the parser reads back", () => {
+  const { entries, problems } = parseTimetableLines(toTimetableLines(WEEK));
+  assert.deepEqual(problems, []);
+  assert.equal(entries.length, WEEK.length);
+
+  for (const [i, original] of WEEK.entries()) {
+    const back = entries[i];
+    assert.equal(back.dayOfWeek, original.dayOfWeek, `row ${i} day`);
+    assert.equal(back.startTime, original.startTime, `row ${i} start`);
+    assert.equal(back.endTime, original.endTime, `row ${i} end`);
+    assert.equal(back.subject ?? back.title, original.subject ?? original.title, `row ${i} name`);
+    assert.equal(back.teacher, original.teacher, `row ${i} teacher`);
+    assert.equal(back.room, original.room, `row ${i} room`);
+  }
+});
+
+test("the written form is the shape the docs promise", () => {
+  const lines = toTimetableLines(WEEK).split("\n");
+  assert.equal(lines[0], "Mon 08:00-09:40 Embedded System Software (Willy)");
+  assert.equal(lines[1], "Mon 09:40-10:00 Short break");
+  assert.equal(lines[2], "Tue 10:00-11:40 Advanced Database (Eric) @ Lab 2");
+});
+
+test("a room is read wherever the teacher notation is", () => {
+  for (const line of [
+    "Tue 10:00-11:40 Advanced Database (Eric) @ Lab 2",
+    "Tue 10:00-11:40 Advanced Database, Eric @ Lab 2",
+    "Tue 10:00-11:40 Advanced Database @ Lab 2",
+  ]) {
+    const { entries, problems } = parseTimetableLines(line);
+    assert.deepEqual(problems, [], line);
+    assert.equal(entries[0].room, "Lab 2", line);
+    assert.equal(entries[0].subject, "Advanced Database", line);
+  }
+});
+
+test("a bare @ with nothing after it is not a room", () => {
+  const { entries } = parseTimetableLines("Mon 08:00-09:40 Java @");
+  assert.equal(entries[0].room, null);
+  assert.equal(entries[0].subject, "Java @");
+});
+
+test("writing out an empty week is an empty string, not a stray newline", () => {
+  assert.equal(toTimetableLines([]), "");
+});

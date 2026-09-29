@@ -1,5 +1,6 @@
 import type { ExtractedEntry } from "@/lib/timetable/import-constants";
 import { normaliseTime } from "@/lib/timetable/review";
+import { DAY_SHORT } from "@/lib/timetable/types";
 
 /**
  * A whole timetable, typed out a line at a time.
@@ -103,6 +104,22 @@ function parseRange(text: string): { start: string; end: string; rest: string } 
   }
 
   return { start, end, rest: text.replace(range[0], " ").trim() };
+}
+
+/** `"Java (Faustin) @ Lab 2"` → the room, and the line without it. */
+function takeRoom(text: string): { room: string | null; rest: string } {
+  /*
+    `@` because it is the one character nobody puts in a subject or a
+    teacher's name, and because the room is optional and has to be
+    recognisable wherever it lands. It matters that this runs before the
+    teacher is taken: otherwise "Java, Eric @ Lab 2" ends with the teacher
+    reading as "Eric @ Lab 2".
+  */
+  const at = text.match(/\s+@\s*([^@]+)$/);
+  if (!at) return { room: null, rest: text };
+
+  const room = at[1].trim();
+  return room ? { room, rest: text.slice(0, at.index).trim() } : { room: null, rest: text };
 }
 
 /** The name, and a teacher if one was written after it. */
@@ -220,7 +237,8 @@ export function parseTimetableLines(input: string): ParseResult {
       return;
     }
 
-    const { name, teacher } = parseNameAndTeacher(range.rest);
+    const { room, rest } = takeRoom(range.rest);
+    const { name, teacher } = parseNameAndTeacher(rest);
     if (!name) {
       problems.push({ lineNumber, text: line, reason: "It has a day and a time but no lesson." });
       return;
@@ -235,7 +253,7 @@ export function parseTimetableLines(input: string): ParseResult {
       activityType,
       subject: activityType === "class" ? name : null,
       title: activityType === "class" ? null : name,
-      room: null,
+      room,
       teacher,
       // Typed by a person reading their own timetable. Nothing was inferred,
       // so nothing should arrive outlined as needing a second look.
@@ -245,4 +263,38 @@ export function parseTimetableLines(input: string): ParseResult {
 
   entries.sort((a, b) => a.dayOfWeek - b.dayOfWeek || a.startTime.localeCompare(b.startTime));
   return { entries, problems };
+}
+
+/**
+ * The inverse: rows back out as lines the parser will read again.
+ *
+ * Exported so a saved timetable can be copied out as text, corrected in
+ * whatever the person already has open, and pasted back in. That round trip
+ * is the reason the format has notation for a room at all — without it, going
+ * out and back in would quietly lose one.
+ *
+ * It is also how the format is discovered. Nobody reads a syntax description;
+ * everybody reads their own timetable written down and recognises the shape.
+ */
+export function toTimetableLines(
+  entries: Array<{
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+    subject?: string | null;
+    title?: string | null;
+    teacher?: string | null;
+    room?: string | null;
+  }>,
+): string {
+  return [...entries]
+    .sort((a, b) => a.dayOfWeek - b.dayOfWeek || a.startTime.localeCompare(b.startTime))
+    .map((entry) => {
+      const day = DAY_SHORT[entry.dayOfWeek] ?? String(entry.dayOfWeek);
+      const name = (entry.subject ?? entry.title ?? "Untitled").trim();
+      const teacher = entry.teacher?.trim() ? ` (${entry.teacher.trim()})` : "";
+      const room = entry.room?.trim() ? ` @ ${entry.room.trim()}` : "";
+      return `${day} ${entry.startTime}-${entry.endTime} ${name}${teacher}${room}`;
+    })
+    .join("\n");
 }
