@@ -7,6 +7,7 @@ import {
   ImageUp,
   Info,
   LayoutGrid,
+  ListPlus,
   Plus,
   Rows3,
   Trash2,
@@ -19,6 +20,7 @@ import { FormPendingOverlay } from "@/components/shared/pending-overlay";
 import { Eyebrow, Surface } from "@/components/shared/surface";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -39,6 +41,7 @@ import {
   type ExtractedEntry,
   type TimetableScope,
 } from "@/lib/timetable/import-constants";
+import { parseTimetableLines, type ParsedLine } from "@/lib/timetable/parse-lines";
 import { findClashes, normaliseTime, rowProblem } from "@/lib/timetable/review";
 import { DAY_NAMES } from "@/lib/timetable/types";
 import { cn } from "@/lib/utils";
@@ -135,6 +138,11 @@ export function ImportWizard({
   const router = useRouter();
   const [rows, setRows] = useState<Row[] | null>(null);
   const [scope, setScope] = useState<TimetableScope>("single");
+  const [mode, setMode] = useState<"photo" | "typed">("photo");
+  const [typed, setTyped] = useState("");
+  const [typedProblems, setTypedProblems] = useState<ParsedLine[] | null>(null);
+  // What the saved version will record about how it was produced.
+  const [source, setSource] = useState<"image" | "pdf" | "manual">("image");
   const [draft, setDraft] = useState<Draft>(BLANK_DRAFT);
   const [draftError, setDraftError] = useState<string | null>(null);
   // Rows the person typed need keys that cannot collide with the numeric ones
@@ -159,6 +167,7 @@ export function ImportWizard({
    */
   const chooseFile = (file: File | null) => {
     setFileName(file?.name ?? null);
+    setSource(file?.type === "application/pdf" ? "pdf" : "image");
 
     if (!file) return setFileError(null);
     if (!SUPPORTED_MEDIA_TYPES.includes(file.type as never)) {
@@ -199,6 +208,28 @@ export function ImportWizard({
     EMPTY_CONFIRM,
   );
 
+  /**
+   * Turn the pasted lines into rows, or say which ones could not be read.
+   *
+   * No server call: the parser is pure and runs here, so a list of forty
+   * lessons becomes a review screen instantly rather than after a round trip
+   * to a model that has nothing to add. It lands on exactly the same step two
+   * as a photograph, which is the point — the editing, the clash check and
+   * the confirmation are already there and already tested.
+   */
+  const useTypedLines = () => {
+    const { entries, problems } = parseTimetableLines(typed);
+
+    setTypedProblems(problems);
+    // Rows are kept even when some lines failed: thirty-eight lessons plus a
+    // list of the two that did not parse beats being sent back to the box.
+    if (entries.length === 0) return;
+
+    setSource("manual");
+    setRows(entries.map((entry, i) => ({ ...entry, key: `typed-${i}` })));
+    setName("My timetable");
+  };
+
   const fieldErrors = analysis.fieldErrors ?? {};
   // What the browser found takes precedence: it describes the file sitting in
   // the input now, where the server's complaint describes the last one posted.
@@ -213,11 +244,66 @@ export function ImportWizard({
           {studentName ? `Upload ${studentName}'s timetable.` : "Upload your timetable."}
         </h2>
         <p className="mt-4 max-w-[52ch] text-body text-ink-muted">
-          A photo, a screenshot or the school&apos;s PDF all work. Nothing is
-          saved until you have checked what was read.
+          A photo, a screenshot or the school&apos;s PDF all work — or type the
+          lessons out if there is no copy to hand. Nothing is saved until you
+          have checked it.
         </p>
 
-        <form action={analyse} className="mt-9 grid gap-7" noValidate>
+        {/*
+          Two ways in, one review screen. The tabs are here rather than on
+          separate pages because what follows them is identical: the same
+          rows, the same editing, the same confirmation. A second page would
+          have meant a second copy of all of it.
+        */}
+        <div
+          role="tablist"
+          aria-label="How to add the timetable"
+          className="mt-7 inline-flex rounded-lg border border-border bg-surface-sunken p-1"
+        >
+          {(
+            [
+              ["photo", "Upload a photo", ImageUp],
+              ["typed", "Type them out", ListPlus],
+            ] as const
+          ).map(([value, label, Icon]) => (
+            <button
+              key={value}
+              type="button"
+              role="tab"
+              aria-selected={mode === value}
+              onClick={() => setMode(value)}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-md px-3.5 py-2 text-[13px] font-medium",
+                "transition-colors duration-200 ease-out-flat",
+                mode === value
+                  ? "bg-surface-raised text-ink"
+                  : "text-ink-muted hover:text-ink",
+              )}
+            >
+              <Icon aria-hidden="true" className="size-4" />
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {mode === "typed" ? (
+          <TypedLines
+            value={typed}
+            onChange={(next) => {
+              setTyped(next);
+              setTypedProblems(null);
+            }}
+            problems={typedProblems}
+            onUse={useTypedLines}
+            returnTo={returnTo}
+          />
+        ) : null}
+
+        <form
+          action={analyse}
+          className={cn("mt-9 grid gap-7", mode === "typed" && "hidden")}
+          noValidate
+        >
           {/*
             The read is the one thing here that takes long enough to look
             broken. Measured at twenty-odd seconds for a photograph and up to
@@ -873,6 +959,9 @@ export function ImportWizard({
           {/* Recorded on the saved version, so a week that came back odd can
               later be traced to how the image was read. */}
           <input type="hidden" name="scope" value={scope} />
+          {/* 'manual', 'pdf' or 'image' — the column has taken all three
+              since the core schema, and only ever received 'image'. */}
+          <input type="hidden" name="source" value={source} />
           <input
             type="hidden"
             name="entries"
@@ -913,6 +1002,107 @@ export function ImportWizard({
           </div>
         </form>
       </Surface>
+    </div>
+  );
+}
+
+const EXAMPLE = [
+  "Mon 08:00-09:40 Embedded System Software (Willy)",
+  "Mon 09:40-10:00 Short break",
+  "Mon 10:00-11:40 Web3 (Emmanuel)",
+  "Tue 08:50-09:40 Project Based Learning (Eric)",
+  "Wed 1:30-2:20 PM Data Structures (Eric)",
+].join("\n");
+
+/**
+ * The whole week, one lesson to a line.
+ *
+ * The format is described in one sentence and then shown, because an example
+ * is read and a specification is not. Everything the parser forgives is
+ * visible in those five lines — short day names, a bare start time, an
+ * afternoon range written the way a timetable prints it — so nobody has to be
+ * told that they are allowed.
+ */
+function TypedLines({
+  value,
+  onChange,
+  problems,
+  onUse,
+  returnTo,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  problems: ParsedLine[] | null;
+  onUse: () => void;
+  returnTo: string;
+}) {
+  const lineCount = value.split(/\r?\n/).filter((line) => line.trim() && !line.startsWith("#")).length;
+
+  return (
+    <div className="mt-8 grid gap-5">
+      <div>
+        <p className="mb-2.5 text-[13px] font-medium text-ink">
+          One lesson per line: day, time, lesson, teacher
+        </p>
+        <Textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          spellCheck={false}
+          placeholder={EXAMPLE}
+          className="min-h-[16rem] font-mono text-[0.85rem] leading-relaxed"
+          aria-label="Your lessons, one per line"
+        />
+        <p className="mt-2.5 max-w-[62ch] text-[0.85rem] leading-relaxed text-ink-subtle">
+          <code className="text-ink-muted">Mon 08:00-09:40 Java (Faustin)</code>.
+          Short day names are fine, so are <code className="text-ink-muted">8-9:40</code>{" "}
+          and <code className="text-ink-muted">1:30-2:20 PM</code>. The teacher can
+          go in brackets, after a comma or after a dash, and can be left out.
+          Breaks and study periods are recognised by name. Columns pasted from a
+          spreadsheet work too.
+        </p>
+      </div>
+
+      {problems && problems.length > 0 ? (
+        <div className="rounded-xl border border-danger/45 bg-danger/8 px-5 py-4">
+          <p className="text-[0.92rem] font-medium text-danger">
+            {problems.length} line{problems.length === 1 ? "" : "s"} could not be
+            read. The rest are fine — fix {problems.length === 1 ? "it" : "them"}{" "}
+            and press the button again, or carry on without{" "}
+            {problems.length === 1 ? "it" : "them"}.
+          </p>
+          <ul className="mt-3 space-y-2">
+            {problems.slice(0, 8).map((problem) => (
+              <li key={problem.lineNumber} className="text-[0.85rem] leading-relaxed">
+                <span className="text-ink-subtle" data-numeric>
+                  Line {problem.lineNumber}:
+                </span>{" "}
+                <code className="text-ink-muted">{problem.text}</code>
+                <span className="block text-danger">{problem.reason}</span>
+              </li>
+            ))}
+          </ul>
+          {problems.length > 8 ? (
+            <p className="mt-3 text-[0.85rem] text-ink-subtle">
+              …and {problems.length - 8} more.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        {lineCount > 0 ? (
+          <span className="mr-auto text-[0.85rem] text-ink-subtle" data-numeric>
+            {lineCount} line{lineCount === 1 ? "" : "s"}
+          </span>
+        ) : null}
+        <Button asChild type="button" variant="outline">
+          <a href={returnTo}>Cancel</a>
+        </Button>
+        <Button type="button" size="lg" className="w-fit" disabled={lineCount === 0} onClick={onUse}>
+          <ListPlus aria-hidden="true" />
+          Check these
+        </Button>
+      </div>
     </div>
   );
 }

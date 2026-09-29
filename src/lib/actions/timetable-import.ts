@@ -229,6 +229,20 @@ export async function confirmTimetableAction(
     ? (rawScope as TimetableScope)
     : "shared";
 
+  /*
+    Where the rows came from, in the database's own vocabulary.
+
+    `timetable_source` has taken 'manual', 'pdf', 'image' and 'csv' since the
+    core schema, and this action recorded 'image' for all of them because that
+    was the only way in when it was written. A week somebody typed out is not
+    an image, and neither is a PDF — and the one question this column exists
+    to answer later is "how was this produced".
+  */
+  const rawSource = String(formData.get("source") ?? "");
+  const source = (["manual", "pdf", "image"] as const).includes(rawSource as never)
+    ? (rawSource as "manual" | "pdf" | "image")
+    : "image";
+
   let rows: z.infer<typeof confirmEntrySchema>[];
   try {
     rows = z.array(confirmEntrySchema).min(1).parse(JSON.parse(String(payload)));
@@ -267,7 +281,7 @@ export async function confirmTimetableAction(
       user_id: target.id,
       name,
       status: "active",
-      source_type: "image",
+      source_type: source,
       confirmed_at: new Date().toISOString(),
       extraction_meta: { confirmedBy: target.onBehalf ? "support" : "student", scope },
     })
@@ -362,7 +376,7 @@ export async function confirmTimetableAction(
     metadata: {
       title: name,
       entries: inserted?.length ?? entries.length,
-      source: "image",
+      source,
       // Recorded so it is visible in her feed that somebody else did this.
       bySupport: target.onBehalf,
     },
