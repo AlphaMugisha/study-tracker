@@ -114,6 +114,36 @@ authenticates perfectly and then fails every request. The balance belongs to
 the account rather than to the key, so issuing a new key changes nothing —
 the upload screen says so rather than telling you to retake the photograph.
 
+#### Typing a timetable instead
+
+There is not always a photo. `/timetable/upload?mode=typed` takes the week as
+one lesson to a line and lands on the same review screen a photo does:
+
+```
+Mon 08:00-09:40 Embedded System Software (Willy)
+Mon 09:40-10:00 Short break
+Tue 10:00-11:40 Advanced Database (Eric) @ Lab 2
+Wed 1:30-2:20 PM Data Structures, Eric
+```
+
+Day, then the times, then what it is. Short day names work, so do numbers
+1–7. `8-9:40` and `08:00 - 09:40` are the same period, and an afternoon range
+written `1:30-2:20 PM` puts both halves in the afternoon rather than reading
+the start as one in the morning. The teacher goes in brackets, after a comma
+or after a dash, and can be left out; a room goes after `@`. Breaks, lunch and
+study periods are recognised by name and filed as such rather than as lessons.
+Blank lines and `#` comments are ignored, and columns pasted from a
+spreadsheet keep their boundaries.
+
+A line that cannot be read is reported with its number and its text, and the
+rest are kept — a timetable quietly missing Thursday is worse than one that
+refused to parse.
+
+This runs in the browser, so it costs nothing and takes no time. **Copy as
+text** on `/timetable` writes the saved week back out in exactly this format,
+which makes correcting a term's worth of changes one paste rather than forty
+trips through a dialog.
+
 ### 4. Decide about email confirmation
 
 **Authentication → Sign In / Providers → Email**, in the Supabase dashboard.
