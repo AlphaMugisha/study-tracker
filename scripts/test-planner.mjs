@@ -147,3 +147,154 @@ test("nothing outstanding means an empty plan, not an empty crash", () => {
   assert.equal(plan.deferred.length, 0);
   assert.equal(plan.startWith, null);
 });
+
+// ---------------------------------------------------------------------------
+// Filling the evening from the timetable
+// ---------------------------------------------------------------------------
+// `spareMinutes` used to be reported and nothing more: an evening with no
+// homework was described as empty rather than used. These cover the one rule
+// that makes that safe to change — set work always wins, and a suggestion
+// never displaces it.
+
+/** The shape `suggestStudy` returns; the planner reads only these fields. */
+function sug(subject, minutes, reason = `${subject} is on tomorrow's timetable.`) {
+  return {
+    subjectId: `sub-${subject}`,
+    subjectName: subject,
+    colorToken: "chart-1",
+    minutes,
+    score: 50,
+    headline: `${subject}, ready for tomorrow`,
+    reasons: [reason],
+    next: null,
+    last: null,
+  };
+}
+
+test("an empty evening is filled from the timetable rather than left empty", () => {
+  const plan = buildEveningPlan({
+    ...BASE,
+    assignments: [],
+    suggestions: [sug("Chemistry", 30)],
+  });
+  assert.equal(plan.blocks.length, 1);
+  assert.equal(plan.blocks[0].kind, "suggested");
+  assert.equal(plan.blocks[0].subjectId, "sub-Chemistry");
+  assert.equal(plan.suggestedMinutes, 30);
+  assert.equal(plan.startsAt, "15:30");
+});
+
+test("a suggestion answers 'what do I start with' only when nothing was set", () => {
+  const withHomework = buildEveningPlan({
+    ...BASE,
+    assignments: [hw("a", "Essay", 30)],
+    suggestions: [sug("Chemistry", 30)],
+  });
+  assert.equal(withHomework.startWith.label, "Essay", "set work comes first, always");
+  assert.equal(withHomework.startWith.reason, null);
+
+  const withoutHomework = buildEveningPlan({
+    ...BASE,
+    assignments: [],
+    suggestions: [sug("Chemistry", 30, "You have a Chemistry double at 09:20 tomorrow.")],
+  });
+  assert.equal(withoutHomework.startWith.label, "Chemistry, ready for tomorrow");
+  assert.equal(
+    withoutHomework.startWith.reason,
+    "You have a Chemistry double at 09:20 tomorrow.",
+    "a suggestion has to say why; set work does not",
+  );
+});
+
+test("suggestions go after the homework, never in front of it", () => {
+  const plan = buildEveningPlan({
+    ...BASE,
+    assignments: [hw("a", "Essay", 30)],
+    suggestions: [sug("Chemistry", 30)],
+  });
+  const kinds = plan.blocks.filter((b) => b.kind !== "break").map((b) => b.kind);
+  assert.deepEqual(kinds, ["homework", "suggested"]);
+  assert.equal(plan.workMinutes, 60);
+  assert.equal(plan.suggestedMinutes, 30, "only the suggested half counts as suggested");
+});
+
+test("nothing is suggested in an evening that could not hold the homework", () => {
+  const plan = buildEveningPlan({
+    ...BASE,
+    studyUntilMinutes: 16 * HOUR, // 30 minutes of evening
+    assignments: [hw("a", "Fits", 30), hw("b", "Does not fit", 60)],
+    suggestions: [sug("Chemistry", 30)],
+  });
+  assert.ok(plan.deferred.length > 0);
+  assert.equal(plan.blocks.filter((b) => b.kind === "suggested").length, 0,
+    "offering optional revision to someone already out of time is noise");
+  assert.equal(plan.suggestedMinutes, 0);
+});
+
+test("a suggestion is never scheduled past the cutoff", () => {
+  const plan = buildEveningPlan({
+    ...BASE,
+    studyUntilMinutes: 16 * HOUR, // 30 minutes of evening
+    assignments: [],
+    suggestions: [sug("Chemistry", 45), sug("French", 45)],
+  });
+  for (const block of plan.blocks) {
+    const end = Number(block.endLabel.slice(0, 2)) * 60 + Number(block.endLabel.slice(3));
+    assert.ok(end <= 16 * HOUR, `suggestion ran past the cutoff: ends ${block.endLabel}`);
+  }
+  assert.ok(plan.blocks.length <= 1, "only what fits");
+});
+
+test("a short remainder is left spare rather than filled with a token block", () => {
+  const plan = buildEveningPlan({
+    ...BASE,
+    studyUntilMinutes: 15 * HOUR + 45, // 15 minutes of evening
+    assignments: [],
+    suggestions: [sug("Chemistry", 30)],
+  });
+  assert.equal(plan.blocks.length, 0, "15 minutes is not a study session");
+  assert.equal(plan.spareMinutes, 15);
+});
+
+test("a free evening is capped, not packed end to end with revision", () => {
+  const plan = buildEveningPlan({
+    ...BASE, // 15:30 to 21:00 — five and a half hours
+    assignments: [],
+    suggestions: ["A", "B", "C", "D", "E", "F"].map((s) => sug(s, 45)),
+  });
+  const suggested = plan.blocks.filter((b) => b.kind === "suggested");
+  assert.equal(suggested.length, 3, "three blocks is an offer; six is a sentence");
+  assert.ok(plan.spareMinutes > 0, "the rest of the evening stays hers");
+});
+
+test("a suggested block carries the reason it was made", () => {
+  const plan = buildEveningPlan({
+    ...BASE,
+    assignments: [],
+    suggestions: [sug("Chemistry", 30, "You have a Chemistry double at 09:20 tomorrow.")],
+  });
+  assert.equal(plan.blocks[0].reason, "You have a Chemistry double at 09:20 tomorrow.");
+  assert.equal(plan.blocks[0].detail, "Chemistry");
+  assert.equal(plan.blocks[0].taskId, null, "there is no row to work against yet");
+});
+
+test("breaks are earned across suggestions the same way they are across homework", () => {
+  const plan = buildEveningPlan({
+    ...BASE,
+    assignments: [],
+    suggestions: [sug("A", 45), sug("B", 45), sug("C", 45)],
+  });
+  const breaks = plan.blocks.filter((b) => b.kind === "break");
+  assert.ok(breaks.length >= 1, "135 minutes of revision earns at least one break");
+});
+
+test("an evening already over suggests nothing", () => {
+  const plan = buildEveningPlan({
+    ...BASE,
+    nowMinutes: 22 * HOUR,
+    assignments: [],
+    suggestions: [sug("Chemistry", 30)],
+  });
+  assert.equal(plan.blocks.length, 0);
+  assert.equal(plan.startWith, null);
+});

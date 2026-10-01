@@ -8,6 +8,7 @@ import { DeferredList, PlanTimeline, StartWithCard } from "@/components/plan/eve
 import { RevisionActions } from "@/components/plan/revision-actions";
 import { RevisionDialog } from "@/components/plan/revision-dialog";
 import { RowSessionButton } from "@/components/plan/session-controls";
+import { StudySlots, SuggestionList } from "@/components/plan/study-suggestions";
 import { PriorityBadge, StatusBadge, SubjectDot } from "@/components/shared/badges";
 import { ItemCard, ItemGrid } from "@/components/shared/item-card";
 import { Reveal } from "@/components/shared/reveal";
@@ -16,18 +17,22 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getOpenSession } from "@/lib/actions/sessions";
 import { requireSessionContext } from "@/lib/auth";
+import { getStudyRecency } from "@/lib/data/study-history";
 import { byUrgency, getAssignments, getRevisionTasks, type RevisionView } from "@/lib/data/tasks";
 import { getActiveTimetable, getSubjects } from "@/lib/data/timetable";
 import { formatDueLabel } from "@/lib/format";
 import { buildEveningPlan, timeToMinutesSafe } from "@/lib/planner/build-plan";
-import { formatDuration, toDayOfWeek } from "@/lib/timetable/types";
+import { suggestStudy } from "@/lib/planner/suggest-study";
+import { clockIn } from "@/lib/timetable/resolve";
+import { formatDuration } from "@/lib/timetable/types";
 import type { AssignmentView } from "@/lib/data/tasks";
+import type { DayOfWeek } from "@/types/database";
 
 export const metadata: Metadata = { title: "Home plan" };
 
 export default async function PlanPage() {
   const now = new Date();
-  const [session, { entries }, assignments, revision, openSession, subjects] =
+  const [session, { entries }, assignments, revision, openSession, subjects, studiedDaysAgo] =
     await Promise.all([
       requireSessionContext(),
       getActiveTimetable(),
@@ -35,12 +40,40 @@ export default async function PlanPage() {
       getRevisionTasks(),
       getOpenSession(),
       getSubjects(),
+      getStudyRecency(),
     ]);
 
-  const today = toDayOfWeek(now);
+  /**
+   * Her clock, not the server's — the dashboard has always done this and this
+   * page had not. It mattered less when the timetable was read for one number;
+   * now that the suggestions turn on which day it is and what has already been
+   * taught today, a server an hour ahead would recommend tomorrow's subjects a
+   * day early and file this morning's lessons as still to come.
+   */
+  const { minutes: nowMinutes, dayOfWeek: today } = clockIn(
+    session.profile?.timezone ?? "UTC",
+    now,
+  );
   const todaysEntries = entries.filter((e) => e.dayOfWeek === today);
   const schoolEndsMinutes =
     todaysEntries.length > 0 ? Math.max(...todaysEntries.map((e) => e.endMinutes)) : null;
+
+  /**
+   * What the timetable says to study, worked out before the plan is built so
+   * the planner can spend leftover time on it. Until now the timetable was
+   * read for exactly one number here — when school finishes — and the rest of
+   * the week it describes went unused.
+   */
+  const guidance = suggestStudy({
+    entries,
+    // `clockIn` is typed `number` because it falls back to a lookup that
+    // cannot be proven exhaustive; every branch of it returns 1–7.
+    today: today as DayOfWeek,
+    nowMinutes,
+    assignments,
+    revision,
+    studiedDaysAgo,
+  });
 
   const plan = buildEveningPlan({
     schoolEndsMinutes,
@@ -48,7 +81,8 @@ export default async function PlanPage() {
     studyUntilMinutes: timeToMinutesSafe(session.profile?.study_until, 21 * 60),
     assignments,
     revision,
-    nowMinutes: now.getHours() * 60 + now.getMinutes(),
+    suggestions: guidance.suggestions,
+    nowMinutes,
   });
 
   const outstanding = assignments.filter((a) => a.status !== "completed").sort(byUrgency);
@@ -94,6 +128,32 @@ export default async function PlanPage() {
           <Reveal index={1}>
             <PlanTimeline plan={plan} activeTaskId={activeTaskId} />
           </Reveal>
+        </Block>
+
+        {/*
+          Read off the timetable, not off a to-do list. This sits below the
+          plan rather than above it because homework has a deadline and this
+          does not — but it is the only section on the page that can tell her
+          about a subject nobody has set anything for.
+        */}
+        <Block id="study">
+          <Reveal>
+            <BlockHeading
+              eyebrow="From your timetable"
+              tone="revise"
+              title="What to study."
+              description="Ranked by what is coming up, what was just taught, and what nothing else in here would ever raise. Each one says why."
+            />
+          </Reveal>
+          <Reveal index={1}>
+            <SuggestionList guidance={guidance} />
+          </Reveal>
+
+          {guidance.slots.length > 0 ? (
+            <Reveal index={2} className="mt-6">
+              <StudySlots slots={guidance.slots} />
+            </Reveal>
+          ) : null}
         </Block>
 
         <Block id="outstanding">

@@ -12,12 +12,12 @@ const ACTIVITY_ACCENT: Record<string, ItemAccent> = {
   other: "brand",
 };
 import {
-  ActivityChip,
   OverdueBadge,
   PriorityBadge,
   SubjectDot,
 } from "@/components/shared/badges";
 import { PlanBlockCard } from "@/components/plan/plan-block-card";
+import { SuggestionStrip } from "@/components/plan/study-suggestions";
 import { ItemCard, ItemGrid, type ItemAccent } from "@/components/shared/item-card";
 import { Surface } from "@/components/shared/surface";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import type { AssignmentView } from "@/lib/data/tasks";
 import { formatDueLabel, formatOverdueLabel } from "@/lib/format";
 import type { EveningPlan } from "@/lib/planner/build-plan";
+import type { StudySuggestion } from "@/lib/planner/suggest-study";
 import { formatDuration, type ResolvedEntry } from "@/lib/timetable/types";
 import { cn } from "@/lib/utils";
 
@@ -72,46 +73,6 @@ function Panel({
       ) : null}
       {children}
     </Surface>
-  );
-}
-
-// --- Up next ----------------------------------------------------------------
-
-export function UpNextCard({ next }: { next: ResolvedEntry | null }) {
-  return (
-    <Panel
-      title="Up next"
-      size="md"
-      float="b"
-      action={
-        <Button asChild variant="ghost" size="sm">
-          <Link href="/timetable">
-            Timetable <ArrowRight aria-hidden="true" />
-          </Link>
-        </Button>
-      }
-    >
-      {next ? (
-        <div className="flex flex-1 flex-col justify-center py-2">
-          <p className="text-[1.9rem] font-semibold leading-[1.1] tracking-[-0.025em] text-balance text-ink">
-            {next.label}
-          </p>
-          <p className="mt-3 text-body-lg text-ink-muted" data-numeric>
-            {next.startLabel} — {next.endLabel}
-          </p>
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <ActivityChip kind={next.activityType} />
-            {next.room ? (
-              <span className="text-[0.95rem] text-ink-subtle">{next.room}</span>
-            ) : null}
-          </div>
-        </div>
-      ) : (
-        <p className="flex flex-1 items-center text-body text-ink-muted">
-          Nothing else is timetabled today.
-        </p>
-      )}
-    </Panel>
   );
 }
 
@@ -166,6 +127,47 @@ export function HomePlanPreview({ plan }: { plan: EveningPlan }) {
             ) : null}
           </p>
         </>
+      )}
+    </Panel>
+  );
+}
+
+// --- What to study ----------------------------------------------------------
+
+/**
+ * The timetable's own recommendation, in the space a dashboard card has.
+ *
+ * Headline and one reason each, not all of them: the /plan page argues the
+ * full case and this card is a prompt to go read it. Showing three sentences
+ * per subject here would make it the tallest card on the screen and say
+ * nothing the plan does not say better.
+ *
+ * It is a separate card from the plan preview beside it rather than a section
+ * of it, because the two answer different questions. The plan is "here is
+ * tonight in order"; this is "here is why any of it is revision".
+ */
+export function StudyFromTimetable({ suggestions }: { suggestions: StudySuggestion[] }) {
+  return (
+    <Panel
+      title="What to study"
+      count={suggestions.length}
+      size="md"
+      float="b"
+      action={
+        <Button asChild variant="ghost" size="sm">
+          <Link href="/plan#study">
+            Why <ArrowRight aria-hidden="true" />
+          </Link>
+        </Button>
+      }
+    >
+      {suggestions.length === 0 ? (
+        <p className="flex flex-1 items-center text-body text-ink-muted">
+          Nothing the timetable can add. Every subject on it already has
+          something waiting.
+        </p>
+      ) : (
+        <SuggestionStrip suggestions={suggestions} />
       )}
     </Panel>
   );

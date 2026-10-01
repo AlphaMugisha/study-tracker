@@ -1,4 +1,5 @@
 import { byUrgency, type AssignmentView, type RevisionView } from "@/lib/tasks/ordering";
+import type { StudySuggestion } from "@/lib/planner/suggest-study";
 import { minutesToLabel } from "@/lib/timetable/types";
 
 /**
@@ -30,6 +31,13 @@ import { minutesToLabel } from "@/lib/timetable/types";
  *                    it is the same sort the homework list uses, so the top of
  *                    one is the top of the other.
  *
+ *   Filling.         Whatever is left of the window after the real work is
+ *                    offered to `suggestions` — revision the timetable asked
+ *                    for. `spareMinutes` was previously reported as a number
+ *                    and nothing else, so an empty evening was described as
+ *                    empty rather than used. Where those come from, and why
+ *                    they are ranked as they are, is `suggest-study.ts`.
+ *
  * Deliberately NOT here: persistence. This is a pure function of its inputs so
  * it can be tested without a database, and so re-planning is free. Recording
  * what was actually worked on is `study_sessions`, a separate concern.
@@ -44,15 +52,32 @@ const BREAK_MINUTES = 15;
  *  becoming a block of its own — a 4-minute block is noise. */
 const MIN_CHUNK_MINUTES = 10;
 
-export type PlanBlockKind = "homework" | "revision" | "break";
+/**
+ * Least time worth offering a suggestion in, and the most suggestions to fill
+ * with.
+ *
+ * The cap matters. A free Friday evening would otherwise be laid out as five
+ * hours of revision nobody asked for, and a plan that reads as a punishment
+ * gets ignored wholesale. Three blocks is an offer; eight is a sentence.
+ */
+const MIN_SUGGESTION_MINUTES = 20;
+const MAX_SUGGESTED_BLOCKS = 3;
+
+/** `suggested` is revision this proposed; `revision` is revision she queued. */
+export type PlanBlockKind = "homework" | "revision" | "break" | "suggested";
 
 export type PlanBlock = {
   id: string;
   /** The row this block works on. Several blocks can share one. */
   taskId: string | null;
+  /** Set on `suggested` blocks, which have no row yet — this is what lets one
+   *  be queued as real revision straight from the timeline. */
+  subjectId: string | null;
   kind: PlanBlockKind;
   label: string;
   detail: string | null;
+  /** Why this block is here. Only ever set on `suggested`. */
+  reason: string | null;
   startMinutes: number;
   startLabel: string;
   endLabel: string;
@@ -80,10 +105,19 @@ export type EveningPlan = {
   endsBy: string;
   /** Minutes of actual work scheduled, excluding breaks. */
   workMinutes: number;
+  /** How much of `workMinutes` is suggested revision rather than set work. */
+  suggestedMinutes: number;
   /** Minutes of the window left unused. */
   spareMinutes: number;
-  /** The single answer to "what do I start with", or null if nothing is due. */
-  startWith: { label: string; detail: string | null; minutes: number } | null;
+  /** The single answer to "what do I start with", or null when there is
+   *  nothing to do and nothing worth suggesting. */
+  startWith: {
+    label: string;
+    detail: string | null;
+    minutes: number;
+    /** Set when the answer came from the timetable rather than a deadline. */
+    reason: string | null;
+  } | null;
 };
 
 type Candidate = {
@@ -102,6 +136,7 @@ export function buildEveningPlan({
   studyUntilMinutes,
   assignments,
   revision,
+  suggestions = [],
   nowMinutes,
 }: {
   /** Minutes since midnight when the last timetabled entry finishes. */
@@ -110,6 +145,9 @@ export function buildEveningPlan({
   studyUntilMinutes: number;
   assignments: AssignmentView[];
   revision: RevisionView[];
+  /** Ranked timetable-driven revision, used to fill whatever is left of the
+   *  window. Nothing is taken from here if homework had to be deferred. */
+  suggestions?: StudySuggestion[];
   /** If the evening has already begun, start from now rather than from the
    *  school bell — a plan that starts an hour ago is not a plan. */
   nowMinutes?: number;
@@ -144,7 +182,9 @@ export function buildEveningPlan({
   const afterSchool = (schoolEndsMinutes ?? 15 * 60) + settleMinutes;
   const start = Math.max(afterSchool, nowMinutes ?? 0);
 
-  if (candidates.length === 0 || start >= studyUntilMinutes) {
+  // Out of evening entirely. Nothing can be scheduled and nothing is worth
+  // suggesting, so everything outstanding is reported as deferred.
+  if (start >= studyUntilMinutes) {
     return {
       blocks: [],
       deferred: candidates.map((c) => ({
@@ -160,6 +200,7 @@ export function buildEveningPlan({
       startsAt: null,
       endsBy: minutesToLabel(studyUntilMinutes),
       workMinutes: 0,
+      suggestedMinutes: 0,
       spareMinutes: Math.max(0, studyUntilMinutes - start),
       startWith: null,
     };
@@ -170,6 +211,34 @@ export function buildEveningPlan({
   let cursor = start;
   let sinceBreak = 0;
   let workMinutes = 0;
+  let suggestedMinutes = 0;
+
+  /**
+   * A break, but only once enough work has built up and only if work can
+   * follow it. Shared by the homework pass and the filling pass so the two
+   * cannot drift into different ideas of when a break is earned.
+   */
+  const insertBreakIfEarned = (): void => {
+    if (sinceBreak < BREAK_AFTER_MINUTES) return;
+    if (studyUntilMinutes - cursor <= BREAK_MINUTES + MIN_CHUNK_MINUTES) return;
+
+    blocks.push({
+      id: `break-${cursor}`,
+      taskId: null,
+      subjectId: null,
+      kind: "break",
+      label: "Break",
+      detail: null,
+      reason: null,
+      startMinutes: cursor,
+      startLabel: minutesToLabel(cursor),
+      endLabel: minutesToLabel(cursor + BREAK_MINUTES),
+      minutes: BREAK_MINUTES,
+      part: null,
+    });
+    cursor += BREAK_MINUTES;
+    sinceBreak = 0;
+  };
 
   for (const task of candidates) {
     // How many blocks this task will need, so each can be labelled "2 of 3".
@@ -178,34 +247,19 @@ export function buildEveningPlan({
 
     for (let i = 0; i < chunks.length; i += 1) {
       const chunk = chunks[i];
-      const remainingWindow = studyUntilMinutes - cursor;
 
-      // A break is only worth inserting if work can follow it.
-      if (sinceBreak >= BREAK_AFTER_MINUTES && remainingWindow > BREAK_MINUTES + MIN_CHUNK_MINUTES) {
-        blocks.push({
-          id: `break-${cursor}`,
-          taskId: null,
-          kind: "break",
-          label: "Break",
-          detail: null,
-          startMinutes: cursor,
-          startLabel: minutesToLabel(cursor),
-          endLabel: minutesToLabel(cursor + BREAK_MINUTES),
-          minutes: BREAK_MINUTES,
-          part: null,
-        });
-        cursor += BREAK_MINUTES;
-        sinceBreak = 0;
-      }
+      insertBreakIfEarned();
 
       if (cursor + chunk > studyUntilMinutes) break; // out of evening
 
       blocks.push({
         id: `${task.id}-${i}`,
         taskId: task.id,
+        subjectId: null,
         kind: task.kind,
         label: task.label,
         detail: task.detail,
+        reason: null,
         startMinutes: cursor,
         startLabel: minutesToLabel(cursor),
         endLabel: minutesToLabel(cursor + chunk),
@@ -234,6 +288,40 @@ export function buildEveningPlan({
     }
   }
 
+  // Fill what is left with what the timetable asked for — but only when the
+  // set work all fitted. Proposing optional revision in an evening that could
+  // not hold the homework is not a suggestion, it is noise.
+  if (deferred.length === 0) {
+    for (const suggestion of suggestions.slice(0, MAX_SUGGESTED_BLOCKS)) {
+      insertBreakIfEarned();
+
+      const remaining = studyUntilMinutes - cursor;
+      if (remaining < MIN_SUGGESTION_MINUTES) break;
+
+      const minutes = Math.min(suggestion.minutes, remaining, MAX_BLOCK_MINUTES);
+
+      blocks.push({
+        id: `suggested-${suggestion.subjectId}-${cursor}`,
+        taskId: null,
+        subjectId: suggestion.subjectId,
+        kind: "suggested",
+        label: suggestion.headline,
+        detail: suggestion.subjectName,
+        reason: suggestion.reasons[0] ?? null,
+        startMinutes: cursor,
+        startLabel: minutesToLabel(cursor),
+        endLabel: minutesToLabel(cursor + minutes),
+        minutes,
+        part: null,
+      });
+
+      cursor += minutes;
+      sinceBreak += minutes;
+      workMinutes += minutes;
+      suggestedMinutes += minutes;
+    }
+  }
+
   const first = blocks.find((b) => b.kind !== "break");
 
   return {
@@ -242,9 +330,15 @@ export function buildEveningPlan({
     startsAt: blocks.length > 0 ? minutesToLabel(start) : null,
     endsBy: minutesToLabel(studyUntilMinutes),
     workMinutes,
+    suggestedMinutes,
     spareMinutes: Math.max(0, studyUntilMinutes - cursor),
     startWith: first
-      ? { label: first.label, detail: first.detail, minutes: first.minutes }
+      ? {
+          label: first.label,
+          detail: first.detail,
+          minutes: first.minutes,
+          reason: first.reason,
+        }
       : null,
   };
 }

@@ -217,7 +217,10 @@ try {
     // the old resolver faked that state so the card always looked populated.
     // The real one is honest, so asserting it would make this suite pass only
     // during school hours.
-    ["/dashboard", ["Today", "Up next", "When you get home", "Due soon"]],
+    // "Up next" was asserted here until the card was removed: the next lesson
+    // was on this screen three times over, and the hero plus "Rest of today"
+    // say it better. The two headings that remain are still always present.
+    ["/dashboard", ["Today", "When you get home", "Due soon"]],
     ["/dashboard", ["Quadratic equations practice"]],
     // The shell itself: sidebar, search affordance and the day stats strip.
     ["/dashboard", ["Collapse sidebar", "Ctrl K", "Lessons today", "Work tonight"]],
@@ -232,6 +235,24 @@ try {
     ["/plan", ["When you get home", "The order to work in", "What the plan is built from"]],
     // Plan blocks render as hoverable cards in a container-query grid.
     ["/plan", ["@container", "sf-rise"]],
+    /*
+      The study suggester, reading the seeded timetable.
+
+      Asserting the heading and the button rather than a subject name: which
+      subject gets recommended depends on what day the suite runs, which is
+      the whole point of it.
+
+      The reason text is worth asserting too, because it is the only proof the
+      suggester read anything. This fixture has two subjects and homework on
+      both, so "already has homework for it" is the reason it must produce —
+      and Mathematics is the only subject that can appear at all, since
+      Physics carries a queued revision task and is excluded. Matched without
+      the leading "Tonight's": React escapes the apostrophe to `&#x27;`.
+    */
+    ["/plan", ["From your timetable", "What to study", "Add to revision"]],
+    ["/plan", ["already has homework for it"]],
+    // The dashboard carries the same recommendation, compactly.
+    ["/dashboard", ["What to study", "/plan#study"]],
     // Subject management and the planning window.
     ["/settings", ["Subjects", "Add a subject", "Finish work by", "Wind-down after school"]],
     // The consent panel: who can see your work, and how to stop them.

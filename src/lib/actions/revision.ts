@@ -103,6 +103,65 @@ export async function createRevisionAction(
   return { ok: true };
 }
 
+/**
+ * Accept a suggestion off the timetable as real revision.
+ *
+ * Deliberately a separate action rather than a pre-filled `RevisionDialog`.
+ * The suggester has already decided the subject, the title and the length from
+ * the timetable, so a form asking for all three again would be asking the
+ * student to confirm arithmetic. One button, one row.
+ *
+ * `scheduledDate` is left null: a suggestion is for whenever the plan next has
+ * room, and pinning it to today would make it look overdue tomorrow.
+ *
+ * Nothing here trusts the posted fields further than the schema — the subject
+ * id is a uuid or it is nothing, and RLS refuses a subject that is not hers.
+ */
+export async function queueSuggestionAction(formData: FormData): Promise<void> {
+  const parsed = revisionSchema.safeParse({
+    title: String(formData.get("title") ?? "").trim(),
+    subjectId: uuidOrNull(formData.get("subjectId")),
+    estimatedMinutes: Number(formData.get("estimatedMinutes") ?? 30),
+    priority: "medium",
+    scheduledDate: null,
+  });
+  if (!parsed.success) return;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const { data } = await supabase
+    .from("revision_tasks")
+    .insert({
+      user_id: user.id,
+      subject_id: parsed.data.subjectId,
+      title: parsed.data.title,
+      estimated_minutes: parsed.data.estimatedMinutes,
+      priority: parsed.data.priority,
+      scheduled_date: null,
+    })
+    .select("id, title")
+    .single();
+
+  if (data) {
+    await logActivity({
+      activityType: "revision_created",
+      entityType: "revision_task",
+      entityId: data.id,
+      metadata: { title: data.title, source: "timetable_suggestion" },
+    });
+  }
+
+  revalidateRevisionPages();
+}
+
+function uuidOrNull(value: FormDataEntryValue | null): string | null {
+  return typeof value === "string" && z.string().uuid().safeParse(value).success ? value : null;
+}
+
 /** Status changes are one-click, so they take a plain form action. */
 export async function setRevisionStatusAction(formData: FormData): Promise<void> {
   const id = formData.get("id");

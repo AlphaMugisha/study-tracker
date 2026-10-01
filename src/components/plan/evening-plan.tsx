@@ -3,6 +3,7 @@ import { AlertTriangle, Clock } from "lucide-react";
 import { PlanBlockCard } from "@/components/plan/plan-block-card";
 import { ItemCard, ItemGrid } from "@/components/shared/item-card";
 import { StartSessionButton } from "@/components/plan/session-controls";
+import { QueueSuggestionButton } from "@/components/plan/study-suggestions";
 import { Eyebrow, Surface } from "@/components/shared/surface";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { EveningPlan } from "@/lib/planner/build-plan";
@@ -44,6 +45,15 @@ export function StartWithCard({
       <Eyebrow className="text-hero-foreground/70">Start with</Eyebrow>
       <p className="mt-6 text-headline text-balance">{plan.startWith.label}</p>
 
+      {/*
+        Set work needs no justification — a teacher set it and it has a date.
+        A suggestion does, and the hero is where it has to appear: told "start
+        with Chemistry" and nothing else, the only honest response is "why?".
+      */}
+      {plan.startWith.reason ? (
+        <p className="mt-4 max-w-[48ch] text-body-lg opacity-80">{plan.startWith.reason}</p>
+      ) : null}
+
       <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-body opacity-80">
         {plan.startWith.detail ? <span>{plan.startWith.detail}</span> : null}
         <span className="inline-flex items-center gap-2" data-numeric>
@@ -53,12 +63,28 @@ export function StartWithCard({
         <span data-numeric>{formatDuration(plan.startWith.minutes)}</span>
       </div>
 
+      {/*
+        A suggestion has no row yet, so there is nothing to clock time against
+        — `StartSessionButton` needs an assignment id and renders nothing
+        without one, which would leave the hero with no action at all. The
+        useful move on a suggestion is to accept it; once it is a real revision
+        task the plan rebuilds and the ordinary buttons take over.
+      */}
       <div className="mt-9">
-        <StartSessionButton
-          taskId={first.taskId}
-          openSessionId={openSessionId}
-          isActive={activeTaskId !== null && activeTaskId === first.taskId}
-        />
+        {first.kind === "suggested" ? (
+          <QueueSuggestionButton
+            title={first.label}
+            subjectId={first.subjectId}
+            minutes={first.minutes}
+            tone="hero"
+          />
+        ) : (
+          <StartSessionButton
+            taskId={first.taskId}
+            openSessionId={openSessionId}
+            isActive={activeTaskId !== null && activeTaskId === first.taskId}
+          />
+        )}
       </div>
     </Surface>
   );
@@ -104,6 +130,15 @@ export function PlanTimeline({
         <span data-numeric>{plan.startsAt}</span> to{" "}
         <span data-numeric>{plan.endsBy}</span> ·{" "}
         <span data-numeric>{formatDuration(plan.workMinutes)}</span> of work
+        {/* Said plainly, because the difference matters: this much of the
+            evening is work somebody set, and this much is the timetable's
+            idea. She is entitled to skip the second and not the first. */}
+        {plan.suggestedMinutes > 0 ? (
+          <>
+            , <span data-numeric>{formatDuration(plan.suggestedMinutes)}</span> of it
+            suggested
+          </>
+        ) : null}
         {plan.spareMinutes > 0 ? (
           <>
             {" "}

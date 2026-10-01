@@ -13,17 +13,20 @@ import {
   DueSoonList,
   HomePlanPreview,
   RestOfDay,
+  StudyFromTimetable,
   TodayProgress,
-  UpNextCard,
 } from "@/components/today/sections";
 import { requireSessionContext, displayName } from "@/lib/auth";
 import { getHelpRequests } from "@/lib/data/help";
+import { getStudyRecency } from "@/lib/data/study-history";
 import { getActiveTimetable, getSubjects } from "@/lib/data/timetable";
 import { byUrgency, getAssignments, getRevisionTasks, groupAssignments } from "@/lib/data/tasks";
 import { firstNameOf, formatFullDate, greeting } from "@/lib/format";
 import { buildEveningPlan, timeToMinutesSafe } from "@/lib/planner/build-plan";
+import { suggestStudy } from "@/lib/planner/suggest-study";
 import { clockIn, resolveNow } from "@/lib/timetable/resolve";
 import { formatDurationCompact } from "@/lib/timetable/types";
+import type { DayOfWeek } from "@/types/database";
 
 export const metadata: Metadata = { title: "Today" };
 
@@ -41,13 +44,15 @@ export default async function TodayPage() {
 
   const now = new Date();
 
-  const [{ entries }, assignments, revision, help, subjects] = await Promise.all([
-    getActiveTimetable(),
-    getAssignments(now),
-    getRevisionTasks(),
-    getHelpRequests(session.user.id),
-    getSubjects(),
-  ]);
+  const [{ entries }, assignments, revision, help, subjects, studiedDaysAgo] =
+    await Promise.all([
+      getActiveTimetable(),
+      getAssignments(now),
+      getRevisionTasks(),
+      getHelpRequests(session.user.id),
+      getSubjects(),
+      getStudyRecency(),
+    ]);
 
   /**
    * Her clock, not the server's. On Vercel those are different, and a
@@ -63,12 +68,24 @@ export default async function TodayPage() {
       ? Math.max(...todaysEntries.map((e) => e.endMinutes))
       : null;
 
+  // Same guidance the /plan page builds, from the same inputs, so the two
+  // screens cannot recommend different subjects on the same evening.
+  const guidance = suggestStudy({
+    entries,
+    today: today as DayOfWeek,
+    nowMinutes,
+    assignments,
+    revision,
+    studiedDaysAgo,
+  });
+
   const plan = buildEveningPlan({
     schoolEndsMinutes,
     settleMinutes: session.profile?.settle_minutes ?? 30,
     studyUntilMinutes: timeToMinutesSafe(session.profile?.study_until, 21 * 60),
     assignments,
     revision,
+    suggestions: guidance.suggestions,
     nowMinutes,
   });
   const groups = groupAssignments(assignments, now);
@@ -78,15 +95,6 @@ export default async function TodayPage() {
     (a) => a.due_date === now.toISOString().slice(0, 10) || a.overdue,
   );
   const doneToday = trackedToday.filter((a) => a.status === "completed").length;
-
-  // `next` exists in several states, not just mid-lesson — before school it is
-  // the first entry, and in a gap it is what the gap leads to.
-  const upNext =
-    state.kind === "in_activity"
-      ? state.next
-      : state.kind === "before_school" || state.kind === "gap"
-        ? state.next
-        : null;
 
   /**
    * "Rest of today" is measured from the same point the current-activity card
@@ -171,15 +179,18 @@ export default async function TodayPage() {
             <LiveActivity initial={state} />
             </Reveal>
 
-            {/* Beside the hero at xl; two across at sm; stacked on a phone. */}
-            <div className="grid gap-6 sm:grid-cols-2 lg:gap-8 xl:col-span-4 xl:grid-cols-1">
-              <Reveal index={1} className="h-full">
-                <UpNextCard next={upNext} />
-              </Reveal>
-              <Reveal index={2} className="h-full">
-                <RestOfDay entries={restOfDay} />
-              </Reveal>
-            </div>
+            {/*
+              "Up next" used to sit above this, and the next lesson appeared
+              on this screen three times: the hero ends with "Then Java at
+              10:00", the card restated it in large type, and it is the first
+              row of the list below. Two of those were the same sentence in
+              different fonts. The hero states it in context and this list
+              states it with everything that follows, which is the part
+              nothing else answers.
+            */}
+            <Reveal index={1} className="h-full xl:col-span-4">
+              <RestOfDay entries={restOfDay} />
+            </Reveal>
           </div>
         </Block>
 
@@ -191,9 +202,14 @@ export default async function TodayPage() {
               tone="revise"
               title="When you get home."
               description={
-                plan.startWith
-                  ? `Start with ${plan.startWith.label}, and finish by ${plan.endsBy}.`
-                  : "Nothing outstanding. The evening is yours."
+                // A suggestion's label already reads as a sentence ("Chemistry,
+                // ready for tomorrow"), so wrapping it in "Start with …" makes
+                // a comma splice. Its reason is the better line anyway.
+                plan.startWith?.reason
+                  ? `${plan.startWith.reason} Finish by ${plan.endsBy}.`
+                  : plan.startWith
+                    ? `Start with ${plan.startWith.label}, and finish by ${plan.endsBy}.`
+                    : "Nothing outstanding. The evening is yours."
               }
             />
           </Reveal>
@@ -202,6 +218,10 @@ export default async function TodayPage() {
               sits beside it; the ring needs the least but has a hard floor —
               148px plus 72px of padding is 220px, so the 3-up arrangement
               waits for 2xl. At xl it would resolve to 206px and overflow. */}
+          {/* "What to study" takes the slot due-soon had at 2xl, and due-soon
+              drops to its own full-width row — it is a list, so it loses
+              nothing by being wide, and the three cards that read as a set
+              stay on one line. */}
           <div className="grid gap-6 lg:grid-cols-12 lg:gap-8">
             <Reveal index={1} className="h-full lg:col-span-7 2xl:col-span-5">
               <HomePlanPreview plan={plan} />
@@ -209,7 +229,10 @@ export default async function TodayPage() {
             <Reveal index={2} className="h-full lg:col-span-5 2xl:col-span-3">
               <TodayProgress done={doneToday} total={trackedToday.length} />
             </Reveal>
-            <Reveal index={3} className="h-full lg:col-span-12 2xl:col-span-4">
+            <Reveal index={3} className="h-full lg:col-span-7 2xl:col-span-4">
+              <StudyFromTimetable suggestions={guidance.suggestions} />
+            </Reveal>
+            <Reveal index={4} className="h-full lg:col-span-5 2xl:col-span-12">
               <DueSoonList assignments={dueSoon} />
             </Reveal>
           </div>

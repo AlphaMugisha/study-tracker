@@ -19,6 +19,14 @@ const KIND = {
     ring: "group-hover/block:border-pause/40",
     title: "",
   },
+  // Same accent as revision, because that is what it is — but the card below
+  // draws it with a dashed edge, so a suggestion never looks like a commitment
+  // she made.
+  suggested: {
+    dot: "bg-revise/60",
+    ring: "group-hover/block:border-revise/40",
+    title: "",
+  },
 } as const;
 
 /**
@@ -45,6 +53,7 @@ export function PlanBlockCard({
 }) {
   const kind = KIND[block.kind];
   const isBreak = block.kind === "break";
+  const isSuggested = block.kind === "suggested";
   const href = block.taskId ? `/homework#${block.taskId}` : null;
 
   const body = (
@@ -87,6 +96,15 @@ export function PlanBlockCard({
           {block.detail ? (
             <p className="mt-1 truncate text-[0.9rem] text-ink-subtle">{block.detail}</p>
           ) : null}
+          {/*
+            A suggested block is the only one that has to justify itself. The
+            others are here because a teacher set them or she wrote them down;
+            this one is here because the timetable implied it, so it says which
+            part of the timetable.
+          */}
+          {block.reason ? (
+            <p className="mt-2 text-[0.85rem] leading-relaxed text-ink-muted">{block.reason}</p>
+          ) : null}
         </div>
       </div>
     </>
@@ -98,6 +116,9 @@ export function PlanBlockCard({
     isBreak
       ? "border-dashed border-border bg-transparent"
       : "border-border bg-surface-sunken shadow-card",
+    // Dashed, like a break: an offer rather than a commitment. The fill stays,
+    // so it still reads as work — it is the edge that says "optional".
+    isSuggested && "border-dashed border-revise/40",
     // A break is not something you open, so it does not pretend to be.
     !isBreak && "hover:-translate-y-1 hover:bg-surface-raised hover:shadow-card-hover",
     !isBreak && kind.ring,
