@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { requireSessionContext } from "@/lib/auth";
 import { getDailyReports } from "@/lib/data/daily-report";
 import { getStudentSnapshot } from "@/lib/data/student-view";
+import { getOversight } from "@/lib/data/oversight";
 import { getLinksAsAdmin, isLive } from "@/lib/data/support";
 import { summarise } from "@/lib/report/daily";
 import { formatDurationCompact } from "@/lib/timetable/types";
@@ -51,14 +52,25 @@ export default async function DailyReportsPage({
   const session = await requireSessionContext();
   if (session.profile?.role !== "admin") redirect("/dashboard");
 
-  const links = await getLinksAsAdmin();
-  const link = links.find((l) => l.student_id === studentId && isLive(l));
-  if (!link) notFound();
+  // A report is a read, so since 0008 it follows oversight rather than a
+  // link. Pre-migration the oversight list is empty and a live link is still
+  // the only way in — the same fallback as the record page it links back to.
+  const [{ counterparts, pendingMigration }, links] = await Promise.all([
+    getOversight(),
+    getLinksAsAdmin(),
+  ]);
+
+  const link = links.find((l) => l.student_id === studentId && isLive(l)) ?? null;
+  const student = counterparts.find((c) => c.id === studentId) ?? null;
+  if (!student && !(pendingMigration && link)) notFound();
 
   const asked = Number(typeof query.days === "string" ? query.days : DEFAULT_RANGE);
   const days = RANGES.includes(asked as (typeof RANGES)[number]) ? asked : DEFAULT_RANGE;
 
-  const snapshot = await getStudentSnapshot(studentId, link.counterpartName ?? "This student");
+  const snapshot = await getStudentSnapshot(
+    studentId,
+    student?.name ?? link?.counterpartName ?? "This student",
+  );
   const reports = await getDailyReports(studentId, snapshot.timezone, days);
   const totals = summarise(reports);
 

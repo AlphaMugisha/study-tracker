@@ -114,16 +114,24 @@ The shape is the same everywhere:
 | `DELETE` | `user_id = auth.uid()` |
 
 ```sql
+-- As of 0008. The link clause is kept but is now redundant for an admin
+-- reading a student; see "Admin ↔ student authorisation" below.
 create function public.has_student_access(target uuid) returns boolean as $$
   select target = auth.uid()
+      or (is_admin() and exists (select 1 from profiles
+                                  where id = target and role = 'student'))
       or exists (select 1 from admin_student_links
                   where admin_id = auth.uid() and student_id = target
                     and status = 'active' and revoked_at is null);
 $$;
 ```
 
-Reads may be shared with an authorised admin. **Writes are owner-only,
-always.** No policy anywhere grants an admin write access to a student's data.
+Reads are shared with any support account. **Writes are owner-only**, with one
+narrow exception: a support account holding an `active` link may write a
+student's **timetable and subjects** (0007), through the separate
+`can_manage_timetable` predicate. Nothing else — not homework, revision,
+sessions, the stuck-on list or the profile — is writable by anyone but its
+owner, and 0008 did not change that.
 
 `has_student_access` and `is_admin` are `SECURITY DEFINER` so they can read
 `admin_student_links` while its own RLS is active — otherwise every policy
@@ -147,32 +155,53 @@ Changing a role requires the service key: `npm run role -- --email … --role ad
 
 ## Admin ↔ student authorisation
 
+**Changed by 0008.** Up to 0007 this was a consent model: being an admin
+granted nothing, and reading a student required an `active` link only that
+student could create. 0008 replaced that with oversight, at the operator's
+request.
+
 ```
-ADMIN ──active link──▶ STUDENT A     can READ A's academic data
-      ──active link──▶ STUDENT B     can READ B's academic data
-      ──(no link)────  STUDENT C     cannot see C exists
+ADMIN ──▶ EVERY STUDENT              can READ their academic data
+      ──active link──▶ STUDENT A     ...and can also WRITE A's timetable
+      ──▶ ANOTHER ADMIN              cannot see them at all
+STUDENT ──▶ ANOTHER STUDENT          cannot see them at all
 ```
 
-Being an admin grants nothing by itself. Access requires an `active` row in
-`admin_student_links`, and it is read-only even then.
+Being a support account is now sufficient to read any student, including
+accounts that register later. Two things did not move:
+
+- **The write side.** `can_manage_timetable` still requires the `active` link,
+  so the timetable is the one thing a student still controls who may change.
+- **The disclosure.** `oversight_counterparts()` is symmetric: it tells an
+  admin which students they can read and tells a student which support
+  accounts can read them. The student's Settings page is wired to it. Access
+  that cannot be refused is a product decision; access that cannot be
+  *discovered* would be a different thing entirely, which is why the
+  disclosure is enforced in the schema rather than left to the UI.
 
 ### Who can do what
 
+The link now governs timetable editing only — not whether a record is visible.
+
 | Action | Admin | Student |
 |---|---|---|
+| Read any student's record | ✅ no link needed | ❌ own only |
+| Write a student's timetable | ✅ **only with an active link** | ✅ own |
+| Write anything else of a student's | ❌ | ✅ own |
 | Create the link (`pending`) | ✅ only naming themselves, and only if genuinely an admin | ❌ |
 | Move it to `active` | ❌ | ✅ **only the student** |
-| Revoke | ✅ | ✅ |
+| Revoke it | ✅ | ✅ |
 | Re-activate after revoking | ❌ | ✅ |
-| See that the link exists | ✅ | ✅ |
+| Find out who can see them | ✅ | ✅ `oversight_counterparts()` |
 | Delete the link | ❌ | ❌ |
 
-**Why this asymmetry.** An admin who could self-activate would be
-surveillance, which the product explicitly rejects. A student who could
-activate an arbitrary admin without that admin asking first would be a
-social-engineering target — "just approve this support request" is an easy
-thing to talk a sixteen-year-old into. Requiring a request *from* the admin
-and consent *from* the student means neither side can act alone.
+**Why the link asymmetry survives.** It no longer guards reading, but it still
+guards the only cross-account write in the product, and there the original
+reasoning holds exactly. An admin who could self-activate could rewrite a
+student's timetable unasked; a student who could activate an arbitrary admin
+would be a social-engineering target — "just approve this support request" is
+an easy thing to talk a sixteen-year-old into. Requiring a request *from* the
+admin and consent *from* the student means neither side can act alone.
 
 Enforced by:
 

@@ -198,8 +198,37 @@ async function run() {
   // --- admin authorisation --------------------------------------------------
   console.log(`\n${BOLD}admin authorisation${RESET}`);
 
+  /*
+    Preflight for 0008, because this section's expectations INVERT with it.
+
+    Before 0008: an admin sees nothing without an active link, and revoking
+    takes the access away. After 0008: an admin reads every student, a link
+    only governs timetable writes, and revoking takes nothing away.
+
+    Both are real contracts and this script has to check whichever one the
+    database is actually running — asserting the old one against a migrated
+    database would report a breach that is really a deliberate change, and
+    asserting the new one against an unmigrated database would pass every
+    "an admin can read" check for the wrong reason.
+
+    Probed as the SERVICE key: this only asks whether the function exists.
+  */
+  const probe0008 = await call("/rest/v1/rpc/oversight_counterparts", {
+    headers: service, method: "POST", body: {},
+  });
+  const has0008 = probe0008.body?.code !== "PGRST202" && probe0008.status !== 404;
+  console.log(
+    `  ${DIM}migration 0008 ${has0008 ? "applied — checking the oversight contract" : "not applied — checking the pre-0008 consent contract"}${RESET}`,
+  );
+
   const unlinked = await call("/rest/v1/assignments?select=id", { headers: sara.h });
-  rec("an unlinked admin sees nothing", rows(unlinked) === 0, `rows: ${rows(unlinked)}`);
+  if (has0008) {
+    // The whole point of 0008. If this fails, the portal is empty.
+    rec("a support account reads a student with no link at all",
+        unlinked.ok && rows(unlinked) === 1, `rows: ${rows(unlinked)}`);
+  } else {
+    rec("an unlinked admin sees nothing", rows(unlinked) === 0, `rows: ${rows(unlinked)}`);
+  }
 
   const selfActivate = await call("/rest/v1/admin_student_links", {
     headers: sara.h, method: "POST", prefer: "return=representation",
@@ -224,7 +253,9 @@ async function run() {
   }
 
   const pendingSees = await call("/rest/v1/assignments?select=id", { headers: sara.h });
-  rec("a pending link grants no access", rows(pendingSees) === 0, `rows: ${rows(pendingSees)}`);
+  if (!has0008) {
+    rec("a pending link grants no access", rows(pendingSees) === 0, `rows: ${rows(pendingSees)}`);
+  }
 
   const adminActivate = await call(`/rest/v1/admin_student_links?id=eq.${linkId}`, {
     headers: sara.h, method: "PATCH", prefer: "return=representation", body: { status: "active" },
@@ -247,7 +278,17 @@ async function run() {
       `rows: ${rows(linkedRead)}`);
 
   const otherAdmin = await call("/rest/v1/assignments?select=id", { headers: omar.h });
-  rec("a different admin is unaffected by that link", rows(otherAdmin) === 0, `rows: ${rows(otherAdmin)}`);
+  if (has0008) {
+    // Under oversight, every support account sees every student — so a second
+    // admin seeing this student is correct rather than a leak. What must still
+    // be true is that it is not the LINK doing it, which the no-link check
+    // above already established.
+    rec("every support account sees the student, not just the linked one",
+        otherAdmin.ok && rows(otherAdmin) === 1, `rows: ${rows(otherAdmin)}`);
+  } else {
+    rec("a different admin is unaffected by that link", rows(otherAdmin) === 0,
+        `rows: ${rows(otherAdmin)}`);
+  }
 
   const adminEdit = await call(`/rest/v1/assignments?id=eq.${assignmentId}`, {
     headers: sara.h, method: "PATCH", prefer: "return=representation", body: { title: "edited by admin" },
@@ -268,7 +309,19 @@ async function run() {
       `revoked_at stamped: ${Boolean(revoke.body?.[0]?.revoked_at)}`);
 
   const afterRevoke = await call("/rest/v1/assignments?select=id", { headers: sara.h });
-  rec("REVOKING removes access immediately", rows(afterRevoke) === 0, `rows: ${rows(afterRevoke)}`);
+  if (has0008) {
+    /*
+      Stated as a PASS rather than quietly skipped, because this is the thing
+      0008 took away and somebody reading this output needs to see it named.
+      Revoking now ends the timetable-write grant and nothing else; the read
+      survives because it never came from the link.
+    */
+    rec("revoking no longer removes READ access (0008 oversight)",
+        afterRevoke.ok && rows(afterRevoke) === 1, `rows: ${rows(afterRevoke)}`);
+  } else {
+    rec("REVOKING removes access immediately", rows(afterRevoke) === 0,
+        `rows: ${rows(afterRevoke)}`);
+  }
 
   const reActivate = await call(`/rest/v1/admin_student_links?id=eq.${linkId}`, {
     headers: sara.h, method: "PATCH", prefer: "return=representation", body: { status: "active" },
@@ -635,6 +688,95 @@ ${BOLD}help requests (0006)${RESET}`);
           blocked(afterRevokeWrite),
           `HTTP ${afterRevokeWrite.status}, rows ${rows(afterRevokeWrite)}`);
     }
+  }
+
+  // --- 0008: oversight, and the lines it did not cross ----------------------
+  console.log(`\n${BOLD}oversight (0008)${RESET}`);
+
+  rec("migration 0008 is applied", has0008,
+      has0008 ? "" : "apply supabase/migrations/0008_admin_oversight.sql");
+
+  if (has0008) {
+    /*
+      The disclosure is the thing worth testing hardest.
+
+      0008 removed the student's ability to REFUSE a support account. The only
+      protection left is that they can always find out, so if this section ever
+      fails the product has become something it does not claim to be — and that
+      is worth a loud red line rather than a quiet behaviour change.
+    */
+    const adminAsks = await call("/rest/v1/rpc/oversight_counterparts", {
+      headers: sara.h, method: "POST", body: {},
+    });
+    const adminSeesIds = (Array.isArray(adminAsks.body) ? adminAsks.body : []).map((r) => r.id);
+    rec("a support account is told which students it can see",
+        adminAsks.ok && adminSeesIds.includes(ava.id) && adminSeesIds.includes(ben.id),
+        `rows: ${rows(adminAsks)}`);
+    rec("that list is students only, never other support accounts",
+        !adminSeesIds.includes(omar.id) && !adminSeesIds.includes(sara.id),
+        `omar present: ${adminSeesIds.includes(omar.id)}`);
+
+    const studentAsks = await call("/rest/v1/rpc/oversight_counterparts", {
+      headers: ava.h, method: "POST", body: {},
+    });
+    const studentSeesIds = (Array.isArray(studentAsks.body) ? studentAsks.body : []).map((r) => r.id);
+    rec("a student is told WHO can see them",
+        studentAsks.ok && studentSeesIds.includes(sara.id) && studentSeesIds.includes(omar.id),
+        `rows: ${rows(studentAsks)}`);
+    rec("and is given their names, so the disclosure is usable",
+        (Array.isArray(studentAsks.body) ? studentAsks.body : []).every(
+          (r) => typeof r.full_name === "string" && r.full_name.length > 0,
+        ),
+        "every row carries full_name");
+    rec("that list does not leak other students to a student",
+        !studentSeesIds.includes(ben.id), `ben present: ${studentSeesIds.includes(ben.id)}`);
+
+    // --- what oversight must NOT have opened ---------------------------------
+    // sara's link to ava was revoked earlier, so she is an unlinked admin:
+    // exactly the case 0008 gave read access to and nothing more.
+    const oversightEdit = await call(`/rest/v1/assignments?id=eq.${assignmentId}`, {
+      headers: sara.h, method: "PATCH", prefer: "return=representation",
+      body: { title: "edited via oversight" },
+    });
+    rec("0008 did NOT open homework to editing", blocked(oversightEdit),
+        `HTTP ${oversightEdit.status}, rows ${rows(oversightEdit)}`);
+
+    const oversightDelete = await call(`/rest/v1/assignments?id=eq.${assignmentId}`, {
+      headers: sara.h, method: "DELETE", prefer: "return=representation",
+    });
+    rec("0008 did NOT open homework to deletion", blocked(oversightDelete),
+        `HTTP ${oversightDelete.status}`);
+
+    const oversightRenames = await call(`/rest/v1/profiles?id=eq.${ava.id}`, {
+      headers: sara.h, method: "PATCH", prefer: "return=representation",
+      body: { full_name: "renamed via oversight" },
+    });
+    rec("0008 did NOT open the student's profile", blocked(oversightRenames),
+        `HTTP ${oversightRenames.status}, rows ${rows(oversightRenames)}`);
+
+    // A support account oversees STUDENTS. Another admin is not a student, so
+    // admins stay opaque to each other — otherwise "admin" would quietly mean
+    // "can read every account in the project".
+    const adminOnAdmin = await call(
+      `/rest/v1/profiles?select=id&id=eq.${omar.id}`, { headers: sara.h },
+    );
+    rec("a support account cannot read another support account",
+        rows(adminOnAdmin) === 0, `rows: ${rows(adminOnAdmin)}`);
+
+    // The one that must never break, migration or no migration.
+    const studentOnStudentRead = await call(
+      `/rest/v1/assignments?select=id&user_id=eq.${ava.id}`, { headers: ben.h },
+    );
+    rec("a student still cannot read another student", rows(studentOnStudentRead) === 0,
+        `rows: ${rows(studentOnStudentRead)}`);
+
+    const stillNoSelfPromotion = await call(`/rest/v1/profiles?id=eq.${ava.id}`, {
+      headers: ava.h, method: "PATCH", prefer: "return=representation",
+      body: { role: "admin" },
+    });
+    rec("a student still cannot promote themselves to see everyone",
+        !stillNoSelfPromotion.ok,
+        `HTTP ${stillNoSelfPromotion.status} ${stillNoSelfPromotion.body?.code ?? ""}`);
   }
 
   // --- activity log ---------------------------------------------------------

@@ -95,9 +95,18 @@ where schemaname = 'public' and tablename = 'profiles';
 -- ---------------------------------------------------------------------------
 -- Column privileges: the privilege-escalation guard
 -- ---------------------------------------------------------------------------
+-- The grant is the escalation guard, so this asserts the WHOLE list rather
+-- than "does not include role" — a test that only forbade `role` would not
+-- notice a future migration granting something else by accident.
+--
+-- The list grew in 0004, which added the planning window to `profiles` and
+-- restated the grant; this assertion still named the two columns from 0001 and
+-- so had been failing ever since. What matters has not changed: `role` and
+-- `id` are absent, and that is what makes self-promotion impossible.
 insert into results (name, passed, detail)
-select 'authenticated has UPDATE on full_name and timezone only',
-       array_agg(column_name::text order by column_name) = array['full_name', 'timezone'],
+select 'authenticated has UPDATE on exactly the four safe columns, never role',
+       array_agg(column_name::text order by column_name)
+         = array['full_name', 'settle_minutes', 'study_until', 'timezone'],
        coalesce(array_agg(column_name::text order by column_name)::text, 'none')
 from information_schema.column_privileges
 where table_schema = 'public' and table_name = 'profiles'

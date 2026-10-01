@@ -340,16 +340,33 @@ declare
   omar constant uuid := 'd0000000-0000-4000-8000-000000000004';
   link uuid; n int; ok boolean; d text;
 begin
-  -- 1. An unlinked admin is blind.
+  -- 1. A support account reads every student, link or no link (0008).
+  --
+  -- These two asserted the opposite until 0008 — "an unlinked admin is blind"
+  -- was the heart of the consent model. 0008 replaced that with oversight at
+  -- the operator's request, so the checks are inverted rather than deleted:
+  -- the fact that a support account CAN read an unlinked student is now the
+  -- thing that has to keep working, and it is worth a named assertion.
+  --
+  -- This harness applies every migration in the directory, so 0008 is always
+  -- in and there is nothing to branch on. `verify-live-rls.mjs` does branch,
+  -- because the real project may not have had it applied yet.
   perform pg_temp.act(sara);
   select count(*) into n from public.assignments where user_id = ava;
   perform pg_temp.stop();
-  perform pg_temp.rec('admin', 'an unlinked admin cannot read a student''s assignments', n = 0, 'rows: ' || n);
+  perform pg_temp.rec('admin', 'a support account reads an unlinked student''s assignments', n > 0, 'rows: ' || n);
 
   perform pg_temp.act(sara);
   select count(*) into n from public.timetable_entries where user_id = ava;
   perform pg_temp.stop();
-  perform pg_temp.rec('admin', 'an unlinked admin cannot read a student''s timetable', n = 0, 'rows: ' || n);
+  perform pg_temp.rec('admin', 'a support account reads an unlinked student''s timetable', n > 0, 'rows: ' || n);
+
+  -- ...but only STUDENTS. Another support account is not overseen, or "admin"
+  -- would quietly mean "can read every account in the project".
+  perform pg_temp.act(sara);
+  select count(*) into n from public.profiles where id = omar;
+  perform pg_temp.stop();
+  perform pg_temp.rec('admin', 'a support account cannot read another support account', n = 0, 'rows: ' || n);
 
   -- 2. An admin cannot grant themselves access.
   perform pg_temp.act(sara);
@@ -377,11 +394,20 @@ begin
   perform pg_temp.rec('admin', 'the request lands as pending, not active', ok,
     (select 'status=' || status from public.admin_student_links where id = link));
 
-  -- 4. A pending link grants nothing.
+  -- 4. A pending link grants nothing EXTRA.
+  --
+  -- Reading is no longer what the link is for, so the old "pending grants no
+  -- access" check cannot be asked of assignments any more — a support account
+  -- reads those regardless. What a pending link must still not grant is the
+  -- timetable WRITE, which is the thing it now governs.
   perform pg_temp.act(sara);
-  select count(*) into n from public.assignments where user_id = ava;
+  begin
+    update public.timetable_entries set room = 'pending should not write' where user_id = ava;
+    get diagnostics n = row_count;
+    ok := n = 0; d := 'rows affected: ' || n;
+  exception when others then ok := true; d := 'blocked: ' || sqlstate; end;
   perform pg_temp.stop();
-  perform pg_temp.rec('admin', 'a pending link grants no access', n = 0, 'rows: ' || n);
+  perform pg_temp.rec('admin', 'a pending link grants no timetable WRITE', ok, d);
 
   -- 5. The admin cannot self-activate by update either.
   perform pg_temp.act(sara);
@@ -423,17 +449,20 @@ begin
   perform pg_temp.stop();
   perform pg_temp.rec('admin', 'a linked admin CAN read the student''s timetable', n > 0, 'rows: ' || n);
 
-  -- 9. But only that student.
+  -- 9 and 10 were "the link does not leak other students" and "a second,
+  -- unlinked admin stays blind". Both are false by design after 0008 — every
+  -- support account reads every student — so they now assert that directly.
+  -- The isolation that still has to hold is student-to-student, which section
+  -- C covers and which 0008 did not touch.
   perform pg_temp.act(sara);
   select count(*) into n from public.assignments where user_id = ben;
   perform pg_temp.stop();
-  perform pg_temp.rec('admin', 'the link does not leak other students', n = 0, 'rows: ' || n);
+  perform pg_temp.rec('admin', 'oversight reaches every student, not just the linked one', n > 0, 'rows: ' || n);
 
-  -- 10. A second, unlinked admin stays blind.
   perform pg_temp.act(omar);
   select count(*) into n from public.assignments where user_id = ava;
   perform pg_temp.stop();
-  perform pg_temp.rec('admin', 'a different admin is unaffected by someone else''s link', n = 0, 'rows: ' || n);
+  perform pg_temp.rec('admin', 'a second support account sees the same students', n > 0, 'rows: ' || n);
 
   -- 11. Read-only: no write anywhere, ever.
   perform pg_temp.act(sara);
@@ -460,7 +489,13 @@ begin
   perform pg_temp.stop();
   perform pg_temp.rec('admin', 'a linked admin cannot CREATE work for the student', ok, d);
 
-  -- 12. The student revokes. Access ends immediately.
+  -- 12. The student revokes.
+  --
+  -- This used to end access outright. After 0008 it ends the timetable-write
+  -- grant and nothing else, so both halves are asserted — the half that still
+  -- works, and the half that no longer does. Naming the second one as a
+  -- deliberate expectation is the point: it should be impossible to restore
+  -- the old behaviour by accident without this check turning red.
   perform pg_temp.act(ava);
   update public.admin_student_links set status = 'revoked' where id = link;
   perform pg_temp.stop();
@@ -468,10 +503,52 @@ begin
   perform pg_temp.act(sara);
   select count(*) into n from public.assignments where user_id = ava;
   perform pg_temp.stop();
-  perform pg_temp.rec('admin', 'REVOKING the link removes access immediately', n = 0, 'rows: ' || n);
+  perform pg_temp.rec('admin', 'revoking does NOT remove read access (0008 oversight)', n > 0, 'rows: ' || n);
+
+  perform pg_temp.act(sara);
+  begin
+    update public.timetable_entries set room = 'revoked should not write' where user_id = ava;
+    get diagnostics n = row_count;
+    ok := n = 0; d := 'rows affected: ' || n;
+  exception when others then ok := true; d := 'blocked: ' || sqlstate; end;
+  perform pg_temp.stop();
+  perform pg_temp.rec('admin', 'revoking DOES remove the timetable write', ok, d);
 
   select revoked_at is not null into ok from public.admin_student_links where id = link;
   perform pg_temp.rec('admin', 'revoked_at is stamped automatically', ok, 'revoked_at set: ' || ok::text);
+
+  -- 12b. The disclosure (0008).
+  --
+  -- Tested hardest of anything in this section, because it is the only
+  -- protection the student has left. 0008 took away their ability to refuse;
+  -- what it owes them in exchange is the ability to find out. If these fail,
+  -- the product has silently become something it does not claim to be.
+  perform pg_temp.act(ava);
+  select count(*) into n from public.oversight_counterparts() where id in (sara, omar);
+  perform pg_temp.stop();
+  perform pg_temp.rec('admin', 'a student is told which support accounts can see them', n = 2, 'rows: ' || n);
+
+  perform pg_temp.act(ava);
+  select count(*) into n from public.oversight_counterparts() where id = ben;
+  perform pg_temp.stop();
+  perform pg_temp.rec('admin', 'that disclosure does not leak other students to a student', n = 0, 'rows: ' || n);
+
+  perform pg_temp.act(ava);
+  select count(*) into n
+  from public.oversight_counterparts()
+  where full_name is null or btrim(full_name) = '';
+  perform pg_temp.stop();
+  perform pg_temp.rec('admin', 'every disclosed account is named, not a bare uuid', n = 0, 'nameless rows: ' || n);
+
+  perform pg_temp.act(sara);
+  select count(*) into n from public.oversight_counterparts() where id in (ava, ben);
+  perform pg_temp.stop();
+  perform pg_temp.rec('admin', 'a support account is told which students it can see', n = 2, 'rows: ' || n);
+
+  perform pg_temp.act(sara);
+  select count(*) into n from public.oversight_counterparts() where id in (sara, omar);
+  perform pg_temp.stop();
+  perform pg_temp.rec('admin', 'and is not told about other support accounts', n = 0, 'rows: ' || n);
 
   -- 13. The admin cannot re-activate what was revoked.
   perform pg_temp.act(sara);

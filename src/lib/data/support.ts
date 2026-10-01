@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { getUser } from "@/lib/auth";
+import { getOversight } from "@/lib/data/oversight";
 import { createClient } from "@/lib/supabase/server";
 import type { ActivityLog, ActivityType, AdminStudentLink, LinkStatus } from "@/types/database";
 
@@ -7,12 +8,19 @@ import type { ActivityLog, ActivityType, AdminStudentLink, LinkStatus } from "@/
  * Support-access reads.
  *
  * Every query here is ordinary and unprivileged — no service-role key, no
- * bypass. RLS decides what comes back: `has_student_access` returns rows only
- * for your own record or for a student who has an ACTIVE link to you. An admin
- * with no link runs exactly these queries and gets nothing.
+ * bypass. RLS decides what comes back, and since 0008 `has_student_access`
+ * returns rows for your own record or for any student, because being a support
+ * account is now sufficient on its own.
  *
- * That is the point. The authorisation lives in the database, so a mistake in
- * this file can only ever show less than it should, never more.
+ * The authorisation still lives in the database, which is what matters: a
+ * mistake in this file can only ever show less than it should, never more.
+ *
+ * What is left in this module is the LINK, which 0008 demoted but did not
+ * retire. A live link is no longer how a support account comes to read a
+ * student — it is now only how one comes to edit their timetable, which
+ * `can_manage_timetable` still gates on it. So "who can I see" moved to
+ * `lib/data/oversight.ts` and "who said I may change their lessons" stayed
+ * here.
  */
 
 export type SupportLink = AdminStudentLink & {
@@ -70,9 +78,9 @@ export function isLive(link: { status: LinkStatus; revoked_at: string | null }):
 /**
  * A student's academic activity, most recent first.
  *
- * Returns nothing unless the caller is that student or holds an active link —
- * the `activity_logs` SELECT policy is `has_student_access(user_id)`, the same
- * predicate as everything else.
+ * The `activity_logs` SELECT policy is `has_student_access(user_id)`, the same
+ * predicate as everything else — so this returns rows to that student and to
+ * any support account, and nothing to another student.
  */
 export async function getActivityFeed(
   studentId: string,
@@ -150,18 +158,15 @@ export function activityTone(
 }
 
 /**
- * A one-query summary for the app shell.
+ * A summary for the app shell.
  *
  * The header renders on every page, so this deliberately does not reuse
  * `getLinksAsAdmin`/`getLinksAsStudent` — those each make a second round trip
- * to resolve names, which the header does not need.
- *
- * Both sides come from the same rows: the SELECT policy returns links where
- * you are either the admin or the student, so one read answers "how many
- * students can I see" and "is anyone asking to see me".
+ * to resolve names, which the header does not need. `getOversight` is `cache`d
+ * and the portal reads it too, so on an admin page it is one call, not two.
  */
 export type SupportSummary = {
-  /** Active links where the caller is the support account. */
+  /** Students the caller can read. Since 0008, all of them. */
   studentsVisible: number;
   /** Requests awaiting the caller's own decision. */
   pendingForMe: number;
@@ -179,6 +184,8 @@ export const getSupportSummary = cache(async function getSupportSummary(): Promi
   const [supabase, user] = await Promise.all([createClient(), getUser()]);
   if (!user) return { studentsVisible: 0, pendingForMe: 0, watching: null };
 
+  // `admin_student_links` is still the only source for "is anyone asking me",
+  // which is a link-shaped question and always will be.
   const { data } = await supabase
     .from("admin_student_links")
     .select("admin_id, student_id, status, revoked_at");
@@ -190,27 +197,51 @@ export const getSupportSummary = cache(async function getSupportSummary(): Promi
     revoked_at: string | null;
   }>;
 
-  const mine = rows.filter((r) => r.admin_id === user.id && isLive(r));
+  /**
+   * How many students the caller can see is no longer a link count.
+   *
+   * Since 0008 it is every student, so this reads the oversight list and falls
+   * back to live links when the migration is not in — the header would
+   * otherwise say "1 student" while the portal listed five, and a number in
+   * the chrome that disagrees with the page it links to is worse than no
+   * number.
+   */
+  const { counterparts, pendingMigration } = await getOversight();
+  const live = rows.filter((r) => r.admin_id === user.id && isLive(r));
+
+  const visible = pendingMigration
+    ? live.map((r) => ({ id: r.student_id }))
+    : counterparts.map((c) => ({ id: c.id }));
 
   // Only when there is exactly one: with two children the header cannot show
   // both clocks without becoming a departures board.
   let watching: SupportSummary["watching"] = null;
-  if (mine.length === 1) {
-    const { data: p } = await supabase
-      .from("profiles")
-      .select("full_name, timezone")
-      .eq("id", mine[0].student_id)
-      .maybeSingle();
-    if (p) {
+  if (visible.length === 1) {
+    // The oversight list already carries the name and zone, so a second read
+    // is only needed on the fallback path.
+    const known = pendingMigration ? null : counterparts[0];
+    if (known) {
       watching = {
-        label: p.full_name.split(/\s+/)[0] ?? p.full_name,
-        timezone: p.timezone,
+        label: known.name.split(/\s+/)[0] ?? known.name,
+        timezone: known.timezone,
       };
+    } else {
+      const { data: p } = await supabase
+        .from("profiles")
+        .select("full_name, timezone")
+        .eq("id", visible[0].id)
+        .maybeSingle();
+      if (p) {
+        watching = {
+          label: p.full_name.split(/\s+/)[0] ?? p.full_name,
+          timezone: p.timezone,
+        };
+      }
     }
   }
 
   return {
-    studentsVisible: mine.length,
+    studentsVisible: visible.length,
     pendingForMe: rows.filter((r) => r.student_id === user.id && r.status === "pending")
       .length,
     watching,

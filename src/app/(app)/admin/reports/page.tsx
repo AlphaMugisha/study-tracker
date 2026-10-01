@@ -10,6 +10,7 @@ import { Reveal } from "@/components/shared/reveal";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { requireSessionContext } from "@/lib/auth";
+import { getOversight } from "@/lib/data/oversight";
 import { getLinksAsAdmin, isLive } from "@/lib/data/support";
 
 export const metadata: Metadata = { title: "Daily reports" };
@@ -26,9 +27,15 @@ export default async function ReportsIndexPage() {
   const session = await requireSessionContext();
   if (session.profile?.role !== "admin") redirect("/dashboard");
 
-  const links = (await getLinksAsAdmin()).filter(isLive);
+  // Whose reports follows oversight, same as the reports themselves do.
+  const { counterparts, pendingMigration } = await getOversight();
+  const roster = pendingMigration
+    ? (await getLinksAsAdmin())
+        .filter(isLive)
+        .map((l) => ({ id: l.student_id, name: l.counterpartName ?? "Student" }))
+    : counterparts;
 
-  if (links.length === 1) redirect(`/admin/${links[0].student_id}/reports`);
+  if (roster.length === 1) redirect(`/admin/${roster[0].id}/reports`);
 
   return (
     <PageContainer>
@@ -38,11 +45,17 @@ export default async function ReportsIndexPage() {
         description="A report for every day, for each student who has given you access."
       />
 
-      {links.length === 0 ? (
+      {roster.length === 0 ? (
         <EmptyState
           icon={Users}
-          headline="Nobody has approved you yet."
-          body="Request access with a student's email. They decide, and they can undo it at any time."
+          headline={
+            pendingMigration ? "Nobody has approved you yet." : "No student accounts yet."
+          }
+          body={
+            pendingMigration
+              ? "Apply migration 0008 to see every student, or request access with a student's email."
+              : "Anyone who signs up as a student appears here on their own."
+          }
           action={
             <Button asChild>
               <Link href="/admin">Go to Students</Link>
@@ -52,13 +65,13 @@ export default async function ReportsIndexPage() {
       ) : (
         <Reveal>
           <ItemGrid>
-            {links.map((link, i) => (
+            {roster.map((student, i) => (
               <ItemCard
-                key={link.id}
+                key={student.id}
                 index={i}
                 accent="brand"
-                href={`/admin/${link.student_id}/reports`}
-                title={link.counterpartName ?? "Student"}
+                href={`/admin/${student.id}/reports`}
+                title={student.name}
                 meta={<span>Day-by-day record</span>}
                 trailing={<ArrowRight aria-hidden="true" className="size-4 text-ink-subtle" />}
               />

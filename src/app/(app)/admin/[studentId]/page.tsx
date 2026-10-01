@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { DayStats } from "@/components/today/sections";
 import { EmptyState } from "@/components/ui/empty-state";
 import { requireSessionContext } from "@/lib/auth";
+import { getOversight } from "@/lib/data/oversight";
 import { getWeeklyReport } from "@/lib/data/report";
 import { getStudentSnapshot } from "@/lib/data/student-view";
 import { getActivityFeed, getLinksAsAdmin, isLive } from "@/lib/data/support";
@@ -23,16 +24,18 @@ import { getActivityFeed, getLinksAsAdmin, isLive } from "@/lib/data/support";
 export const metadata: Metadata = { title: "Student record" };
 
 /**
- * One student's academic record, for a support account holding a live link.
+ * One student's academic record, for a support account.
  *
  * Every read below is an ordinary authenticated query. There is no
  * service-role key here and no elevation of any kind — RLS is what decides
- * whether these return rows. If the link is revoked while this page is open,
- * the next request returns nothing.
+ * whether these return rows.
  *
- * Read-only by construction, not by convention: no policy in the schema grants
- * a support account UPDATE, INSERT or DELETE on another user's record, so
- * there is no write path to leave out.
+ * Read-only, and that is a property of the schema rather than of this file:
+ * `has_student_access` is the SELECT predicate on every table here and 0008
+ * widened only that. The sole write a support account has anywhere is the
+ * timetable, via `can_manage_timetable`, which still needs a live link — so
+ * the only thing the link changes on this page is whether the timetable link
+ * below leads somewhere editable.
  */
 export default async function StudentRecordPage({
   params,
@@ -43,14 +46,29 @@ export default async function StudentRecordPage({
   const session = await requireSessionContext();
   if (session.profile?.role !== "admin") redirect("/dashboard");
 
-  // The link check is for a clear 404 rather than an unexplained empty page;
-  // RLS would return nothing regardless.
-  const links = await getLinksAsAdmin();
-  const link = links.find((l) => l.student_id === studentId && isLive(l));
-  if (!link) notFound();
+  /**
+   * Since 0008 a support account may read any student, so the gate is "is this
+   * id a student I can see" rather than "do I hold a link to them". The link
+   * is still looked up, because it is what decides whether the timetable is
+   * editable — but it is no longer what decides whether this page exists.
+   *
+   * Still a courtesy 404 rather than the boundary: RLS returns nothing for an
+   * id that is not a student the caller can read, so the worst a wrong id can
+   * produce is an empty record.
+   */
+  const [{ counterparts, pendingMigration }, links] = await Promise.all([
+    getOversight(),
+    getLinksAsAdmin(),
+  ]);
+
+  const link = links.find((l) => l.student_id === studentId && isLive(l)) ?? null;
+  const student = counterparts.find((c) => c.id === studentId) ?? null;
+
+  // Pre-0008 the oversight list is empty, so a live link is the only way in.
+  if (!student && !(pendingMigration && link)) notFound();
 
   const [snapshot, activity, report] = await Promise.all([
-    getStudentSnapshot(studentId, link.counterpartName ?? "This student"),
+    getStudentSnapshot(studentId, student?.name ?? link?.counterpartName ?? "This student"),
     getActivityFeed(studentId),
     getWeeklyReport(studentId),
   ]);

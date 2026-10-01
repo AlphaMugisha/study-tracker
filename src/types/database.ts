@@ -295,6 +295,22 @@ export type Database = {
         Args: { student_email: string; request_note: string | null };
         Returns: string;
       };
+      /**
+       * 0008 oversight, both directions from one function: to an admin, every
+       * student they can read; to a student, every support account that can
+       * read them. Declared with the row shape rather than `unknown` so the
+       * caller in `lib/data/oversight.ts` cannot quietly read a column the
+       * function does not return.
+       */
+      oversight_counterparts: {
+        Args: Record<never, never>;
+        Returns: Array<{
+          id: string;
+          full_name: string;
+          timezone: string;
+          role: UserRole;
+        }>;
+      };
     };
     Enums: {
       user_role: UserRole;

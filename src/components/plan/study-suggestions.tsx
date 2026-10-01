@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { queueSuggestionAction } from "@/lib/actions/revision";
 import type { StudyGuidance, StudySlot, StudySuggestion } from "@/lib/planner/suggest-study";
-import { formatDuration } from "@/lib/timetable/types";
 
 /**
  * What the timetable says to study.

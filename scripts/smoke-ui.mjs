@@ -255,8 +255,20 @@ try {
     ["/dashboard", ["What to study", "/plan#study"]],
     // Subject management and the planning window.
     ["/settings", ["Subjects", "Add a subject", "Finish work by", "Wind-down after school"]],
-    // The consent panel: who can see your work, and how to stop them.
-    ["/settings", ["Support access", "Nobody has access"]],
+    /*
+      The student's disclosure panel.
+
+      "Nobody has access" was the assertion until 0008 made it untrue — a
+      support account reads every student now, so that sentence became the
+      most misleading one in the product and the panel was rewritten around
+      the timetable right, which IS still nobody's by default.
+
+      Only the heading and the timetable line are asserted. Whether the
+      "a support account can see your work" block renders depends on whether
+      0008 has been applied to the project this runs against, which is not
+      something this suite should pin.
+    */
+    ["/settings", ["Support access", "Nobody can change your timetable"]],
     // The role, stated plainly, plus what it means for this account.
     ["/settings", ["Role", "Student", "Your work is yours"]],
     // Revision is writable now, not just readable.

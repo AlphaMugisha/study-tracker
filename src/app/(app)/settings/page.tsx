@@ -12,6 +12,7 @@ import { Reveal } from "@/components/shared/reveal";
 import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/lib/actions/auth";
 import { displayName, requireSessionContext } from "@/lib/auth";
+import { getOversight } from "@/lib/data/oversight";
 import { getLinksAsStudent } from "@/lib/data/support";
 import { getSubjects } from "@/lib/data/timetable";
 import { cn } from "@/lib/utils";
@@ -45,10 +46,11 @@ function Panel({
 }
 
 export default async function SettingsPage() {
-  const [session, subjects, supportLinks] = await Promise.all([
+  const [session, subjects, supportLinks, oversight] = await Promise.all([
     requireSessionContext(),
     getSubjects(),
     getLinksAsStudent(),
+    getOversight(),
   ]);
   const { user, profile } = session;
 
@@ -139,9 +141,19 @@ export default async function SettingsPage() {
         <Reveal index={4} className="@3xl:col-span-2">
           <Panel
             title="Support access"
-            description="Who can see your academic progress. You decide, and you can change your mind at any time."
+            description="Who can see your academic progress, and exactly how much of it."
           >
-            <SupportAccess links={supportLinks} />
+            {/*
+              `oversight` is the part that is not up to her, so it is passed
+              separately from `links` rather than folded in: a support account
+              that reads her record without having asked must not be rendered
+              by the same component path that draws a Revoke button, because
+              that button would be a lie.
+            */}
+            <SupportAccess
+              links={supportLinks}
+              oversight={session.profile?.role === "student" ? oversight.counterparts : []}
+            />
           </Panel>
         </Reveal>
         </div>

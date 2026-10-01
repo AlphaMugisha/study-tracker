@@ -24,6 +24,12 @@
 --   - nothing new is captured. `activity_logs` records academic events inside
 --     StudyFlow and nothing else: no keystrokes, no browser history, no
 --     location, no activity outside this app
+--
+-- SUPERSEDED IN PART BY 0008. The first two bullets above were true when this
+-- was written and are not true now: 0008 widened `has_student_access` so a
+-- support account reads every student with no link at all. The third still
+-- holds — nothing new is captured, then or since. Read 0008 before relying on
+-- anything this file says about who can see whom.
 -- ---------------------------------------------------------------------------
 
 -- --- 1. The two parties to a link may read each other's profile row ---------
@@ -61,6 +67,14 @@ comment on function public.shares_support_link(uuid) is
   'any status. Used only to reveal a name, never to grant data access.';
 
 drop policy if exists profiles_select_own on public.profiles;
+
+-- Dropped as well as created, or a second run of this file aborts: the line
+-- above has already removed `profiles_select_own`, so there is nothing left to
+-- make way for the CREATE and it fails on the name it made itself. This file
+-- claims to be idempotent at the top and `db:verify:local` runs every
+-- migration twice to check exactly that, so it was failing the project's own
+-- verification before it reached the suites.
+drop policy if exists profiles_select_linked on public.profiles;
 
 create policy profiles_select_linked
   on public.profiles
