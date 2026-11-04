@@ -285,3 +285,16 @@ Defined once in `src/app/globals.css`, verifiable at `/styleguide`.
 
 Components reference semantic tokens (`bg-sage`, `text-ink-muted`), never raw
 hex, so a dark theme stays a single extra block.
+
+## Mission and Goals
+
+**Mission:** Help a student understand the school day, organize homework and revision, and make better use of limited study time through a timetable-aware academic assistant.
+
+**Goals:**
+- Make the current lesson, next activity, and remaining work easy to understand.
+- Let students enter or review timetable information before saving it.
+- Keep student data protected through database policies and role-aware access.
+- Support practical homework planning and revision routines.
+- Keep setup, environment configuration, and deployment instructions reproducible.
+
+The feature descriptions and limitations above remain the source of truth; update this section when the product scope changes.
