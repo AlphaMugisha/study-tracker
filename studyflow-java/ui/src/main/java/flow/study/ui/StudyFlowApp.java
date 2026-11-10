@@ -2,8 +2,11 @@ package flow.study.ui;
 
 import flow.study.store.StoreLocation;
 import javafx.application.Application;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 import java.io.InputStream;
@@ -12,9 +15,13 @@ import java.util.Objects;
 /**
  * The window.
  *
- * Two states and one transition: the gate, then the app. Nothing else switches
- * scenes, because the only thing that can change about this app at runtime is
- * whether the copy is unlocked.
+ * On a computer that has been set up, this opens straight onto Today. There is
+ * no prompt of any kind -- the operator chose that over an encrypted copy, and
+ * the consequence is recorded in StoreLocation and said out loud in Settings.
+ *
+ * The only time anything is asked is the very first run, and again if the
+ * saved session is ever revoked, because at that point there is genuinely
+ * nothing to sync with.
  */
 public final class StudyFlowApp extends Application {
 
@@ -31,6 +38,7 @@ public final class StudyFlowApp extends Application {
     private static final int MIN_HEIGHT = 560;
 
     private AppContext context;
+    private MainWindow window;
 
     public static void main(String[] args) {
         launch(args);
@@ -38,33 +46,53 @@ public final class StudyFlowApp extends Application {
 
     @Override
     public void start(Stage stage) {
-        StoreLocation location = StoreLocation.standard();
-
         stage.setTitle("StudyFlow");
         stage.setMinWidth(MIN_WIDTH);
         stage.setMinHeight(MIN_HEIGHT);
         loadIcon(stage);
 
-        UnlockView gate = new UnlockView(location, unlocked -> {
-            this.context = unlocked;
-            showApp(stage, unlocked);
-        });
+        Parent first;
+        try {
+            context = AppContext.open(StoreLocation.standard());
+            first = context.signedIn()
+                    ? openApp()
+                    : new SetupView(context, ready -> stage.getScene().setRoot(openApp())).root();
+        } catch (RuntimeException e) {
+            // A copy that will not open at all is the one failure with nothing
+            // useful behind it, so it says so on screen rather than vanishing
+            // with a stack trace into a console nobody is watching.
+            first = failure(e);
+        }
 
-        stage.setScene(scene(gate.root()));
+        stage.setScene(scene(first));
         stage.show();
     }
 
-    private void showApp(Stage stage, AppContext unlocked) {
-        MainWindow window = new MainWindow(unlocked);
-        stage.getScene().setRoot(window.root());
+    private Parent openApp() {
+        window = new MainWindow(context);
+        Parent root = window.root();
         window.start();
+        return root;
     }
 
-    private Scene scene(javafx.scene.Parent root) {
+    private Scene scene(Parent root) {
         Scene scene = new Scene(root, WIDTH, HEIGHT);
         scene.getStylesheets().add(Objects.requireNonNull(
                 StudyFlowApp.class.getResource("theme.css")).toExternalForm());
         return scene;
+    }
+
+    private static Parent failure(RuntimeException e) {
+        Label label = new Label("StudyFlow could not open your copy.\n\n"
+                + (e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage()));
+        label.getStyleClass().add("detail");
+        label.setWrapText(true);
+        label.setMaxWidth(520);
+
+        StackPane pane = new StackPane(label);
+        pane.getStyleClass().add("root");
+        pane.setPadding(new javafx.geometry.Insets(40));
+        return pane;
     }
 
     /**
@@ -84,6 +112,7 @@ public final class StudyFlowApp extends Application {
 
     @Override
     public void stop() {
+        if (window != null) window.stop();
         if (context != null) {
             // Closes the database explicitly. H2 is opened with
             // DB_CLOSE_DELAY=-1, so without this the file stays locked until

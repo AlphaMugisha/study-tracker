@@ -28,7 +28,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class OutboxTest {
 
-    private static final char[] PASSPHRASE = "an evening of homework".toCharArray();
     private static final ZoneId KIGALI = ZoneId.of("Africa/Kigali");
     private static final Instant NOW = Instant.parse("2026-09-23T17:00:00Z");
     private static final LocalDate IN_TWO_DAYS = LocalDate.parse("2026-09-25");
@@ -36,8 +35,7 @@ class OutboxTest {
     private record Kit(LocalDatabase db, Outbox outbox, TaskStore tasks) {}
 
     private static Kit open(Path dir) {
-        LocalDatabase db = LocalDatabase.open(
-                new StoreLocation(dir), PASSPHRASE, Passphrase.newSalt());
+        LocalDatabase db = LocalDatabase.open(new StoreLocation(dir));
         Outbox outbox = new Outbox(db);
         return new Kit(db, outbox, new TaskStore(db, outbox));
     }

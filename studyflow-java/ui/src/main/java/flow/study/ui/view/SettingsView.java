@@ -136,8 +136,13 @@ public final class SettingsView {
                 Ui.meta(lastPulled == null
                         ? "Never synced."
                         : "Last synced " + ago(lastPulled) + "."),
-                Ui.meta("Your copy lives at " + context.location().directory()
-                        + ", encrypted with your passphrase."));
+                Ui.meta("Your copy lives at " + context.location().directory() + "."),
+                // Said out loud rather than left as a property nobody knows
+                // about. The app opens with no password by choice, and the
+                // cost of that choice belongs on screen next to where the
+                // file is, not only in a source comment.
+                Ui.meta("It is not password-protected, so anyone who can use this "
+                        + "Windows account can read it."));
 
         if (!refused.isEmpty()) {
             /*

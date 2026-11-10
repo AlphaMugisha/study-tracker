@@ -50,29 +50,25 @@ TypeScript one fails the build rather than quietly shipping.
 
 ## First run
 
-Needs a connection, once. Her StudyFlow email and password sign in, she
-chooses a passphrase, and the encrypted copy is created with the refresh token
-sealed inside it.
-
-Every run after that needs nothing. The passphrase derives the file key
-(Argon2id), the copy opens, and the app works whether or not there is a
-connection.
-
-The passphrase is not her Supabase password and is never sent anywhere. Losing
-it costs the local copy, not the data: signing in again on a fresh copy
-re-downloads everything.
+Needs a connection, once: her StudyFlow email and password. Nothing is asked
+after that — launching goes straight to Today, online or not.
 
 ## Where things live
 
 | | |
 |---|---|
-| The copy | `%LOCALAPPDATA%\StudyFlow\studyflow.mv.db`, AES-encrypted |
-| The salt | `%LOCALAPPDATA%\StudyFlow\studyflow.properties`, plaintext |
+| The copy | `%LOCALAPPDATA%\StudyFlow\studyflow.mv.db` |
 | The app  | `dist/StudyFlow/StudyFlow.exe` |
 
-The salt sits outside the encrypted file because it is needed to derive the
-key that opens it. That is correct rather than a compromise: a salt has to be
-unique, not secret.
+**The copy is not encrypted, and there is no password on the app.** That was
+chosen deliberately, with the trade-off on the table: the alternative was a
+passphrase prompt on every launch. The cost is that anyone who can use this
+Windows account can read the whole academic record straight off disk, and the
+saved refresh token with it. Settings says so on screen rather than leaving it
+as a property nobody knows about.
+
+Putting it back is a one-line change in `LocalDatabase.open` — append
+`;CIPHER=AES` to the URL and pass a derived key as the file password.
 
 ## How syncing works
 

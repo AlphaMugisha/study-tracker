@@ -9,7 +9,6 @@ import flow.study.domain.model.TaskStatus;
 import flow.study.store.Intent;
 import flow.study.store.LocalDatabase;
 import flow.study.store.Outbox;
-import flow.study.store.Passphrase;
 import flow.study.store.ProfileStore;
 import flow.study.store.StoreLocation;
 import flow.study.store.TaskStore;
@@ -38,7 +37,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SyncEngineTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
-    private static final char[] PASSPHRASE = "an evening of homework".toCharArray();
     private static final String USER = "user-1";
     private static final LocalDate DUE = LocalDate.parse("2026-09-25");
 
@@ -97,8 +95,7 @@ class SyncEngineTest {
                        SyncEngine engine, FakeCloud cloud) {}
 
     private static Kit open(Path dir) {
-        LocalDatabase db = LocalDatabase.open(
-                new StoreLocation(dir), PASSPHRASE, Passphrase.newSalt());
+        LocalDatabase db = LocalDatabase.open(new StoreLocation(dir));
         Outbox outbox = new Outbox(db);
         ProfileStore profiles = new ProfileStore(db, outbox);
         TimetableStore timetable = new TimetableStore(db);

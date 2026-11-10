@@ -224,18 +224,17 @@ create table if not exists sync_state (
     watermark      varchar(64)
 );
 
--- The session, sealed inside the encrypted file.
+-- The session.
 --
--- One row, enforced by the fixed primary key. The refresh token is what lets
--- the app sync silently once a connection returns without asking her to log
--- in again; it is only as safe as the file encryption around it, which is the
--- reason the file is encrypted.
+-- One row, enforced by the fixed primary key. Whether this row exists is also
+-- what decides setup versus straight-to-the-app on launch, so there is no
+-- separate marker file to fall out of step with it.
 --
--- The Argon2 SALT IS NOT HERE, and cannot be: it is needed to derive the key
--- that opens this file, so storing it inside would be circular. It lives in a
--- plaintext sidecar next to the database -- which is fine, because a salt is
--- required to be unique rather than secret. A wrong passphrase is detected by
--- H2 refusing to open the file at all, so there is no verifier column either.
+-- The refresh token is what lets the app sync silently once a connection
+-- returns without asking her to sign in again. It is stored in the clear,
+-- because this database is: see StoreLocation for that decision. Anyone who
+-- can read this file can act as her against Supabase until the token is
+-- revoked, which is the sharpest edge of the no-passphrase choice.
 create table if not exists auth_state (
     -- default before primary key: H2 rejects the other order.
     id                  int default 1 primary key check (id = 1),

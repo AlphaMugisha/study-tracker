@@ -86,6 +86,14 @@ echo "    main jar: $MAIN_JAR"
 # ---------------------------------------------------------------------------
 say "Packaging"
 # ---------------------------------------------------------------------------
+# A running copy holds its own jars open, and Windows will not let them be
+# replaced. Without this the rebuild fails halfway with a dozen "device or
+# resource busy" lines and leaves a half-deleted app directory behind.
+if taskkill //IM "$APP_NAME.exe" //F > /dev/null 2>&1; then
+    echo "    closed the running copy first"
+    sleep 2
+fi
+
 rm -rf "$DIST/$APP_NAME"
 mkdir -p "$DIST"
 

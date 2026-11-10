@@ -77,8 +77,19 @@ public final class AppContext implements AutoCloseable {
         this.engine = new SyncEngine(rest, outbox, profiles, timetable, tasks);
     }
 
-    public static AppContext open(StoreLocation location, char[] passphrase, String salt) {
-        return new AppContext(location, LocalDatabase.open(location, passphrase, salt));
+    public static AppContext open(StoreLocation location) {
+        return new AppContext(location, LocalDatabase.open(location));
+    }
+
+    /**
+     * Has this computer been set up yet?
+     *
+     * Read from the database rather than from a marker file, so there is no
+     * second thing that can disagree with it. A copy whose sign-in failed
+     * half way has tables but no session row, and correctly asks again.
+     */
+    public boolean signedIn() {
+        return profiles.session() != null;
     }
 
     // -----------------------------------------------------------------------

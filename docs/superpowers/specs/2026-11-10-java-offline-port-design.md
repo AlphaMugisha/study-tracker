@@ -13,7 +13,7 @@ of the product.
 ## What we are building
 
 A JavaFX desktop application. It keeps a full local copy of the student's
-academic data in an encrypted embedded database, works with no network at all,
+academic data in an embedded database, works with no network at all,
 and pushes the evening's work up to Supabase when one returns.
 
 A shortcut on the Desktop launches it. No terminal, no `next dev`, no
@@ -29,8 +29,7 @@ localhost.
 | **Outbox of intents**, not row-level last-write-wins | Intents preserve meaning. "Complete assignment X" is idempotent and touches one column; shipping a whole row would clobber fields the student never edited — including a linked adult's timetable edit, the one cross-account write the product allows. |
 | **Full-snapshot pull**, except `activity_logs` | The dataset is a few hundred rows. A full pull is cheaper than tracking tombstones and makes cloud deletes resolve for free. `activity_logs` is append-only and unbounded, so it pulls incrementally by `created_at`. |
 | **Push before pull, always** | Pulling first would overwrite local rows whose intents have not been sent. |
-| **H2 embedded with AES file encryption** | Pure Java, no per-platform native library to ship. The key is Argon2id over the student's passphrase. |
-| **Passphrase gate that also derives the DB key** | The local file holds a child's week with her teachers' names on it. On a school laptop or in a stolen bag, an unencrypted file is the whole record. |
+| **H2 embedded, unencrypted** | Pure Java, no per-platform native library to ship. Encryption and the passphrase that went with it were **removed after review** — see the amendment at the foot of this document. |
 | **Zero new cloud migrations** | The outbox and sync state are local-only. Push uses tables that already exist; pull is a read. Nothing to apply by hand. |
 
 ### Not in scope
@@ -48,7 +47,7 @@ no network:
 ```
 studyflow-java/
   domain/   pure Java 23. No JavaFX, no JDBC, no HTTP.
-  store/    H2 + AES, schema, outbox, repositories.
+  store/    H2, schema, outbox, repositories.
   sync/     GoTrue + PostgREST clients, SyncEngine, connectivity.
   ui/       JavaFX. Views, theme, school-day ticker, desktop packaging.
 ```
@@ -90,14 +89,14 @@ Java planner that disagrees with the TypeScript one fails the build.
 
 ### store
 
-H2, file mode, AES-encrypted. Tables mirror the Postgres ones minus RLS —
-meaningless in a single-user file — plus three local-only:
+H2, file mode. Tables mirror the Postgres ones minus RLS — meaningless in a
+single-user file — plus three local-only:
 
 | Table | Purpose |
 |---|---|
 | `outbox` | `seq`, `entity_type`, `entity_id`, `kind`, `payload` (JSON), `status`, `attempts`, `last_error` |
 | `sync_state` | pull watermark per table |
-| `auth_state` | user id, email, Supabase refresh token, last online auth — sealed inside the encrypted file |
+| `auth_state` | user id, email, Supabase refresh token, last online auth. Its presence is also what decides setup versus straight-to-the-app |
 
 `activity_logs` stays append-only locally too, via a `BEFORE UPDATE` trigger
 that raises. Same reasoning as 0002: not something anyone gets to do by
@@ -166,3 +165,31 @@ click as early as there is a window to show.
 | Clock skew on the laptop | Intents carry no timestamps that decide outcomes; the server sets `updated_at`. A direct consequence of choosing intents over last-write-wins. |
 | `0009_school_catchup.sql` may not be applied in the cloud | Catch-up code degrades gracefully, exactly as the TypeScript does — the feature goes quiet rather than erroring |
 | H2 AES is not SQLCipher | Documented. Switchable later; nothing above depends on the cipher choice. |
+
+
+---
+
+## Amendment, 2026-11-10: no passphrase
+
+The design above specified an encrypted local copy unlocked by a passphrase,
+and it was built that way. On seeing it, the operator asked what a passphrase
+was — which is itself the finding: a second password with no explanation reads
+as the app being broken, and this one would have been typed every single
+launch.
+
+Offered the trade-off explicitly, they chose **no gate at all**. So:
+
+- H2 opens unencrypted. `Passphrase`, `WrongPassphraseException` and the Bouncy
+  Castle dependency are gone.
+- The plaintext sidecar that held the Argon2 salt is gone too. Whether setup
+  has happened is now read from the `auth_state` row, so there is no second
+  marker file to fall out of step with the database.
+- `UnlockView` became `SetupView`: shown on first run, and again only if the
+  saved session is revoked.
+
+**What this costs, stated plainly:** anyone who can use this Windows account
+can read the whole academic record off disk, and can act as the student against
+Supabase using the stored refresh token until it is revoked. That is a
+reasonable trade for a machine that stays at home and a bad one for a laptop
+that travels. It is surfaced in the Settings card rather than left implicit,
+and `LocalDatabase.open` carries the note on how to reinstate it.
