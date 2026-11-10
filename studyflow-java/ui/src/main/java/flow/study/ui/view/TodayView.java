@@ -25,7 +25,7 @@ import java.util.List;
  * cannot see whether she is in the room, and the wording never suggests
  * otherwise -- see the comment on Presence before changing any of it.
  */
-public final class TodayView {
+public final class TodayView implements Screen {
 
     private final AppContext context;
     private final VBox body = new VBox(16);
@@ -60,6 +60,7 @@ public final class TodayView {
         if (day.get() != null) render(day.get());
     }
 
+    @Override
     public Node root() {
         return Ui.page(body);
     }

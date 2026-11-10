@@ -29,7 +29,7 @@ import java.util.List;
  * better for her than the constraint was: "Maths already runs then" rather
  * than a range operator in an error message.
  */
-public final class TimetableView {
+public final class TimetableView implements Screen {
 
     private final AppContext context;
     private final VBox body = new VBox(16);
@@ -46,6 +46,7 @@ public final class TimetableView {
         if (day.get() != null) render(day.get());
     }
 
+    @Override
     public Node root() {
         return Ui.page(body);
     }

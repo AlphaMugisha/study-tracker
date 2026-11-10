@@ -407,3 +407,40 @@
     -fx-font-size: 14px;
     -fx-padding: 24px 0;
 }
+
+/* --------------------------------------------------------------------------
+ * Spinners
+ *
+ * The default indicator draws a percentage label and a dark arc, neither of
+ * which works here: the work being waited on has no measurable progress, and
+ * the default arc is close enough to the page colour to look like nothing is
+ * happening at all.
+ * -------------------------------------------------------------------------- */
+
+.progress-indicator {
+    -fx-progress-color: -color-brand;
+}
+
+.progress-indicator > .determinate-indicator > .percentage {
+    -fx-fill: transparent;
+}
+
+/*
+ * JavaFX reuses the style class "spinner" for two unrelated things: the
+ * numeric Spinner control, styled with the inputs above, and the rotating part
+ * of an indeterminate ProgressIndicator. Without this reset the indicator
+ * inherits the input padding and rounded background and draws as a small grey
+ * box that does not turn.
+ */
+.progress-indicator > .spinner {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-padding: 0;
+}
+
+/* The loading row beside a spinner, so it reads as one thing. */
+.loading-state {
+    -fx-text-fill: -color-ink-muted;
+}

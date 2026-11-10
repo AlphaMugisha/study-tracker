@@ -7,6 +7,8 @@ import flow.study.domain.timetable.SchoolClock;
 import flow.study.domain.timetable.TimetableResolver;
 import flow.study.domain.timetable.TimetableState;
 import flow.study.sync.SyncResult;
+import flow.study.ui.view.DataView;
+import flow.study.ui.view.Screen;
 import flow.study.ui.view.HomeworkView;
 import flow.study.ui.view.PlanView;
 import flow.study.ui.view.SettingsView;
@@ -18,11 +20,11 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -34,6 +36,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * The shell: where she is, what she is doing, and what is waiting to be sent.
@@ -59,20 +62,37 @@ public final class MainWindow {
      */
     private static final List<String> ALLOWED_AT_SCHOOL = List.of("Homework", "Stuck on");
 
+    private static final List<String> NAV = List.of(
+            "Today", "Timetable", "Homework", "Home plan", "Stuck on", "Settings");
+
     private final AppContext context;
     private final BorderPane root = new BorderPane();
     private final VBox sidebar = new VBox(4);
     private final BorderPane content = new BorderPane();
     private final Label syncPill = new Label();
+    private final ProgressIndicator syncSpinner = new ProgressIndicator();
+    private final Button syncNow = new Button("Sync");
     private final Label clockLabel = new Label();
 
     /** The current school day, recomputed every second, read by every view. */
     private final ObjectProperty<SchoolDay> day = new SimpleObjectProperty<>();
 
-    private final Map<String, Node> views = new LinkedHashMap<>();
+    /**
+     * Views are built on first visit, not all six at startup.
+     *
+     * Constructing every screen before showing anything delays the window by
+     * however long the slowest one takes, and five of the six are not being
+     * looked at. The suppliers below are the recipe; `built` is what has
+     * actually been made.
+     */
+    private final Map<String, Supplier<Screen>> recipes = new LinkedHashMap<>();
+    private final Map<String, Node> built = new LinkedHashMap<>();
+    private final Map<String, DataView> dataViews = new LinkedHashMap<>();
     private final Map<String, Button> navButtons = new LinkedHashMap<>();
+
     private String activeView = "Today";
     private Timeline ticker;
+    private boolean syncing;
 
     /**
      * Everything derived from the clock, in one value.
@@ -91,6 +111,13 @@ public final class MainWindow {
         root.setTop(topBar());
         root.setLeft(buildSidebar());
         root.setCenter(content);
+
+        recipes.put("Today", () -> new TodayView(context, day));
+        recipes.put("Timetable", () -> new TimetableView(context, day));
+        recipes.put("Homework", () -> new HomeworkView(context));
+        recipes.put("Home plan", () -> new PlanView(context, day));
+        recipes.put("Stuck on", () -> new StuckOnView(context));
+        recipes.put("Settings", () -> new SettingsView(context));
     }
 
     public BorderPane root() {
@@ -105,15 +132,8 @@ public final class MainWindow {
         return context;
     }
 
-    /** Begin ticking, build the views, and try a sync. */
+    /** Begin ticking, show Today, and try a sync. */
     public void start() {
-        views.put("Today", new TodayView(context, day).root());
-        views.put("Timetable", new TimetableView(context, day).root());
-        views.put("Homework", new HomeworkView(context).root());
-        views.put("Home plan", new PlanView(context, day).root());
-        views.put("Stuck on", new StuckOnView(context).root());
-        views.put("Settings", new SettingsView(context).root());
-
         tick();
         ticker = new Timeline(new KeyFrame(Duration.seconds(1), event -> tick()));
         ticker.setCycleCount(Animation.INDEFINITE);
@@ -182,11 +202,14 @@ public final class MainWindow {
 
         syncPill.getStyleClass().add("pill");
 
-        Button syncNow = new Button("Sync");
+        syncSpinner.setPrefSize(14, 14);
+        syncSpinner.setMaxSize(14, 14);
+        showSpinner(false);
+
         syncNow.getStyleClass().add("button-quiet");
         syncNow.setOnAction(event -> sync());
 
-        HBox bar = new HBox(14, logo, clockLabel, spacer, syncPill, syncNow);
+        HBox bar = new HBox(12, logo, clockLabel, spacer, syncSpinner, syncPill, syncNow);
         bar.getStyleClass().add("top-bar");
         bar.setAlignment(Pos.CENTER_LEFT);
         return bar;
@@ -196,8 +219,7 @@ public final class MainWindow {
         sidebar.getStyleClass().add("sidebar");
         sidebar.setPrefWidth(188);
 
-        for (String name : List.of("Today", "Timetable", "Homework", "Home plan",
-                "Stuck on", "Settings")) {
+        for (String name : NAV) {
             Button button = new Button(name);
             button.getStyleClass().add("nav-button");
             button.setMaxWidth(Double.MAX_VALUE);
@@ -209,8 +231,18 @@ public final class MainWindow {
         return sidebar;
     }
 
+    /** Show a screen, building it the first time it is asked for. */
     private void show(String name) {
-        Node view = views.get(name);
+        Node view = built.computeIfAbsent(name, key -> {
+            Screen made = recipes.get(key).get();
+            if (made instanceof DataView data) {
+                dataViews.put(key, data);
+                // A screen built mid-sync has to be told, or it renders an
+                // empty list as a fact while the answer is still in flight.
+                data.setSyncing(syncing);
+            }
+            return made.root();
+        });
         if (view == null) return;
 
         activeView = name;
@@ -228,14 +260,32 @@ public final class MainWindow {
     // -----------------------------------------------------------------------
 
     private void sync() {
+        if (syncing) return; // the worker is single-threaded; queueing helps nobody
+
+        setSyncing(true);
         setPill("Syncing...", "pill");
+
         context.syncInBackground(result -> {
+            setSyncing(false);
             refreshSyncPill(result);
-            // The pull may have replaced everything on screen, so the views
-            // are rebuilt from the local copy rather than left stale.
+            // The pull may have replaced everything underneath, so the clock
+            // and every built screen are re-read from the local copy.
             tick();
-            rebuildDataViews();
+            for (DataView view : dataViews.values()) view.refresh();
         });
+    }
+
+    /** One flag, three places it shows: the spinner, the button, the views. */
+    private void setSyncing(boolean value) {
+        syncing = value;
+        showSpinner(value);
+        syncNow.setDisable(value);
+        for (DataView view : dataViews.values()) view.setSyncing(value);
+    }
+
+    private void showSpinner(boolean visible) {
+        syncSpinner.setVisible(visible);
+        syncSpinner.setManaged(visible);
     }
 
     /**
@@ -277,17 +327,8 @@ public final class MainWindow {
         syncPill.getStyleClass().setAll("pill", modifier);
     }
 
-    /** Rebuild the views that read rows rather than the clock. */
-    private void rebuildDataViews() {
-        List<String> rebuilt = new ArrayList<>(List.of("Homework", "Stuck on", "Settings"));
-        views.put("Homework", new HomeworkView(context).root());
-        views.put("Stuck on", new StuckOnView(context).root());
-        views.put("Settings", new SettingsView(context).root());
-        if (rebuilt.contains(activeView)) show(activeView);
-    }
-
-    /** Padding used by every page, so the views do not each pick their own. */
-    static Insets pagePadding() {
-        return new Insets(24, 28, 28, 28);
+    /** Which screens exist right now. Useful when debugging lazy construction. */
+    List<String> builtViews() {
+        return new ArrayList<>(built.keySet());
     }
 }

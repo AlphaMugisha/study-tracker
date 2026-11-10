@@ -35,12 +35,13 @@ import java.util.List;
  * evening planner uses, so the top of this list is the top of the plan. A
  * second sort here would let the two disagree about what is most urgent.
  */
-public final class HomeworkView {
+public final class HomeworkView implements DataView {
 
     private final AppContext context;
     private final VBox body = new VBox(16);
     private final VBox list = new VBox(10);
     private final Label status = new Label();
+    private boolean syncing;
 
     public HomeworkView(AppContext context) {
         this.context = context;
@@ -56,8 +57,15 @@ public final class HomeworkView {
         refresh();
     }
 
+    @Override
     public Node root() {
         return Ui.page(body);
+    }
+
+    @Override
+    public void setSyncing(boolean syncing) {
+        this.syncing = syncing;
+        refresh();
     }
 
     // -----------------------------------------------------------------------
@@ -149,7 +157,8 @@ public final class HomeworkView {
     // The list
     // -----------------------------------------------------------------------
 
-    private void refresh() {
+    @Override
+    public void refresh() {
         list.getChildren().clear();
 
         Instant now = Instant.now();
@@ -157,7 +166,15 @@ public final class HomeworkView {
         TaskOrdering.Groups groups = TaskOrdering.group(all, context.zone(), now);
 
         if (all.isEmpty()) {
-            list.getChildren().add(Ui.emptyState("Nothing written down yet."));
+            /*
+             * Nothing to show is not the same as nothing to do. Before the
+             * first pull has landed, "nothing written down yet" is the app
+             * asserting something it has not been told, and she would believe
+             * it -- so while a sync is running it says what is actually true.
+             */
+            list.getChildren().add(syncing
+                    ? Ui.loadingState("Getting your homework...")
+                    : Ui.emptyState("Nothing written down yet."));
             say("");
             return;
         }

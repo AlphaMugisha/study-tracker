@@ -24,12 +24,13 @@ import java.util.List;
  * One field, one optional subject, no required choices. Anything more to fill
  * in and it stops getting used, which is the only way this feature fails.
  */
-public final class StuckOnView {
+public final class StuckOnView implements DataView {
 
     private final AppContext context;
     private final SupportStore support;
     private final VBox body = new VBox(16);
     private final VBox list = new VBox(10);
+    private boolean syncing;
 
     public StuckOnView(AppContext context) {
         this.context = context;
@@ -40,8 +41,15 @@ public final class StuckOnView {
         refresh();
     }
 
+    @Override
     public Node root() {
         return Ui.page(body);
+    }
+
+    @Override
+    public void setSyncing(boolean syncing) {
+        this.syncing = syncing;
+        refresh();
     }
 
     private Node addForm() {
@@ -84,12 +92,16 @@ public final class StuckOnView {
                 Ui.row(subject, Ui.grow(), add));
     }
 
-    private void refresh() {
+    @Override
+    public void refresh() {
         list.getChildren().clear();
         List<SupportStore.Entry> entries = support.entries();
 
         if (entries.isEmpty()) {
-            list.getChildren().add(Ui.emptyState("Nothing on the list."));
+            // As in HomeworkView: an unanswered question is not an empty list.
+            list.getChildren().add(syncing
+                    ? Ui.loadingState("Getting your list...")
+                    : Ui.emptyState("Nothing on the list."));
             return;
         }
 

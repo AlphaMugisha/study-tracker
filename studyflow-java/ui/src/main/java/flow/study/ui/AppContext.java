@@ -147,6 +147,31 @@ public final class AppContext implements AutoCloseable {
     // -----------------------------------------------------------------------
 
     /**
+     * Run something slow off the FX thread, and hand the answer back on it.
+     *
+     * Anything that touches the network has to come through here. The FX
+     * thread is the one that repaints, so blocking it does not merely feel
+     * slow -- the window stops drawing entirely, spinner included, and a
+     * frozen app is indistinguishable from a crashed one.
+     *
+     * Failures arrive as an exception passed to onFailed rather than thrown
+     * into a dead background thread, where nothing could report them and the
+     * screen would wait forever.
+     */
+    public <T> void runInBackground(java.util.concurrent.Callable<T> work,
+                                    java.util.function.Consumer<T> onFinished,
+                                    java.util.function.Consumer<Exception> onFailed) {
+        worker.submit(() -> {
+            try {
+                T result = work.call();
+                javafx.application.Platform.runLater(() -> onFinished.accept(result));
+            } catch (Exception e) {
+                javafx.application.Platform.runLater(() -> onFailed.accept(e));
+            }
+        });
+    }
+
+    /**
      * Try to sync, off the FX thread, and hand the result back on it.
      *
      * Every failure arrives as a SyncResult rather than an exception, because

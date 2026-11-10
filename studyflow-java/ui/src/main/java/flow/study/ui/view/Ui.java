@@ -4,6 +4,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -72,6 +73,31 @@ public final class Ui {
         label.getStyleClass().add("empty-state");
         label.setWrapText(true);
         return label;
+    }
+
+    /** A small indeterminate spinner, sized to sit on a line of text. */
+    public static ProgressIndicator spinner() {
+        ProgressIndicator spinner = new ProgressIndicator();
+        spinner.setPrefSize(15, 15);
+        spinner.setMinSize(15, 15);
+        spinner.setMaxSize(15, 15);
+        return spinner;
+    }
+
+    /**
+     * Still loading, which is NOT the same as empty.
+     *
+     * "Nothing written down yet" before the first pull has landed is the app
+     * claiming something it does not know -- the same mistake the presence
+     * wording exists to avoid. An empty list and an unanswered question look
+     * identical on screen unless they are deliberately made to differ, so
+     * every list that can be shown before its data arrives uses this instead.
+     */
+    public static Node loadingState(String text) {
+        HBox box = new HBox(10, spinner(), emptyState(text));
+        box.setAlignment(Pos.CENTER_LEFT);
+        box.setPadding(new Insets(16, 0, 16, 0));
+        return box;
     }
 
     public static VBox card(Node... children) {

@@ -8,7 +8,9 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -21,8 +23,7 @@ import java.util.function.Consumer;
  *
  * Signing in needs a network, so this is the only part of the app that does.
  * It happens once; after it, launching goes straight to Today with no prompt
- * of any kind -- which is what the operator asked for, having been shown what
- * it costs.
+ * of any kind.
  *
  * It also appears again if the saved session is ever revoked, because at that
  * point there is genuinely nothing to sync with and asking is the only honest
@@ -33,6 +34,11 @@ final class SetupView {
     private final AppContext context;
     private final Consumer<AppContext> onReady;
     private final StackPane root = new StackPane();
+
+    private final TextField email = new TextField();
+    private final PasswordField password = new PasswordField();
+    private final Button signIn = new Button("Sign in");
+    private final ProgressIndicator spinner = new ProgressIndicator();
     private final Label message = new Label();
 
     SetupView(AppContext context, Consumer<AppContext> onReady) {
@@ -49,25 +55,35 @@ final class SetupView {
     }
 
     private VBox form() {
-        TextField email = new TextField();
         email.setPromptText("Your StudyFlow email");
-
-        PasswordField password = new PasswordField();
         password.setPromptText("Your StudyFlow password");
 
-        Button signIn = new Button("Sign in");
         signIn.getStyleClass().add("button-primary");
         signIn.setDefaultButton(true);
+        signIn.setOnAction(event -> submit());
+        password.setOnAction(event -> submit());
 
-        signIn.setOnAction(event -> {
-            if (email.getText().isBlank() || password.getText().isEmpty()) {
-                error("Enter the email and password you use for StudyFlow.");
-                return;
-            }
-            signIn.setDisable(true);
-            neutral("Signing in and downloading your work...");
-            attempt(email.getText().trim(), password.getText().toCharArray(), signIn);
-        });
+        spinner.setPrefSize(16, 16);
+        spinner.setMaxSize(16, 16);
+        busy(false);
+
+        /*
+         * The button keeps its own width, and the message sits on its own
+         * line beneath.
+         *
+         * Both halves of that matter: an HBox will happily shrink a button to
+         * fit a long sibling, and "Invalid login credentials" is long enough
+         * to squeeze "Sign in" down to an ellipsis -- which is how the one
+         * control she needs to press next disappears exactly when something
+         * has gone wrong.
+         */
+        signIn.setMinWidth(Region.USE_PREF_SIZE);
+
+        HBox action = new HBox(12, signIn, spinner);
+        action.setAlignment(Pos.CENTER_LEFT);
+
+        message.setWrapText(true);
+        message.setMaxWidth(Double.MAX_VALUE);
 
         Platform.runLater(email::requestFocus);
 
@@ -77,7 +93,7 @@ final class SetupView {
                         + "opens straight away and works with no internet at all."),
                 email,
                 password,
-                signIn,
+                action,
                 message,
                 note("Your homework, timetable and plan are kept on this computer so "
                         + "they are there when the connection is not. Anything you "
@@ -90,35 +106,70 @@ final class SetupView {
         return card;
     }
 
-    /**
-     * Sign in, then pull everything down.
-     *
-     * Deliberately NOT on a background thread. This runs once, behind a
-     * disabled button, with a message on screen saying what is happening, and
-     * the window has nothing else in it to touch. Moving it off the FX thread
-     * would buy a spinner and cost a class of ordering bugs around a
-     * half-created copy -- the worst possible thing to get wrong on first run.
-     */
-    private void attempt(String email, char[] password, Button signIn) {
-        try {
-            var session = context.session().signIn(email, password);
-            context.profiles().saveSession(new flow.study.store.ProfileStore.Session(
-                    session.userId(), session.email(), session.refreshToken(), Instant.now()));
-
-            // Straight through rather than waiting for the first pull: it can
-            // take a moment, and staring at a sign-in form that has visibly
-            // succeeded is worse than an app that fills in as it arrives.
-            // MainWindow runs its own sync on start, so nothing is skipped.
-            onReady.accept(context);
-        } catch (GoTrueClient.AuthException e) {
-            signIn.setDisable(false);
-            error(e.getMessage());
-        } catch (RuntimeException e) {
-            signIn.setDisable(false);
-            error(e.getMessage() == null ? "Could not sign in." : e.getMessage());
-        } finally {
-            java.util.Arrays.fill(password, '\0');
+    private void submit() {
+        if (email.getText().isBlank() || password.getText().isEmpty()) {
+            error("Enter the email and password you use for StudyFlow.");
+            return;
         }
+
+        busy(true);
+        neutral("Signing in...");
+
+        String address = email.getText().trim();
+        char[] secret = password.getText().toCharArray();
+
+        /*
+         * Off the FX thread, always.
+         *
+         * An earlier version did this inline on the assumption that a disabled
+         * button and a message were enough feedback. They are not: the FX
+         * thread is the one that repaints, so blocking it freezes the whole
+         * window -- the message never appears, the spinner never turns, and a
+         * slow connection is indistinguishable from a crash.
+         */
+        context.runInBackground(
+                () -> context.session().signIn(address, secret),
+                session -> {
+                    java.util.Arrays.fill(secret, '\0');
+                    context.profiles().saveSession(new flow.study.store.ProfileStore.Session(
+                            session.userId(), session.email(), session.refreshToken(),
+                            Instant.now()));
+
+                    // Straight through rather than waiting for the first pull.
+                    // MainWindow starts its own sync and shows its progress, so
+                    // nothing is skipped and nothing is hidden.
+                    onReady.accept(context);
+                },
+                failure -> {
+                    java.util.Arrays.fill(secret, '\0');
+                    busy(false);
+                    error(describe(failure));
+                });
+    }
+
+    /** One readable sentence out of whatever went wrong. */
+    private static String describe(Exception failure) {
+        if (failure instanceof GoTrueClient.AuthException && failure.getMessage() != null) {
+            return failure.getMessage();
+        }
+        return failure.getMessage() == null
+                ? "Could not sign in. Check your connection and try again."
+                : failure.getMessage();
+    }
+
+    /**
+     * Lock the form while the request is in flight.
+     *
+     * The fields go with the button: leaving them editable invites a second
+     * attempt against a half-finished first one, and the two would race to
+     * write the same session row.
+     */
+    private void busy(boolean busy) {
+        signIn.setDisable(busy);
+        email.setDisable(busy);
+        password.setDisable(busy);
+        spinner.setVisible(busy);
+        spinner.setManaged(busy);
     }
 
     // -----------------------------------------------------------------------

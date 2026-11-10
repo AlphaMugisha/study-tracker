@@ -31,7 +31,7 @@ import java.util.List;
  * columns only, so a student cannot make herself a support account -- putting
  * the field on screen would queue a change guaranteed to be refused.
  */
-public final class SettingsView {
+public final class SettingsView implements DataView {
 
     /** Matches the CHECK constraints in the cloud schema. */
     private static final int MIN_STUDY_HOUR = 12;
@@ -41,12 +41,31 @@ public final class SettingsView {
     private final VBox body = new VBox(16);
     private final Label saved = new Label();
 
+    private boolean syncing;
+
     public SettingsView(AppContext context) {
         this.context = context;
         body.setPadding(Ui.PAGE_PADDING);
         saved.getStyleClass().add("meta");
+        refresh();
+    }
 
-        body.getChildren().addAll(
+    @Override
+    public Node root() {
+        return Ui.page(body);
+    }
+
+    /**
+     * Rebuilt wholesale rather than patched field by field.
+     *
+     * Everything here is read once at build time -- the pending count, the
+     * refusals, when it last synced -- and a pull can change all of it. One
+     * rebuild is simpler than a dozen bindings, and this screen is rebuilt
+     * only when a sync finishes, not on the clock.
+     */
+    @Override
+    public void refresh() {
+        body.getChildren().setAll(
                 Ui.pageTitle("Settings"),
                 profileCard(),
                 syncCard(),
@@ -54,8 +73,10 @@ public final class SettingsView {
                 aboutCard());
     }
 
-    public Node root() {
-        return Ui.page(body);
+    @Override
+    public void setSyncing(boolean syncing) {
+        this.syncing = syncing;
+        refresh();
     }
 
     // -----------------------------------------------------------------------
@@ -129,10 +150,12 @@ public final class SettingsView {
 
         VBox card = Ui.card(
                 Ui.sectionTitle("This copy"),
-                Ui.detail(waiting == 0
-                        ? "Everything has been sent."
-                        : waiting + (waiting == 1 ? " change waiting" : " changes waiting")
-                                + " to be sent."),
+                syncing
+                        ? Ui.loadingState("Syncing now...")
+                        : Ui.detail(waiting == 0
+                                ? "Everything has been sent."
+                                : waiting + (waiting == 1 ? " change waiting" : " changes waiting")
+                                        + " to be sent."),
                 Ui.meta(lastPulled == null
                         ? "Never synced."
                         : "Last synced " + ago(lastPulled) + "."),

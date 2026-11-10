@@ -38,7 +38,7 @@ import java.util.List;
  *                        which is the part a timetable can answer and a
  *                        to-do list cannot.
  */
-public final class PlanView {
+public final class PlanView implements Screen {
 
     private final AppContext context;
     private final VBox body = new VBox(16);
@@ -53,6 +53,7 @@ public final class PlanView {
         if (day.get() != null) render(day.get());
     }
 
+    @Override
     public Node root() {
         return Ui.page(body);
     }
