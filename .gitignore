@@ -50,3 +50,5 @@ studyflow-java/.gradle/
 studyflow-java/build/
 studyflow-java/*/build/
 studyflow-java/dist/
+studyflow-java/packaging/studyflow.ico
+studyflow-java/sync/src/main/resources/flow/study/sync/supabase.properties

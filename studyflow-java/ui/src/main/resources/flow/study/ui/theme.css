@@ -1,0 +1,409 @@
+/*
+ * StudyFlow, on the desktop.
+ *
+ * The palette is lifted verbatim from src/app/globals.css rather than
+ * re-derived. Those values were tuned against LIGHTNESS rather than contrast
+ * ratio, after a version of the web app that passed every contrast check and
+ * still rendered an invisible shell -- the page and the panels were the same
+ * L* apart. Re-picking "equivalent" colours here would be re-running that
+ * mistake, so these are copied: the page sits at L* 7, cards at L* 12, and a
+ * hairline border at L* 24 is what makes a panel edge readable at all.
+ *
+ * JavaFX looked-up colours stand in for the custom properties the web app
+ * uses. Defined once on .root, referenced by name everywhere below.
+ */
+
+.root {
+    -color-bg: #101318;
+    -color-card: #191e26;
+    -color-ink: #f1f3f7;
+    -color-ink-muted: #9aa4b2;
+    -color-ink-subtle: #848e9e;
+    -color-border: #303846;
+    -color-border-strong: #3f4a5c;
+
+    -color-brand: #6c8cff;
+    -color-brand-bright: #8aa3ff;
+    -color-brand-soft: #263049;
+    -color-brand-ink: #9bb1ff;
+
+    -color-lesson: #55d6be;
+    -color-lesson-soft: #233b3e;
+    -color-lesson-ink: #8be3d3;
+
+    -color-revise: #9b8cff;
+    -color-revise-soft: #2e3049;
+
+    -color-pause: #ffd166;
+    -color-pause-soft: #3e3b30;
+
+    -color-danger: #ff6b6b;
+    -color-danger-soft: #3e2a31;
+
+    -fx-background-color: -color-bg;
+    -fx-font-family: "Segoe UI", "Inter", sans-serif;
+    -fx-font-size: 14px;
+    -fx-text-fill: -color-ink;
+}
+
+/* --------------------------------------------------------------------------
+ * Text
+ * -------------------------------------------------------------------------- */
+
+.label {
+    -fx-text-fill: -color-ink;
+}
+
+/*
+ * The headline is sized off whether the app actually KNOWS something.
+ * "Should be in class" is the loudest thing on the page; "No timetable saved"
+ * is a non-event and must not be set in the same display type, or the app
+ * shouts its own ignorance.
+ */
+.headline {
+    -fx-font-size: 30px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-ink;
+}
+
+.headline-unknown {
+    -fx-font-size: 19px;
+    -fx-font-weight: normal;
+    -fx-text-fill: -color-ink-muted;
+}
+
+.page-title {
+    -fx-font-size: 23px;
+    -fx-font-weight: bold;
+}
+
+.section-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.detail {
+    -fx-text-fill: -color-ink-muted;
+    -fx-font-size: 14px;
+}
+
+.meta {
+    -fx-text-fill: -color-ink-subtle;
+    -fx-font-size: 12px;
+}
+
+.numeric {
+    -fx-font-family: "Cascadia Mono", "Consolas", monospace;
+}
+
+/* --------------------------------------------------------------------------
+ * Surfaces
+ * -------------------------------------------------------------------------- */
+
+.card {
+    -fx-background-color: -color-card;
+    -fx-background-radius: 12px;
+    -fx-border-color: -color-border;
+    -fx-border-radius: 12px;
+    -fx-border-width: 1px;
+    -fx-padding: 18px;
+}
+
+.card-lesson {
+    -fx-background-color: -color-lesson-soft;
+    -fx-border-color: derive(-color-lesson, -40%);
+}
+
+.card-brand {
+    -fx-background-color: -color-brand-soft;
+    -fx-border-color: derive(-color-brand, -40%);
+}
+
+.card-revise {
+    -fx-background-color: -color-revise-soft;
+    -fx-border-color: derive(-color-revise, -40%);
+}
+
+.card-pause {
+    -fx-background-color: -color-pause-soft;
+    -fx-border-color: derive(-color-pause, -50%);
+}
+
+.card-danger {
+    -fx-background-color: -color-danger-soft;
+    -fx-border-color: derive(-color-danger, -40%);
+}
+
+/* --------------------------------------------------------------------------
+ * Navigation
+ * -------------------------------------------------------------------------- */
+
+.sidebar {
+    -fx-background-color: -color-card;
+    -fx-border-color: transparent -color-border transparent transparent;
+    -fx-border-width: 0 1px 0 0;
+    -fx-padding: 16px 12px;
+}
+
+.nav-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -color-ink-muted;
+    -fx-alignment: center-left;
+    -fx-padding: 10px 14px;
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+    -fx-font-size: 14px;
+}
+
+.nav-button:hover {
+    -fx-background-color: derive(-color-card, 14%);
+    -fx-text-fill: -color-ink;
+}
+
+.nav-button-active {
+    -fx-background-color: -color-brand-soft;
+    -fx-text-fill: -color-brand-ink;
+    -fx-font-weight: bold;
+}
+
+.top-bar {
+    -fx-background-color: -color-card;
+    -fx-border-color: transparent transparent -color-border transparent;
+    -fx-border-width: 0 0 1px 0;
+    -fx-padding: 12px 20px;
+}
+
+.logo {
+    -fx-font-size: 17px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-brand-ink;
+}
+
+/* --------------------------------------------------------------------------
+ * Buttons
+ * -------------------------------------------------------------------------- */
+
+.button {
+    -fx-background-color: derive(-color-card, 18%);
+    -fx-text-fill: -color-ink;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-border-color: -color-border-strong;
+    -fx-border-width: 1px;
+    -fx-padding: 9px 16px;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: derive(-color-card, 28%);
+}
+
+.button-primary {
+    -fx-background-color: -color-brand;
+    -fx-text-fill: #0b0f16;
+    -fx-font-weight: bold;
+    -fx-border-color: transparent;
+}
+
+.button-primary:hover {
+    -fx-background-color: -color-brand-bright;
+}
+
+.button-quiet {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: -color-ink-muted;
+    -fx-padding: 6px 10px;
+}
+
+.button-quiet:hover {
+    -fx-text-fill: -color-ink;
+    -fx-background-color: derive(-color-card, 14%);
+}
+
+.button:disabled {
+    -fx-opacity: 0.45;
+    -fx-cursor: default;
+}
+
+/* --------------------------------------------------------------------------
+ * Inputs
+ * -------------------------------------------------------------------------- */
+
+.text-field, .password-field, .text-area, .combo-box, .date-picker, .spinner {
+    -fx-background-color: derive(-color-bg, 10%);
+    -fx-text-fill: -color-ink;
+    -fx-prompt-text-fill: -color-ink-subtle;
+    -fx-background-radius: 8px;
+    -fx-border-color: -color-border-strong;
+    -fx-border-radius: 8px;
+    -fx-border-width: 1px;
+    -fx-padding: 9px 12px;
+    -fx-highlight-fill: -color-brand-soft;
+}
+
+.text-field:focused, .password-field:focused, .text-area:focused {
+    -fx-border-color: -color-brand;
+}
+
+.text-area .content {
+    -fx-background-color: derive(-color-bg, 10%);
+}
+
+.combo-box .list-cell, .combo-box-popup .list-view {
+    -fx-background-color: -color-card;
+    -fx-text-fill: -color-ink;
+}
+
+.combo-box-popup .list-view .list-cell:hover {
+    -fx-background-color: -color-brand-soft;
+}
+
+/* --------------------------------------------------------------------------
+ * Badges and the sync pill
+ * -------------------------------------------------------------------------- */
+
+.badge {
+    -fx-background-radius: 999px;
+    -fx-padding: 3px 10px;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-background-color: derive(-color-card, 20%);
+    -fx-text-fill: -color-ink-muted;
+}
+
+.badge-overdue {
+    -fx-background-color: -color-danger-soft;
+    -fx-text-fill: -color-danger;
+}
+
+.badge-lesson {
+    -fx-background-color: -color-lesson-soft;
+    -fx-text-fill: -color-lesson-ink;
+}
+
+.badge-revise {
+    -fx-background-color: -color-revise-soft;
+    -fx-text-fill: -color-revise;
+}
+
+.badge-pause {
+    -fx-background-color: -color-pause-soft;
+    -fx-text-fill: -color-pause;
+}
+
+.badge-done {
+    -fx-background-color: -color-lesson-soft;
+    -fx-text-fill: -color-lesson-ink;
+}
+
+/*
+ * The sync pill states.
+ *
+ * Offline is deliberately NOT styled as an error. It is the expected state
+ * most evenings, and the whole product promise is that it does not matter.
+ */
+.pill {
+    -fx-background-radius: 999px;
+    -fx-padding: 5px 12px;
+    -fx-font-size: 12px;
+    -fx-background-color: derive(-color-card, 20%);
+    -fx-text-fill: -color-ink-muted;
+}
+
+.pill-offline {
+    -fx-background-color: derive(-color-card, 20%);
+    -fx-text-fill: -color-ink-muted;
+}
+
+.pill-waiting {
+    -fx-background-color: -color-pause-soft;
+    -fx-text-fill: -color-pause;
+}
+
+.pill-synced {
+    -fx-background-color: -color-lesson-soft;
+    -fx-text-fill: -color-lesson-ink;
+}
+
+.pill-problem {
+    -fx-background-color: -color-danger-soft;
+    -fx-text-fill: -color-danger;
+}
+
+/* --------------------------------------------------------------------------
+ * Progress
+ * -------------------------------------------------------------------------- */
+
+.progress-bar {
+    -fx-background-radius: 999px;
+}
+
+.progress-bar > .track {
+    -fx-background-color: derive(-color-bg, 14%);
+    -fx-background-radius: 999px;
+}
+
+.progress-bar > .bar {
+    -fx-background-color: -color-lesson;
+    -fx-background-radius: 999px;
+    -fx-padding: 4px;
+}
+
+.progress-bar-brand > .bar {
+    -fx-background-color: -color-brand;
+}
+
+/* --------------------------------------------------------------------------
+ * Lists and scrolling
+ * -------------------------------------------------------------------------- */
+
+.scroll-pane, .scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+.scroll-pane {
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.scroll-bar {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: -color-border-strong;
+    -fx-background-radius: 999px;
+}
+
+.scroll-bar .increment-button, .scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.separator .line {
+    -fx-border-color: -color-border;
+    -fx-border-width: 1px 0 0 0;
+}
+
+.check-box {
+    -fx-text-fill: -color-ink;
+}
+
+.check-box .box {
+    -fx-background-color: derive(-color-bg, 10%);
+    -fx-border-color: -color-border-strong;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+}
+
+.check-box:selected .mark {
+    -fx-background-color: -color-brand-ink;
+}
+
+/* An empty state is a non-event, and is set as one. */
+.empty-state {
+    -fx-text-fill: -color-ink-subtle;
+    -fx-font-size: 14px;
+    -fx-padding: 24px 0;
+}
