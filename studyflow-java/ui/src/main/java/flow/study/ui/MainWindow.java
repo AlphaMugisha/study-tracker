@@ -249,8 +249,18 @@ public final class MainWindow {
         detail.setWrapText(true);
         detail.getStyleClass().add("detail");
 
+        // The way out sits in the notice itself. Telling somebody the wrong
+        // account is signed in and then making them find Settings is most of
+        // the problem left in place.
+        Button signOut = Controls.outline("Sign out", Icons.logOut());
+        signOut.setOnAction(event -> {
+            String refusal = context.signOut();
+            if (refusal == null) onSignedOut.run();
+        });
+
         VBox lines = new VBox(3, title, detail);
-        HBox banner = new HBox(12, Glyph.medium(Icons.info()), lines);
+        HBox banner = new HBox(12, Glyph.medium(Icons.info()), lines, signOut);
+        banner.setAlignment(Pos.CENTER_LEFT);
         banner.getStyleClass().add("notice");
         HBox.setHgrow(lines, Priority.ALWAYS);
         root.setBottom(banner);
