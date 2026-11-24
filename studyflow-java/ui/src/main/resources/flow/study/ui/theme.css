@@ -823,3 +823,27 @@
 .notice .icon-stroke {
     -fx-stroke: -color-brand-ink;
 }
+
+/* --------------------------------------------------------------------------
+ * The account footer
+ *
+ * Pinned to the bottom of the rail. Separated by a rule rather than by a gap,
+ * for the same reason Settings is: a gap reads as a layout mistake where a
+ * line reads as a decision.
+ * -------------------------------------------------------------------------- */
+
+.rail-account {
+    -fx-border-color: -color-sidebar-border transparent transparent transparent;
+    -fx-border-width: 1px 0 0 0;
+    -fx-padding: 12px 6px 4px 10px;
+}
+
+.rail-account .eyebrow {
+    -fx-font-size: 10px;
+    -fx-text-fill: -color-ink-subtle;
+}
+
+.rail-account .meta {
+    -fx-font-size: 12px;
+    -fx-text-fill: -color-ink-muted;
+}

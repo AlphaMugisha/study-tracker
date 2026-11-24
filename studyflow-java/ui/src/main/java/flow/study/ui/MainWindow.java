@@ -32,6 +32,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -331,7 +332,67 @@ public final class MainWindow {
             sidebar.getChildren().add(button);
         }
 
+        Region push = new Region();
+        VBox.setVgrow(push, Priority.ALWAYS);
+        sidebar.getChildren().addAll(push, accountFooter());
+
         return sidebar;
+    }
+
+    /**
+     * Who is signed in, and the way out.
+     *
+     * ------------------------------------------------------------------
+     * Both halves earn their place, and the first one earns it the harder
+     * way. This copy spent a day showing an empty app because it was signed
+     * in with an adult account that owns no timetable -- and there was
+     * nowhere on any screen that said whose copy it was. An app with one
+     * account and no visible identity is fine right up to the moment it is
+     * the wrong account, and then it is unreadable.
+     *
+     * The email is elided from the FRONT when it is too long. The domain is
+     * the part that distinguishes two accounts belonging to the same person,
+     * and "alpha.mugisha.stude..." would hide exactly the character that
+     * matters.
+     * ------------------------------------------------------------------
+     */
+    private Node accountFooter() {
+        String email = context.session().email();
+        String shown = email == null ? "this computer" : email;
+        if (shown.length() > 24) shown = "…" + shown.substring(shown.length() - 23);
+
+        Label who = new Label(shown);
+        who.getStyleClass().add("meta");
+        who.setTooltip(new Tooltip(email == null ? "No account saved" : email));
+
+        Label role = new Label(context.profile().role() == UserRole.ADMIN
+                ? "Adult account" : "Signed in");
+        role.getStyleClass().add("eyebrow");
+
+        Button out = Controls.iconButton(Icons.logOut(), "Sign out");
+        out.setOnAction(event -> signOut());
+
+        VBox lines = new VBox(1, role, who);
+        HBox footer = new HBox(8, lines, Controls.spacer(), out);
+        footer.setAlignment(Pos.CENTER_LEFT);
+        footer.getStyleClass().add("rail-account");
+        return footer;
+    }
+
+    /**
+     * Sign out, or say why not.
+     *
+     * The refusal goes on the pill rather than into a dialog. It is advice --
+     * sync first -- and the changes it is protecting are the ones already
+     * counted there, so that is where somebody is already looking.
+     */
+    private void signOut() {
+        String refusal = context.signOut();
+        if (refusal == null) {
+            onSignedOut.run();
+            return;
+        }
+        setPill(refusal, "pill-problem");
     }
 
     /** The same glyph the website puts beside the same word. */
