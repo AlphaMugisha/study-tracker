@@ -115,6 +115,15 @@ export default async function TimetablePage({
                 term's worth of corrections is one paste rather than forty
                 trips through the dialog. */}
             <CopyWeek entries={entries} />
+            {/* The other half of that copy. Without a way back to the typing
+                tab from here, a copied week has nowhere to be pasted — the
+                route existed and only the empty state ever linked to it. */}
+            <Button asChild variant="outline">
+              <Link href="/timetable/upload?mode=typed">
+                <ListPlus aria-hidden="true" />
+                Type them out
+              </Link>
+            </Button>
             <Button asChild variant="outline">
               <Link href="/timetable/upload">
                 <ImageUp aria-hidden="true" />

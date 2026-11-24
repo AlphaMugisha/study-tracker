@@ -98,8 +98,9 @@ export function SchoolLocked({
   return (
     <div className={cn("relative", className)}>
       <div
-        // @ts-expect-error -- `inert` is valid HTML; React's types lag on it.
-        inert=""
+        // Boolean, not `inert=""`. React 19 reads an empty string as false and
+        // says so in the console, which left the panel dimmed but operable.
+        inert
         aria-hidden="true"
         className="pointer-events-none select-none opacity-25 blur-[1px]"
       >
