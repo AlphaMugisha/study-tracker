@@ -9,6 +9,10 @@ import flow.study.domain.timetable.TimetableState;
 import flow.study.domain.text.Display;
 import flow.study.sync.Connectivity;
 import flow.study.sync.SyncResult;
+import flow.study.ui.kit.Controls;
+import flow.study.ui.kit.Glyph;
+import flow.study.ui.kit.Icons;
+import flow.study.ui.kit.Motion;
 import flow.study.ui.view.DataView;
 import flow.study.ui.view.Screen;
 import flow.study.ui.view.HomeworkView;
@@ -212,10 +216,7 @@ public final class MainWindow {
         Label logo = new Label("StudyFlow");
         logo.getStyleClass().add("logo");
 
-        clockLabel.getStyleClass().addAll("detail", "numeric");
-
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
+        clockLabel.getStyleClass().addAll("meta", "numeric");
 
         syncPill.getStyleClass().add("pill");
 
@@ -223,29 +224,69 @@ public final class MainWindow {
         syncSpinner.setMaxSize(14, 14);
         showSpinner(false);
 
-        syncNow.getStyleClass().add("button-quiet");
+        syncNow.getStyleClass().setAll("button", "button-quiet");
+        syncNow.setGraphic(Glyph.medium(Icons.refreshCw()));
         syncNow.setOnAction(event -> sync());
+        Motion.interactive(syncNow);
 
-        HBox bar = new HBox(12, logo, clockLabel, spacer, syncSpinner, syncPill, syncNow);
+        HBox bar = new HBox(12, logo, clockLabel, Controls.spacer(),
+                syncSpinner, syncPill, syncNow);
         bar.getStyleClass().add("top-bar");
         bar.setAlignment(Pos.CENTER_LEFT);
         return bar;
     }
 
+    /**
+     * The rail.
+     *
+     * Icons come from the same lucide set the website uses, generated into
+     * Java rather than taken from an icon pack -- see Icons. Without them
+     * every row was the same shape as every other row, and a sidebar whose
+     * entries differ only in their text is a list, not navigation.
+     *
+     * Settings sits below a rule rather than in the run, because it is not a
+     * place in the product the way the five above it are.
+     */
     private Node buildSidebar() {
-        sidebar.getStyleClass().add("sidebar");
-        sidebar.setPrefWidth(188);
+        sidebar.getStyleClass().add("rail");
+        sidebar.setPrefWidth(196);
+        sidebar.setSpacing(3);
+
+        Button add = Controls.primary("Add homework", Icons.plus());
+        add.setMaxWidth(Double.MAX_VALUE);
+        add.setOnAction(event -> show("Homework"));
+        VBox.setMargin(add, new javafx.geometry.Insets(2, 2, 14, 2));
+        sidebar.getChildren().add(add);
 
         for (String name : NAV) {
-            Button button = new Button(name);
-            button.getStyleClass().add("nav-button");
-            button.setMaxWidth(Double.MAX_VALUE);
+            if (name.equals("Settings")) {
+                Region rule = new Region();
+                rule.getStyleClass().add("rail-divider");
+                rule.setMaxWidth(Double.MAX_VALUE);
+                VBox.setMargin(rule, new javafx.geometry.Insets(10, 6, 6, 6));
+                sidebar.getChildren().add(rule);
+            }
+
+            Button button = Controls.navRow(name, navIcon(name));
             button.setOnAction(event -> show(name));
             navButtons.put(name, button);
             sidebar.getChildren().add(button);
         }
 
         return sidebar;
+    }
+
+    /** The same glyph the website puts beside the same word. */
+    private static Node navIcon(String name) {
+        return switch (name) {
+            case "Today" -> Icons.sun();
+            case "Timetable" -> Icons.calendarDays();
+            case "Homework" -> Icons.clipboardList();
+            case "Home plan" -> Icons.listChecks();
+            case "Stuck on" -> Icons.circleHelp();
+            case "Settings" -> Icons.settings();
+            default -> Icons.chevronRight();
+        };
     }
 
     /** Show a screen, building it the first time it is asked for. */
@@ -266,9 +307,7 @@ public final class MainWindow {
         content.setCenter(view);
 
         for (Map.Entry<String, Button> entry : navButtons.entrySet()) {
-            Button button = entry.getValue();
-            button.getStyleClass().remove("nav-button-active");
-            if (entry.getKey().equals(name)) button.getStyleClass().add("nav-button-active");
+            Controls.setActive(entry.getValue(), entry.getKey().equals(name));
         }
     }
 
