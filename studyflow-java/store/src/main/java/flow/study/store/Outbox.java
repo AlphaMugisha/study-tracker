@@ -35,8 +35,22 @@ public final class Outbox {
 
     private final Connection connection;
 
+    /**
+     * Told whenever an intent is queued.
+     *
+     * One listener, not a list: there is exactly one thing that cares, and it
+     * is the app deciding whether to sync now. A hook here rather than a call
+     * at each write site because a site that forgets is a change that waits
+     * five minutes for no reason, and that bug is invisible.
+     */
+    private volatile Runnable listener = () -> { };
+
     public Outbox(LocalDatabase database) {
         this.connection = database.connection();
+    }
+
+    public void onRecord(Runnable listener) {
+        this.listener = listener;
     }
 
     /**
@@ -58,9 +72,15 @@ public final class Outbox {
             Rows.setInstant(statement, 5, Instant.now());
             statement.executeUpdate();
 
+            long seq;
             try (ResultSet keys = statement.getGeneratedKeys()) {
-                return keys.next() ? keys.getLong(1) : -1;
+                seq = keys.next() ? keys.getLong(1) : -1;
             }
+
+            // After the row exists, so a listener that immediately counts
+            // pending intents counts this one.
+            listener.run();
+            return seq;
         } catch (SQLException e) {
             throw new StoreException("Cannot record the change for sending: " + e.getMessage(), e);
         } catch (JsonProcessingException e) {
