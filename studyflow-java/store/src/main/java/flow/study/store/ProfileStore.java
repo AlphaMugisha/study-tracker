@@ -5,6 +5,7 @@ import flow.study.domain.model.UserRole;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -157,6 +158,25 @@ public final class ProfileStore {
             statement.executeUpdate();
         } catch (SQLException e) {
             throw new StoreException("Cannot save the session: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Forget who is signed in.
+     *
+     * Three tables, not one. The session row is what decides setup versus
+     * straight-to-the-app, but leaving the profiles and the watermarks behind
+     * would greet the next account by name and then believe it had already
+     * pulled everything -- so the first sync would skip the one table it
+     * actually needed to replace.
+     */
+    public void clearSession() {
+        try (Statement statement = connection.createStatement()) {
+            statement.executeUpdate("delete from auth_state");
+            statement.executeUpdate("delete from profiles");
+            statement.executeUpdate("delete from sync_state");
+        } catch (SQLException e) {
+            throw new StoreException("Cannot sign out: " + e.getMessage(), e);
         }
     }
 

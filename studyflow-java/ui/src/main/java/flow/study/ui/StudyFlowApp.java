@@ -59,9 +59,7 @@ public final class StudyFlowApp extends Application {
         Parent first;
         try {
             context = AppContext.open(StoreLocation.standard());
-            first = context.signedIn()
-                    ? openApp()
-                    : new SetupView(context, ready -> stage.getScene().setRoot(openApp())).root();
+            first = context.signedIn() ? openApp(stage) : setup(stage);
         } catch (RuntimeException e) {
             // A copy that will not open at all is the one failure with nothing
             // useful behind it, so it says so on screen rather than vanishing
@@ -73,11 +71,31 @@ public final class StudyFlowApp extends Application {
         stage.show();
     }
 
-    private Parent openApp() {
-        window = new MainWindow(context);
+    private Parent openApp(Stage stage) {
+        window = new MainWindow(context, () -> backToSetup(stage));
         Parent root = window.root();
         window.start();
         return root;
+    }
+
+    private Parent setup(Stage stage) {
+        return new SetupView(context, ready -> stage.getScene().setRoot(openApp(stage))).root();
+    }
+
+    /**
+     * Back to the sign-in screen, after signing out.
+     *
+     * The window is torn down rather than reused. Every screen was built
+     * against the account that has just gone, and several of them cached what
+     * they read at build time -- handing those to the next person would show
+     * them the last one's week until something happened to refresh it.
+     */
+    private void backToSetup(Stage stage) {
+        if (window != null) {
+            window.stop();
+            window = null;
+        }
+        stage.getScene().setRoot(setup(stage));
     }
 
     private Scene scene(Parent root) {

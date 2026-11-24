@@ -228,6 +228,46 @@ public final class AppContext implements AutoCloseable {
     }
 
     /**
+     * Sign out, so a different account can sign in.
+     *
+     * ------------------------------------------------------------------
+     * There was no way to do this at all, which made the first account to
+     * sign in the only account that copy would ever show. That matters more
+     * here than it looks: the desktop app is the STUDENT side, and an adult
+     * who signs in with their own account gets an app with nothing in it and
+     * no way out of that state.
+     *
+     * Refuses while intents are waiting. Those are changes she made offline
+     * and can still see on screen; discarding them to switch account would be
+     * the one thing this app promises never to do. The caller shows the
+     * returned message rather than this throwing, because "sync first" is
+     * advice, not an error.
+     *
+     * Clears the cached copy as well as the session. A shared Windows account
+     * where signing out left the last student's timetable on screen would be
+     * a worse disclosure than anything the oversight model deliberately
+     * allows.
+     * ------------------------------------------------------------------
+     *
+     * @return null when signed out, or why it did not happen
+     */
+    public String signOut() {
+        int waiting = outbox.pendingCount();
+        if (waiting > 0) {
+            return waiting + (waiting == 1 ? " change has" : " changes have")
+                    + " not reached the cloud yet. Sync first, then sign out.";
+        }
+
+        connectivity.stop();
+        session.forget();
+        timetable.clearWeek();
+        timetable.clearSubjects();
+        tasks.clearSyncedTasks();
+        profiles.clearSession();
+        return null;
+    }
+
+    /**
      * Try to sync, off the FX thread, and hand the result back on it.
      *
      * Every failure arrives as a SyncResult rather than an exception, because

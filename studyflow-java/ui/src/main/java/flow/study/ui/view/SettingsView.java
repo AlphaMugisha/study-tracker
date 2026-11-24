@@ -3,6 +3,8 @@ package flow.study.ui.view;
 import flow.study.domain.model.Profile;
 import flow.study.store.Intent;
 import flow.study.ui.AppContext;
+import flow.study.ui.kit.Controls;
+import flow.study.ui.kit.Icons;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -43,8 +45,18 @@ public final class SettingsView implements DataView {
 
     private boolean syncing;
 
-    public SettingsView(AppContext context) {
+    /**
+     * What to do once the account is gone.
+     *
+     * Passed in rather than reached for: this screen knows how to sign out
+     * and nothing about what replaces the window afterwards, which is the
+     * app's business.
+     */
+    private final Runnable onSignedOut;
+
+    public SettingsView(AppContext context, Runnable onSignedOut) {
         this.context = context;
+        this.onSignedOut = onSignedOut;
         body.setPadding(Ui.PAGE_PADDING);
         saved.getStyleClass().add("meta");
         refresh();
@@ -70,6 +82,7 @@ public final class SettingsView implements DataView {
                 profileCard(),
                 syncCard(),
                 oversightCard(),
+                accountCard(),
                 aboutCard());
     }
 
@@ -247,6 +260,49 @@ public final class SettingsView implements DataView {
                 Ui.meta("The names of the accounts that can see you are not stored in "
                         + "this offline copy yet. Open Settings on the StudyFlow website "
                         + "to see the current list."));
+    }
+
+    /**
+     * Sign out, and say what that does to the copy on this disk.
+     *
+     * There was no way out of an account at all before this, which made the
+     * first sign-in permanent. The consequences are spelled out rather than
+     * implied: the local copy is deleted, which is safe precisely because it
+     * is a cache and the cloud is the record -- and it is the right thing to
+     * do on a machine more than one person uses.
+     */
+    private Node accountCard() {
+        String email = context.session().email();
+
+        Label who = Ui.detail("Signed in as " + (email == null ? "this computer" : email) + ".");
+
+        Label note = Ui.meta("Signing out deletes the copy held on this computer "
+                + "and asks for an account again. Nothing in the cloud is touched -- "
+                + "everything comes back on the next sign-in.");
+        note.setWrapText(true);
+
+        Label problem = Ui.meta("");
+        problem.getStyleClass().add("text-danger");
+        problem.setWrapText(true);
+        problem.setVisible(false);
+        problem.setManaged(false);
+
+        Button signOut = Controls.outline("Sign out", Icons.logOut());
+        signOut.setDisable(syncing);
+        signOut.setOnAction(event -> {
+            String refusal = context.signOut();
+            if (refusal != null) {
+                // Not an error dialog. "Sync first" is advice, and the
+                // changes it is protecting are visible on the screen behind.
+                problem.setText(refusal);
+                problem.setVisible(true);
+                problem.setManaged(true);
+                return;
+            }
+            onSignedOut.run();
+        });
+
+        return Ui.card(Ui.sectionTitle("Account"), who, note, problem, signOut);
     }
 
     private Node aboutCard() {

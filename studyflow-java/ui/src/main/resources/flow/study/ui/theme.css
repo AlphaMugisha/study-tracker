@@ -797,3 +797,29 @@
     -fx-background-color: -color-surface-raised;
     -fx-border-color: -color-border-strong;
 }
+
+.text-danger {
+    -fx-text-fill: -color-danger-ink;
+}
+
+/*
+ * The banner an adult sees when they sign in.
+ *
+ * Styled as information rather than as an error: signing in with the wrong
+ * one of your own two accounts is a reasonable mistake, and the app's job is
+ * to say which one it wanted, not to tell somebody off.
+ */
+.notice {
+    -fx-background-color: -color-brand-soft;
+    -fx-border-color: derive(-color-brand, -40%);
+    -fx-border-width: 0 0 1px 0;
+    -fx-padding: 14px 20px;
+}
+
+.notice .label {
+    -fx-text-fill: -color-brand-ink;
+}
+
+.notice .icon-stroke {
+    -fx-stroke: -color-brand-ink;
+}

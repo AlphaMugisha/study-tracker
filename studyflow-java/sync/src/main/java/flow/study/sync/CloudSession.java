@@ -113,4 +113,15 @@ public final class CloudSession implements PostgrestClient.TokenSource {
     public boolean live() {
         return current != null && !current.expired(Instant.now());
     }
+
+    /**
+     * Drop the token held in memory.
+     *
+     * The stored half is the caller's to clear -- this object does not own
+     * the file. Both have to go, or a sign-out would leave a live access
+     * token able to act as the previous account until it expired.
+     */
+    public void forget() {
+        current = null;
+    }
 }

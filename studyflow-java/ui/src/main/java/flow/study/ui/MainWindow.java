@@ -1,5 +1,6 @@
 package flow.study.ui;
 
+import flow.study.domain.model.UserRole;
 import flow.study.domain.presence.Presence;
 import flow.study.domain.presence.PresenceDescriber;
 import flow.study.domain.timetable.ResolvedEntry;
@@ -118,8 +119,12 @@ public final class MainWindow {
                             List<ResolvedEntry> week, boolean locked) {
     }
 
-    public MainWindow(AppContext context) {
+    /** Handed in by the app: what replaces this window once the account goes. */
+    private final Runnable onSignedOut;
+
+    public MainWindow(AppContext context, Runnable onSignedOut) {
         this.context = context;
+        this.onSignedOut = onSignedOut;
         root.getStyleClass().add("root");
         root.setTop(topBar());
         root.setLeft(buildSidebar());
@@ -130,7 +135,7 @@ public final class MainWindow {
         recipes.put("Homework", () -> new HomeworkView(context));
         recipes.put("Home plan", () -> new PlanView(context, day));
         recipes.put("Stuck on", () -> new StuckOnView(context));
-        recipes.put("Settings", () -> new SettingsView(context));
+        recipes.put("Settings", () -> new SettingsView(context, onSignedOut));
     }
 
     public BorderPane root() {
@@ -154,6 +159,7 @@ public final class MainWindow {
 
         show("Today");
         refreshSyncPill(null);
+        applyRoleNotice();
         sync();
 
         // The watcher calls back on its own thread; the pill and every view it
@@ -206,6 +212,48 @@ public final class MainWindow {
         if (locked && !ALLOWED_AT_SCHOOL.contains(activeView)) {
             show("Homework");
         }
+    }
+
+    /**
+     * Tell an adult that this is the student app.
+     *
+     * ------------------------------------------------------------------
+     * Found the hard way. A copy signed in with an admin account pulls
+     * correctly, finds that the account owns no subjects, no timetable and no
+     * homework, and renders "No timetable saved" -- which is true of the
+     * account and completely misleading about the product. The person is left
+     * believing the sync is broken.
+     *
+     * The 2026-11-10 design is explicit that the parent side stays on the
+     * web, and this is where that decision has to become visible. It says
+     * which account to use instead and where the adult view actually lives,
+     * because a notice that only says "wrong account" leaves somebody exactly
+     * as stuck as the empty screen did.
+     * ------------------------------------------------------------------
+     */
+    private void applyRoleNotice() {
+        if (context.profile().role() != UserRole.ADMIN) {
+            root.setBottom(null);
+            return;
+        }
+
+        Label title = new Label("This is the student app.");
+        title.getStyleClass().add("section-title");
+
+        Label detail = new Label("You are signed in as "
+                + (context.session().email() == null ? "an adult account" : context.session().email())
+                + ", which keeps no timetable or homework of its own. Sign out in "
+                + "Settings and sign in with the student's account to see their "
+                + "week here. The adult view -- reports, and every student you "
+                + "look after -- stays on the website.");
+        detail.setWrapText(true);
+        detail.getStyleClass().add("detail");
+
+        VBox lines = new VBox(3, title, detail);
+        HBox banner = new HBox(12, Glyph.medium(Icons.info()), lines);
+        banner.getStyleClass().add("notice");
+        HBox.setHgrow(lines, Priority.ALWAYS);
+        root.setBottom(banner);
     }
 
     // -----------------------------------------------------------------------
