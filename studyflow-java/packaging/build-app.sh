@@ -43,13 +43,29 @@ say "Baking the Supabase project into the app"
 SYNC_RES="$ROOT/sync/src/main/resources/flow/study/sync"
 mkdir -p "$SYNC_RES"
 
+#
+# The site URL is the third value, and it is here for one reason: a password
+# reset email has to land somewhere, and a desktop app is not an address. The
+# link goes to the deployed website, which already has the screen that takes a
+# new password. Without it the app hides its own reset button rather than
+# sending mail whose link goes nowhere.
+#
+DEFAULT_SITE="https://study-tracker-delta-two.vercel.app"
+
 if [ -f "$ENV_FILE" ]; then
     URL=$(grep -E '^NEXT_PUBLIC_SUPABASE_URL=' "$ENV_FILE" | head -1 | cut -d= -f2- | tr -d '\r')
     ANON=$(grep -E '^NEXT_PUBLIC_SUPABASE_ANON_KEY=' "$ENV_FILE" | head -1 | cut -d= -f2- | tr -d '\r')
+    # `|| true` matters: this key is usually absent, and under `set -o
+    # pipefail` a grep that matches nothing fails the whole pipeline and takes
+    # the script down with it -- silently, right after the first banner.
+    SITE=$(grep -E '^STUDYFLOW_SITE_URL=' "$ENV_FILE" | head -1 | cut -d= -f2- | tr -d '\r' || true)
 else
     URL=""
     ANON=""
+    SITE=""
 fi
+
+[ -n "$SITE" ] || SITE="$DEFAULT_SITE"
 
 {
     echo "# Written by packaging/build-app.sh from .env.local."
@@ -57,7 +73,12 @@ fi
     echo "# too, and every table it can reach is bounded by Row Level Security."
     echo "NEXT_PUBLIC_SUPABASE_URL=$URL"
     echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON"
+    echo "# Where a password-reset link sends her. Must also be listed under"
+    echo "# Redirect URLs in the Supabase dashboard, or GoTrue ignores it and"
+    echo "# falls back to the project's Site URL."
+    echo "STUDYFLOW_SITE_URL=$SITE"
 } > "$SYNC_RES/supabase.properties"
+echo "    Reset links point at: $SITE"
 
 if [ -z "$URL" ] || [ -z "$ANON" ]; then
     echo "    WARNING: no Supabase values found in $ENV_FILE."

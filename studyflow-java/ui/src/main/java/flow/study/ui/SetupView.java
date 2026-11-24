@@ -38,6 +38,7 @@ final class SetupView {
     private final TextField email = new TextField();
     private final PasswordField password = new PasswordField();
     private final Button signIn = new Button("Sign in");
+    private final Button forgot = new Button("Forgot your password?");
     private final ProgressIndicator spinner = new ProgressIndicator();
     private final Label message = new Label();
 
@@ -79,7 +80,16 @@ final class SetupView {
          */
         signIn.setMinWidth(Region.USE_PREF_SIZE);
 
-        HBox action = new HBox(12, signIn, spinner);
+        forgot.getStyleClass().setAll("button", "button-quiet");
+        forgot.setOnAction(event -> sendReset());
+        forgot.setMinWidth(Region.USE_PREF_SIZE);
+        // No site to send her to means a link that goes nowhere. Better to
+        // not offer it than to send an email whose button is broken.
+        boolean canReset = context.config().canResetPassword();
+        forgot.setVisible(canReset);
+        forgot.setManaged(canReset);
+
+        HBox action = new HBox(12, signIn, spinner, spacer(), forgot);
         action.setAlignment(Pos.CENTER_LEFT);
 
         message.setWrapText(true);
@@ -147,6 +157,51 @@ final class SetupView {
                 });
     }
 
+    /**
+     * Email a link for choosing a new password.
+     *
+     * ------------------------------------------------------------------
+     * The link opens the WEBSITE, not this app. A desktop app has no address
+     * an email can point at, and building a second password form here that
+     * had to accept a token out of a browser would be a worse version of a
+     * screen the site already has.
+     *
+     * The answer is the same whether or not the address has an account. That
+     * is not vagueness -- this needs no sign-in, so telling somebody "no such
+     * account" would let anyone test addresses one at a time. The website's
+     * own forgot-password page is worded the same way for the same reason.
+     * ------------------------------------------------------------------
+     */
+    private void sendReset() {
+        String address = email.getText().trim();
+        if (address.isBlank()) {
+            error("Type your email address first, then press this again.");
+            email.requestFocus();
+            return;
+        }
+
+        busy(true);
+        neutral("Sending...");
+
+        String redirect = context.config().resetRedirectUrl();
+        context.runInBackground(
+                () -> {
+                    context.session().requestPasswordReset(address, redirect);
+                    return null;
+                },
+                ignored -> {
+                    busy(false);
+                    neutral("If an account exists for " + address + ", it has just been "
+                            + "sent a link. Open it on this computer or your phone -- it "
+                            + "opens StudyFlow on the web, where you can choose a new "
+                            + "password. Then come back here and sign in with it.");
+                },
+                failure -> {
+                    busy(false);
+                    error(describe(failure));
+                });
+    }
+
     /** One readable sentence out of whatever went wrong. */
     private static String describe(Exception failure) {
         if (failure instanceof GoTrueClient.AuthException && failure.getMessage() != null) {
@@ -166,10 +221,18 @@ final class SetupView {
      */
     private void busy(boolean busy) {
         signIn.setDisable(busy);
+        forgot.setDisable(busy);
         email.setDisable(busy);
         password.setDisable(busy);
         spinner.setVisible(busy);
         spinner.setManaged(busy);
+    }
+
+    /** The gap that pushes the reset link to the far edge of its row. */
+    private static Region spacer() {
+        Region region = new Region();
+        HBox.setHgrow(region, javafx.scene.layout.Priority.ALWAYS);
+        return region;
     }
 
     // -----------------------------------------------------------------------

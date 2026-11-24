@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -96,6 +97,30 @@ public final class GoTrueClient {
             if (e.getMessage() != null && e.getMessage().contains("refresh")) return null;
             throw e;
         }
+    }
+
+    /**
+     * Ask Supabase to email a link for choosing a new password.
+     *
+     * ------------------------------------------------------------------
+     * The link cannot come back here. A desktop app has no address an email
+     * can point at, so {@code redirectTo} sends her to the website, which
+     * already has the screen that takes a new password and the callback that
+     * gives that screen the authority to save it.
+     *
+     * Returns nothing on success and says nothing about whether the address
+     * exists. GoTrue answers 200 either way on purpose -- this endpoint needs
+     * no sign-in, so confirming which addresses have accounts would hand
+     * anybody a way to enumerate them. The screen above repeats that
+     * carefully: "if an account exists".
+     * ------------------------------------------------------------------
+     */
+    public void requestPasswordReset(String email, String redirectTo) {
+        String path = "/recover";
+        if (redirectTo != null && !redirectTo.isBlank()) {
+            path += "?redirect_to=" + URLEncoder.encode(redirectTo, StandardCharsets.UTF_8);
+        }
+        post(path, Map.of("email", email), "Could not send the reset email.");
     }
 
     private Session readSession(JsonNode response, String fallbackEmail) {

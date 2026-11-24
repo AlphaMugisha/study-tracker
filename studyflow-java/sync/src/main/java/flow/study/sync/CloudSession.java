@@ -115,6 +115,16 @@ public final class CloudSession implements PostgrestClient.TokenSource {
     }
 
     /**
+     * Email a link for choosing a new password.
+     *
+     * Needs no session, which is the whole point: somebody who cannot sign in
+     * is exactly who this is for.
+     */
+    public void requestPasswordReset(String email, String redirectTo) {
+        auth.requestPasswordReset(email, redirectTo);
+    }
+
+    /**
      * Drop the token held in memory.
      *
      * The stored half is the caller's to clear -- this object does not own

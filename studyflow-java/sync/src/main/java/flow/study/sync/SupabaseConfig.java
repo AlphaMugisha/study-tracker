@@ -27,10 +27,11 @@ import java.util.Properties;
  *      .env.local. This is the one that makes a fresh install work with no
  *      setup screen.
  */
-public record SupabaseConfig(String url, String anonKey) {
+public record SupabaseConfig(String url, String anonKey, String siteUrl) {
 
     private static final String URL_KEY = "NEXT_PUBLIC_SUPABASE_URL";
     private static final String ANON_KEY = "NEXT_PUBLIC_SUPABASE_ANON_KEY";
+    private static final String SITE_KEY = "STUDYFLOW_SITE_URL";
     private static final String RESOURCE = "/flow/study/sync/supabase.properties";
 
     /** True when there is something to talk to. */
@@ -46,6 +47,37 @@ public record SupabaseConfig(String url, String anonKey) {
         return trimTrailingSlash(url) + "/auth/v1";
     }
 
+    /**
+     * Where a password-reset email should land.
+     *
+     * ------------------------------------------------------------------
+     * The desktop app cannot host the screen that takes a new password --
+     * it is not a web server, and a link in an email has nowhere to go
+     * except a browser. The website already has that screen, so the reset
+     * link points there and this is the one piece of configuration that
+     * makes it work.
+     *
+     * The path matches what the web app itself asks for in
+     * forgotPasswordAction, deliberately: the callback is what exchanges
+     * the emailed code for a session, and landing on /reset-password
+     * directly would show a form with no authority to change anything.
+     *
+     * Null when no site is configured, and the caller says so rather than
+     * sending a reset whose link goes nowhere.
+     * ------------------------------------------------------------------
+     */
+    public String resetRedirectUrl() {
+        if (siteUrl == null || siteUrl.isBlank()) return null;
+        return trimTrailingSlash(siteUrl)
+                + "/auth/callback?next=" + java.net.URLEncoder.encode(
+                        "/reset-password", java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    /** True when a reset email would have somewhere to send her. */
+    public boolean canResetPassword() {
+        return configured() && resetRedirectUrl() != null;
+    }
+
     private static String trimTrailingSlash(String value) {
         return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
     }
@@ -53,7 +85,9 @@ public record SupabaseConfig(String url, String anonKey) {
     public static SupabaseConfig resolve(Path dataDirectory) {
         String url = System.getenv(URL_KEY);
         String anon = System.getenv(ANON_KEY);
-        if (present(url) && present(anon)) return new SupabaseConfig(url, anon);
+        if (present(url) && present(anon)) {
+            return new SupabaseConfig(url, anon, System.getenv(SITE_KEY));
+        }
 
         SupabaseConfig fromDisk = fromFile(dataDirectory.resolve("supabase.properties"));
         if (fromDisk != null && fromDisk.configured()) return fromDisk;
@@ -61,7 +95,7 @@ public record SupabaseConfig(String url, String anonKey) {
         SupabaseConfig bundled = fromClasspath();
         if (bundled != null && bundled.configured()) return bundled;
 
-        return new SupabaseConfig(null, null);
+        return new SupabaseConfig(null, null, null);
     }
 
     private static boolean present(String value) {
@@ -93,6 +127,7 @@ public record SupabaseConfig(String url, String anonKey) {
     private static SupabaseConfig read(Properties properties) {
         return new SupabaseConfig(
                 properties.getProperty(URL_KEY, properties.getProperty("url")),
-                properties.getProperty(ANON_KEY, properties.getProperty("anonKey")));
+                properties.getProperty(ANON_KEY, properties.getProperty("anonKey")),
+                properties.getProperty(SITE_KEY, properties.getProperty("siteUrl")));
     }
 }
