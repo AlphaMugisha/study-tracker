@@ -1,5 +1,6 @@
 package flow.study.domain.text;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -85,6 +86,32 @@ public final class Display {
 
     public static String greeting(ZoneId zone, java.time.Instant at) {
         return greeting(LocalDateTime.ofInstant(at, zone));
+    }
+
+    /**
+     * How long ago something happened, for a status line.
+     *
+     * Rounds to the nearest rather than down, because a pill that says "1 min
+     * ago" for fifty-nine seconds and then "1 min ago" for another minute is
+     * telling two different lies with the same words.
+     *
+     * Past a day it stops counting. The exact number of hours since the last
+     * sync is not a thing anybody needs; that it has been a long time is.
+     */
+    public static String agoLabel(Duration since) {
+        long seconds = since.getSeconds();
+
+        // A negative gap means the host clock moved backwards under us, which
+        // NTP does. Treat it as now rather than rendering "-3 min ago".
+        if (seconds < 45) return "just now";
+
+        long minutes = Math.round(seconds / 60.0);
+        if (minutes < 60) return minutes + " min ago";
+
+        long hours = Math.round(minutes / 60.0);
+        if (hours < 24) return hours + " hr ago";
+
+        return "a while ago";
     }
 
     /** "alpha mugisha" becomes "Alpha". Seeded names are not always capitalised. */
