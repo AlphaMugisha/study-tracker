@@ -38,7 +38,10 @@ public final class TimetableView implements Screen {
     public TimetableView(AppContext context, ObjectProperty<MainWindow.SchoolDay> day) {
         this.context = context;
         body.setPadding(Ui.PAGE_PADDING);
-        body.getChildren().addAll(Ui.pageTitle("Timetable"), week);
+        body.getChildren().addAll(
+                Ui.pageHeader("School timetable", "Your school week.",
+                        "Lessons, breaks and free periods -- not homework. StudyFlow reads this to work out what you are doing now and how much of the evening is left."),
+                week);
 
         day.addListener((observable, previous, current) -> {
             if (current != null) render(current);

@@ -7,6 +7,8 @@ import flow.study.domain.tasks.AssignmentView;
 import flow.study.domain.tasks.TaskOrdering;
 import flow.study.domain.text.Display;
 import flow.study.ui.AppContext;
+import flow.study.ui.kit.Controls;
+import flow.study.ui.kit.Icons;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -49,7 +51,8 @@ public final class HomeworkView implements DataView {
         status.getStyleClass().add("meta");
 
         body.getChildren().addAll(
-                Ui.row(Ui.pageTitle("Homework"), Ui.grow()),
+                Ui.pageHeader("Set work", "Homework.",
+                        "Everything you have been given, soonest first. Overdue sits at the top because it is the thing that costs you."),
                 addForm(),
                 status,
                 list);
@@ -111,7 +114,7 @@ public final class HomeworkView implements DataView {
         priority.setValue(TaskPriority.MEDIUM);
         priority.setPrefWidth(110);
 
-        Button add = new Button("Add");
+        Button add = Controls.primary("Add", Icons.plus());
         add.getStyleClass().add("button-primary");
         add.setDefaultButton(true);
 
@@ -231,7 +234,7 @@ public final class HomeworkView implements DataView {
             row.getChildren().add(Ui.badge("High", "badge-pause"));
         }
 
-        Button remove = new Button("Delete");
+        Button remove = Controls.danger("Delete", Icons.trash2());
         remove.getStyleClass().add("button-quiet");
         remove.setOnAction(event -> {
             context.tasks().deleteAssignment(task.id());

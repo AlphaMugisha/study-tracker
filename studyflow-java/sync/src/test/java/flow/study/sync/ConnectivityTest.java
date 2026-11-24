@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -160,6 +161,35 @@ class ConnectivityTest {
         // that escaped here would kill the watcher thread for good.
         assertEquals(Connectivity.State.OFFLINE, watcher.state());
         assertNotNull(scheduler.task, "the watcher stopped watching");
+    }
+
+    @Test
+    void a_watcher_paused_for_a_sign_out_can_be_started_again() {
+        FakeScheduler scheduler = new FakeScheduler();
+        AtomicInteger woken = new AtomicInteger();
+
+        Connectivity watcher = new Connectivity(() -> true, () -> 1, scheduler);
+        watcher.start(woken::incrementAndGet);
+
+        // Signing out pauses the watcher: there is no session to probe with.
+        watcher.pause();
+        assertEquals(Connectivity.State.UNKNOWN, watcher.state());
+
+        // A probe already in flight when the account went still has to do
+        // nothing, and must not queue another.
+        scheduler.fire();
+        assertEquals(0, woken.get());
+        assertEquals(Connectivity.State.UNKNOWN, watcher.state());
+        assertNull(scheduler.task, "a paused watcher scheduled itself again");
+
+        // Signing back in has to revive it. stop() shuts the executor for
+        // good, so using it here left the next account with no watcher at all
+        // for the rest of the session -- and nothing said so.
+        watcher.start(woken::incrementAndGet);
+        assertNotNull(scheduler.task, "the watcher did not come back");
+
+        scheduler.fire();
+        assertEquals(1, woken.get());
     }
 
     @Test

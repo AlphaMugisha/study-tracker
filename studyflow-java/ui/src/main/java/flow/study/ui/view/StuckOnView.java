@@ -4,6 +4,8 @@ import flow.study.domain.model.HelpStatus;
 import flow.study.domain.model.Subject;
 import flow.study.store.SupportStore;
 import flow.study.ui.AppContext;
+import flow.study.ui.kit.Controls;
+import flow.study.ui.kit.Icons;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -37,7 +39,10 @@ public final class StuckOnView implements DataView {
         this.support = context.support();
 
         body.setPadding(Ui.PAGE_PADDING);
-        body.getChildren().addAll(Ui.pageTitle("Stuck on"), addForm(), list);
+        body.getChildren().addAll(
+                Ui.pageHeader("Stuck on", "Things that have not clicked yet.",
+                        "Write it down while it is fresh. This is not homework and nothing is due -- it is the list you take to a teacher."),
+                addForm(), list);
         refresh();
     }
 
@@ -71,7 +76,7 @@ public final class StuckOnView implements DataView {
             }
         });
 
-        Button add = new Button("Add");
+        Button add = Controls.primary("Add", Icons.plus());
         add.getStyleClass().add("button-primary");
         add.setDefaultButton(true);
 

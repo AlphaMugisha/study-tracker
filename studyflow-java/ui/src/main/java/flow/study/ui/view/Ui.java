@@ -1,5 +1,7 @@
 package flow.study.ui.view;
 
+import flow.study.ui.kit.Type;
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -28,6 +30,31 @@ public final class Ui {
         Label label = new Label(text);
         label.getStyleClass().add("page-title");
         return label;
+    }
+
+    /**
+     * How every screen opens: a small line of context, a large title, and a
+     * sentence saying what the page is for.
+     *
+     * The same three parts the website uses, and the hierarchy between them is
+     * the point. A page where the heading is the only typographic decision
+     * makes somebody read the whole thing to find out whether they are in the
+     * right place.
+     *
+     * @param eyebrow     capitalised here, so callers write it as prose
+     * @param description nullable, for a page whose title says it all
+     */
+    public static VBox pageHeader(String eyebrow, String title, String description) {
+        VBox box = new VBox(4);
+        box.getChildren().add(Type.eyebrow(eyebrow.toUpperCase(java.util.Locale.UK)));
+        box.getChildren().add(Type.display(title));
+        if (description != null) {
+            Label body = Type.body(description);
+            body.setMaxWidth(560);
+            box.getChildren().add(body);
+        }
+        VBox.setMargin(box, new Insets(0, 0, 6, 0));
+        return box;
     }
 
     public static Label sectionTitle(String text) {

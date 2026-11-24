@@ -117,6 +117,24 @@ public final class Connectivity {
         return state.get();
     }
 
+    /**
+     * Stop watching, but stay usable.
+     *
+     * For a sign-out. There is no session to probe with until somebody signs
+     * in again, and the same object has to come back to life when they do --
+     * {@link #stop} shuts its executor for good, so using that here left the
+     * next account with no watcher at all for the rest of the session, and
+     * nothing anywhere said so.
+     *
+     * The state resets to UNKNOWN rather than OFFLINE: what the last account
+     * could reach says nothing about this one.
+     */
+    public void pause() {
+        running = false;
+        state.set(State.UNKNOWN);
+    }
+
+    /** Stop for good. For application shutdown, not for signing out. */
     public void stop() {
         running = false;
         scheduler.stop();

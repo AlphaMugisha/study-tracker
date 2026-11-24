@@ -258,7 +258,7 @@ public final class AppContext implements AutoCloseable {
                     + " not reached the cloud yet. Sync first, then sign out.";
         }
 
-        connectivity.stop();
+        connectivity.pause();
         session.forget();
         timetable.clearWeek();
         timetable.clearSubjects();

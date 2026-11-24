@@ -78,7 +78,8 @@ public final class SettingsView implements DataView {
     @Override
     public void refresh() {
         body.getChildren().setAll(
-                Ui.pageTitle("Settings"),
+                Ui.pageHeader("Settings", "Your copy.",
+                        "The planning window, who can see your work, and the account this computer is signed in with."),
                 profileCard(),
                 syncCard(),
                 oversightCard(),
@@ -129,7 +130,7 @@ public final class SettingsView implements DataView {
         settle.setPrefWidth(95);
         settle.setEditable(true);
 
-        Button save = new Button("Save");
+        Button save = Controls.primary("Save", Icons.check());
         save.getStyleClass().add("button-primary");
         save.setOnAction(event -> {
             context.profiles().updateSettings(
@@ -213,7 +214,7 @@ public final class SettingsView implements DataView {
     }
 
     private Button retryButton(Intent intent) {
-        Button retry = new Button("Try again");
+        Button retry = Controls.outline("Try again", Icons.refreshCw());
         retry.getStyleClass().add("button-quiet");
         retry.setOnAction(event -> {
             context.outbox().retry(intent.seq());
@@ -224,7 +225,7 @@ public final class SettingsView implements DataView {
     }
 
     private Button discardButton(Intent intent) {
-        Button discard = new Button("Discard");
+        Button discard = Controls.danger("Discard", Icons.trash2());
         discard.getStyleClass().add("button-quiet");
         discard.setOnAction(event -> {
             context.outbox().discard(intent.seq());

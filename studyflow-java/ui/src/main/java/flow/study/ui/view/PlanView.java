@@ -12,6 +12,8 @@ import flow.study.domain.planner.StudySuggester;
 import flow.study.domain.timetable.Times;
 import flow.study.domain.timetable.TimetableResolver;
 import flow.study.ui.AppContext;
+import flow.study.ui.kit.Controls;
+import flow.study.ui.kit.Icons;
 import flow.study.ui.MainWindow;
 import javafx.beans.property.ObjectProperty;
 import javafx.scene.Node;
@@ -60,7 +62,8 @@ public final class PlanView implements Screen {
 
     private void render(MainWindow.SchoolDay day) {
         body.getChildren().clear();
-        body.getChildren().add(Ui.pageTitle("Home plan"));
+        body.getChildren().add(Ui.pageHeader("Home plan", "When you get home.",
+                "Ordered by what is most urgent, fitted into the time you actually have, and finished by your cutoff."));
 
         var profile = context.profile();
         Instant now = Instant.now();
@@ -180,7 +183,7 @@ public final class PlanView implements Screen {
                 row.getChildren().add(Ui.badge("Suggested", "badge-revise"));
                 // A suggestion becomes real only when she queues it, so the
                 // plan never fills up with guesses nobody asked for.
-                Button queue = new Button("Add to revision");
+                Button queue = Controls.outline("Add to revision", Icons.listPlus());
                 queue.getStyleClass().add("button-quiet");
                 queue.setOnAction(event -> {
                     context.tasks().createRevision(context.userId(), block.label(),
