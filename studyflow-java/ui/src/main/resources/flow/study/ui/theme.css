@@ -39,9 +39,31 @@
 
     -color-danger: #ff6b6b;
     -color-danger-soft: #3e2a31;
+    -color-danger-ink: #ff9d9d;
+
+    /* Surfaces the first pass did not carry across. */
+    -color-surface-raised: #222a36;
+    -color-surface-sunken: #141922;
+    -color-popover: #1d232d;
+
+    /* The rail sits DARKER than the page, so it reads as chrome rather than
+       as another panel. Same relationship as the website's --sidebar. */
+    -color-sidebar: #0a0d12;
+    -color-sidebar-border: #232b36;
+
+    /* The hero gradient. Both hues run through darker members of themselves
+       because the full-strength colours cannot carry white text. */
+    -color-hero-from: #3550c4;
+    -color-hero-to: #1a7e6d;
+    -color-hero-rest-from: #222a36;
+    -color-hero-rest-to: #3a3426;
+    -color-hero-line: rgba(255, 255, 255, 0.22);
 
     -fx-background-color: -color-bg;
-    -fx-font-family: "Segoe UI", "Inter", sans-serif;
+    /* Geist is registered by flow.study.ui.kit.Fonts before the first scene
+       is built. The fallbacks are what a build that lost its font resources
+       renders in, which should still be a readable window. */
+    -fx-font-family: "Geist", "Segoe UI Variable Text", "Segoe UI", "Inter", sans-serif;
     -fx-font-size: 14px;
     -fx-text-fill: -color-ink;
 }
@@ -443,4 +465,335 @@
 /* The loading row beside a spinner, so it reads as one thing. */
 .loading-state {
     -fx-text-fill: -color-ink-muted;
+}
+
+/* ==========================================================================
+ * The kit
+ * --------------------------------------------------------------------------
+ * Everything below is what flow.study.ui.kit builds with, and is the half of
+ * this file that corresponds to the website's component classes rather than
+ * to raw JavaFX controls.
+ *
+ * JavaFX has no `transition`, so every state here lands whole on the next
+ * frame. Motion.java animates a one-pixel lift alongside, which is what makes
+ * the snap read as an ease -- see the comment there.
+ * ========================================================================== */
+
+/* --------------------------------------------------------------------------
+ * Type scale, matching the website
+ * -------------------------------------------------------------------------- */
+
+.eyebrow {
+    -fx-font-size: 11.5px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-brand-ink;
+}
+
+.display {
+    -fx-font-size: 44px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-ink;
+    -fx-line-spacing: -6px;
+}
+
+.body {
+    -fx-font-size: 14.5px;
+    -fx-text-fill: -color-ink-muted;
+    -fx-line-spacing: 3px;
+}
+
+.figure {
+    -fx-font-size: 40px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-ink;
+}
+
+.figure.tone-lesson  { -fx-text-fill: -color-lesson-ink; }
+.figure.tone-danger  { -fx-text-fill: -color-danger-ink; }
+.figure.tone-brand   { -fx-text-fill: -color-brand-ink; }
+.figure.tone-pause   { -fx-text-fill: -color-pause-ink; }
+
+/* Geist Mono is registered beside Geist. Times in a column have to line up,
+   which a proportional face cannot do however carefully it is kerned. */
+.numeric {
+    -fx-font-family: "Geist Mono", "Cascadia Mono", "Consolas", monospace;
+}
+
+/* --------------------------------------------------------------------------
+ * Icons
+ *
+ * Shapes, not glyphs, so the colour is a STROKE and not a text fill. Anything
+ * that recolours a label on hover has to recolour these alongside it or the
+ * icon stays behind, which reads as a rendering bug rather than a style.
+ * -------------------------------------------------------------------------- */
+
+.icon-stroke {
+    -fx-stroke: -color-ink-muted;
+}
+
+.icon-empty .icon-stroke {
+    -fx-stroke: -color-ink-subtle;
+}
+
+/* --------------------------------------------------------------------------
+ * Sidebar
+ * -------------------------------------------------------------------------- */
+
+.rail {
+    -fx-background-color: -color-sidebar;
+    -fx-border-color: transparent -color-sidebar-border transparent transparent;
+    -fx-border-width: 0 1px 0 0;
+    -fx-padding: 14px 10px;
+}
+
+.nav-row {
+    -fx-background-color: transparent;
+    -fx-text-fill: -color-ink-muted;
+    -fx-font-size: 14px;
+    -fx-padding: 9px 12px;
+    -fx-background-radius: 9px;
+    -fx-border-width: 0;
+    -fx-graphic-text-gap: 11px;
+    -fx-cursor: hand;
+}
+
+.nav-row .icon-stroke {
+    -fx-stroke: -color-ink-subtle;
+}
+
+.nav-row:hover {
+    -fx-background-color: -color-surface-raised;
+    -fx-text-fill: -color-ink;
+}
+
+.nav-row:hover .icon-stroke {
+    -fx-stroke: -color-ink;
+}
+
+.nav-row-active,
+.nav-row-active:hover {
+    -fx-background-color: -color-brand-soft;
+    -fx-text-fill: -color-brand-ink;
+    -fx-font-weight: bold;
+}
+
+.nav-row-active .icon-stroke,
+.nav-row-active:hover .icon-stroke {
+    -fx-stroke: -color-brand-ink;
+}
+
+.nav-row:disabled {
+    -fx-opacity: 0.38;
+}
+
+/* The divider above Settings. A rule, not a gap: a gap alone reads as a
+   layout mistake, where a line reads as a decision. */
+.rail-divider {
+    -fx-border-color: -color-sidebar-border transparent transparent transparent;
+    -fx-border-width: 1px 0 0 0;
+    -fx-padding: 8px 0 0 0;
+}
+
+/* --------------------------------------------------------------------------
+ * Buttons
+ * -------------------------------------------------------------------------- */
+
+.button {
+    -fx-graphic-text-gap: 8px;
+    -fx-font-size: 13.5px;
+}
+
+.button-outline {
+    -fx-background-color: -color-card;
+    -fx-text-fill: -color-ink;
+    -fx-border-color: -color-border-strong;
+}
+
+.button-outline:hover {
+    -fx-background-color: -color-surface-raised;
+}
+
+.button-quiet {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: -color-ink-muted;
+}
+
+.button-quiet:hover {
+    -fx-background-color: -color-surface-raised;
+    -fx-text-fill: -color-ink;
+}
+
+.button-quiet:hover .icon-stroke {
+    -fx-stroke: -color-ink;
+}
+
+.button-danger {
+    -fx-background-color: -color-danger-soft;
+    -fx-border-color: derive(-color-danger, -40%);
+    -fx-text-fill: -color-danger-ink;
+}
+
+.button-danger:hover {
+    -fx-background-color: derive(-color-danger-soft, 18%);
+}
+
+.button-danger .icon-stroke {
+    -fx-stroke: -color-danger-ink;
+}
+
+/* The label on Electric Blue is near-black, not white: white on this blue is
+   3.1:1 and fails AA, while the dark label is 6.2:1. Same choice as the web. */
+.button-primary .icon-stroke {
+    -fx-stroke: #0b0f16;
+}
+
+.button-icon {
+    -fx-padding: 7px;
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.button-icon:hover {
+    -fx-background-color: -color-surface-raised;
+}
+
+.button-icon:hover .icon-stroke {
+    -fx-stroke: -color-ink;
+}
+
+.button:focused {
+    -fx-border-color: -color-brand;
+}
+
+.button:disabled {
+    -fx-opacity: 0.45;
+}
+
+/* --------------------------------------------------------------------------
+ * Panels
+ * -------------------------------------------------------------------------- */
+
+.card {
+    -fx-background-radius: 14px;
+    -fx-border-radius: 14px;
+}
+
+.empty-state {
+    -fx-padding: 38px 24px;
+    -fx-alignment: center;
+}
+
+/*
+ * Three tiles sharing one border, as on the website: a single surface divided
+ * by hairlines rather than three floating cards. Separate cards here would
+ * read as three unrelated facts; these are one sentence about the day.
+ */
+.stat-tile {
+    -fx-background-color: -color-card;
+    -fx-border-color: -color-border;
+    -fx-border-width: 1px 0 1px 1px;
+    -fx-padding: 18px 22px 20px 22px;
+}
+
+.stat-tile-first {
+    -fx-background-radius: 14px 0 0 14px;
+    -fx-border-radius: 14px 0 0 14px;
+}
+
+.stat-tile-last {
+    -fx-border-width: 1px;
+    -fx-background-radius: 0 14px 14px 0;
+    -fx-border-radius: 0 14px 14px 0;
+}
+
+/* --------------------------------------------------------------------------
+ * Hero
+ * -------------------------------------------------------------------------- */
+
+.hero {
+    -fx-background-radius: 16px;
+    -fx-padding: 26px 28px 28px 28px;
+}
+
+.hero-work {
+    -fx-background-color: linear-gradient(to bottom right, -color-hero-from, -color-hero-to);
+}
+
+.hero-rest {
+    -fx-background-color: linear-gradient(to bottom right, -color-hero-rest-from, -color-hero-rest-to);
+}
+
+.hero .label {
+    -fx-text-fill: white;
+}
+
+.hero .eyebrow {
+    -fx-text-fill: rgba(255, 255, 255, 0.72);
+}
+
+.hero .display,
+.hero .page-title,
+.hero .section-title {
+    -fx-text-fill: white;
+}
+
+.hero .body,
+.hero .meta,
+.hero .detail {
+    -fx-text-fill: rgba(255, 255, 255, 0.82);
+}
+
+.hero .icon-stroke {
+    -fx-stroke: rgba(255, 255, 255, 0.86);
+}
+
+/* An action on the hero borrows its own surface rather than bringing the
+   page's. A white button here would be louder than the panel it sits on. */
+.hero .button {
+    -fx-background-color: rgba(255, 255, 255, 0.14);
+    -fx-border-color: -color-hero-line;
+    -fx-text-fill: white;
+}
+
+.hero .button:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.24);
+}
+
+/* --------------------------------------------------------------------------
+ * Status
+ * -------------------------------------------------------------------------- */
+
+.badge {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 3px 9px;
+    -fx-background-radius: 999px;
+}
+
+.badge-lesson { -fx-background-color: -color-lesson-soft; -fx-text-fill: -color-lesson-ink; }
+.badge-revise { -fx-background-color: -color-revise-soft; -fx-text-fill: -color-revise-ink; }
+.badge-pause  { -fx-background-color: -color-pause-soft;  -fx-text-fill: -color-pause-ink; }
+.badge-danger { -fx-background-color: -color-danger-soft; -fx-text-fill: -color-danger-ink; }
+.badge-brand  { -fx-background-color: -color-brand-soft;  -fx-text-fill: -color-brand-ink; }
+
+/* --------------------------------------------------------------------------
+ * List rows
+ *
+ * Not animated, deliberately. Forty of these on the homework screen is where
+ * per-row motion stops being polish and starts being lag.
+ * -------------------------------------------------------------------------- */
+
+.list-row {
+    -fx-background-color: -color-card;
+    -fx-background-radius: 12px;
+    -fx-border-color: -color-border;
+    -fx-border-radius: 12px;
+    -fx-border-width: 1px;
+    -fx-padding: 14px 16px;
+}
+
+.list-row:hover {
+    -fx-background-color: -color-surface-raised;
+    -fx-border-color: -color-border-strong;
 }

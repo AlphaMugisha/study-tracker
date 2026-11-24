@@ -1,6 +1,7 @@
 package flow.study.ui;
 
 import flow.study.store.StoreLocation;
+import flow.study.ui.kit.Fonts;
 import javafx.application.Application;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -46,6 +47,10 @@ public final class StudyFlowApp extends Application {
 
     @Override
     public void start(Stage stage) {
+        // Before any scene exists. A font registered after a label is built
+        // does not retrofit itself onto that label.
+        Fonts.load();
+
         stage.setTitle("StudyFlow");
         stage.setMinWidth(MIN_WIDTH);
         stage.setMinHeight(MIN_HEIGHT);
