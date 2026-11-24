@@ -6,6 +6,8 @@ import flow.study.domain.timetable.ResolvedEntry;
 import flow.study.domain.timetable.SchoolClock;
 import flow.study.domain.timetable.TimetableResolver;
 import flow.study.domain.timetable.TimetableState;
+import flow.study.domain.text.Display;
+import flow.study.sync.Connectivity;
 import flow.study.sync.SyncResult;
 import flow.study.ui.view.DataView;
 import flow.study.ui.view.Screen;
@@ -32,6 +34,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -94,6 +97,12 @@ public final class MainWindow {
     private Timeline ticker;
     private boolean syncing;
 
+    /** The last result, kept so the pill can be re-rendered every tick. */
+    private SyncResult lastResult;
+
+    /** When a sync last actually landed. Null until one does. */
+    private Instant lastSynced;
+
     /**
      * Everything derived from the clock, in one value.
      *
@@ -142,6 +151,10 @@ public final class MainWindow {
         show("Today");
         refreshSyncPill(null);
         sync();
+
+        // The watcher calls back on its own thread; the pill and every view it
+        // refreshes are the FX thread's business.
+        context.startWatching(() -> javafx.application.Platform.runLater(this::sync));
     }
 
     public void stop() {
@@ -168,6 +181,10 @@ public final class MainWindow {
 
         clockLabel.setText(clock.label());
         applyLock(locked);
+
+        // Cheap: setPill returns without touching the scene graph unless the
+        // words actually changed, which is once a minute at most.
+        refreshSyncPill(lastResult);
     }
 
     /**
@@ -263,10 +280,23 @@ public final class MainWindow {
         if (syncing) return; // the worker is single-threaded; queueing helps nobody
 
         setSyncing(true);
-        setPill("Syncing...", "pill");
+        refreshSyncPill(lastResult);
 
         context.syncInBackground(result -> {
             setSyncing(false);
+            lastResult = result;
+
+            switch (result.outcome()) {
+                // PARTIAL still reached the cloud, which is what "online"
+                // means here. The refusal shows on the pill separately.
+                case SYNCED, UP_TO_DATE, PARTIAL -> {
+                    lastSynced = Instant.now();
+                    context.connectivity().markOnline();
+                }
+                case OFFLINE, FAILED -> context.connectivity().markOffline();
+                case SIGN_IN_NEEDED -> { /* the network is fine; the token is not */ }
+            }
+
             refreshSyncPill(result);
             // The pull may have replaced everything underneath, so the clock
             // and every built screen are re-read from the local copy.
@@ -291,38 +321,68 @@ public final class MainWindow {
     /**
      * What the pill says, and in what tone.
      *
-     * Offline is styled as a quiet state rather than an error. It is the
-     * expected condition most evenings and the whole promise of the product is
-     * that it does not matter -- a red badge would contradict the design.
+     * Ordered by what matters most to her, not by what happened most
+     * recently. A refusal outranks everything: it is the only state that
+     * needs a decision. Offline outranks a successful sync from ten minutes
+     * ago, because "Synced" while the wifi is off is the one thing this pill
+     * must never say -- working without a connection is the whole promise,
+     * and a status line that lies about it undoes that.
+     *
+     * Offline is styled quiet rather than as an error. It is the expected
+     * condition most evenings; a red badge would contradict the design.
      */
     private void refreshSyncPill(SyncResult result) {
+        if (syncing) {
+            setPill("Syncing…", "pill");
+            return;
+        }
+
         int waiting = context.outbox().pendingCount();
         int refused = context.outbox().rejectedCount();
 
         if (refused > 0) {
-            setPill(refused + (refused == 1 ? " change refused" : " changes refused"),
+            setPill(refused + (refused == 1 ? " change rejected" : " changes rejected"),
                     "pill-problem");
             return;
         }
 
-        if (result != null) {
-            switch (result.outcome()) {
-                case OFFLINE -> setPill(waiting > 0
-                        ? "Offline · " + waiting + " waiting"
-                        : "Offline", "pill-offline");
-                case SIGN_IN_NEEDED -> setPill("Sign in needed", "pill-problem");
-                case FAILED -> setPill("Sync failed", "pill-problem");
-                case PARTIAL -> setPill(result.summary(), "pill-problem");
-                case SYNCED, UP_TO_DATE -> setPill(result.summary(), "pill-synced");
-            }
+        if (result != null && result.outcome() == SyncResult.Outcome.SIGN_IN_NEEDED) {
+            setPill("Sign in needed", "pill-problem");
             return;
         }
 
-        setPill(waiting > 0 ? waiting + " waiting" : "Not synced yet",
-                waiting > 0 ? "pill-waiting" : "pill-offline");
+        if (context.connectivity().state() == Connectivity.State.OFFLINE) {
+            setPill(waiting > 0 ? "Offline · " + waiting + " waiting" : "Offline",
+                    "pill-offline");
+            return;
+        }
+
+        if (waiting > 0) {
+            setPill(waiting + " waiting", "pill-waiting");
+            return;
+        }
+
+        if (lastSynced != null) {
+            setPill("Synced · " + Display.agoLabel(
+                    java.time.Duration.between(lastSynced, Instant.now())), "pill-synced");
+            return;
+        }
+
+        setPill("Not synced yet", "pill-offline");
     }
 
+    /**
+     * Set the pill, or do nothing if it would not change.
+     *
+     * This runs once a second now. Restyling a node to the words it already
+     * has is work the FX thread does not need.
+     */
     private void setPill(String text, String modifier) {
+        if (text.equals(syncPill.getText())
+                && syncPill.getStyleClass().size() == 2
+                && syncPill.getStyleClass().get(1).equals(modifier)) {
+            return;
+        }
         syncPill.setText(text);
         syncPill.getStyleClass().setAll("pill", modifier);
     }
