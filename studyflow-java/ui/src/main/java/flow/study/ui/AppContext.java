@@ -9,6 +9,7 @@ import flow.study.store.StoreLocation;
 import flow.study.store.TaskStore;
 import flow.study.store.TimetableStore;
 import flow.study.sync.CloudSession;
+import flow.study.sync.Connectivity;
 import flow.study.sync.GoTrueClient;
 import flow.study.sync.PostgrestClient;
 import flow.study.sync.SupabaseConfig;
@@ -19,6 +20,9 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Everything the screens need, wired once.
@@ -44,6 +48,23 @@ public final class AppContext implements AutoCloseable {
     private final SupabaseConfig config;
     private final CloudSession session;
     private final SyncEngine engine;
+    private final Connectivity connectivity;
+
+    /**
+     * Where a write-triggered sync waits out its debounce.
+     *
+     * Separate from the sync worker on purpose: a delayed task sitting on the
+     * single sync thread would block the sync it is waiting to start.
+     */
+    private final ScheduledExecutorService nudges =
+            Executors.newSingleThreadScheduledExecutor(runnable -> {
+                Thread thread = new Thread(runnable, "studyflow-nudge");
+                thread.setDaemon(true);
+                return thread;
+            });
+
+    private ScheduledFuture<?> queuedNudge;
+    private volatile Runnable syncTrigger = () -> { };
 
     /**
      * One thread, not a pool.
@@ -75,6 +96,12 @@ public final class AppContext implements AutoCloseable {
         this.session = new CloudSession(auth, profiles);
         var rest = new PostgrestClient(config, http, session);
         this.engine = new SyncEngine(rest, outbox, profiles, timetable, tasks);
+
+        this.connectivity = new Connectivity(
+                rest::reachable, outbox::pendingCount, Connectivity.daemonScheduler());
+
+        // Every queued intent is a reason to try, if there is a connection.
+        outbox.onRecord(this::notifyLocalWrite);
     }
 
     public static AppContext open(StoreLocation location) {
@@ -171,6 +198,35 @@ public final class AppContext implements AutoCloseable {
         });
     }
 
+    public Connectivity connectivity() { return connectivity; }
+
+    /**
+     * Start watching for a connection.
+     *
+     * {@code onShouldSync} is called on a background thread, not the FX
+     * thread. The caller hops threads itself -- doing it here would put
+     * scene-graph knowledge in the one class that has stayed free of it.
+     */
+    public void startWatching(Runnable onShouldSync) {
+        this.syncTrigger = onShouldSync;
+        connectivity.start(onShouldSync);
+    }
+
+    /**
+     * Something was just written locally. Sync shortly, if we can.
+     *
+     * Debounced, because editing three pieces of homework in a row is one
+     * reason to sync and not three. Skipped entirely when offline: the
+     * watcher is already checking, and a second timer racing it would only
+     * make the pill flicker.
+     */
+    public synchronized void notifyLocalWrite() {
+        if (connectivity.state() == Connectivity.State.OFFLINE) return;
+        if (queuedNudge != null) queuedNudge.cancel(false);
+        if (nudges.isShutdown()) return;
+        queuedNudge = nudges.schedule(() -> syncTrigger.run(), 2, TimeUnit.SECONDS);
+    }
+
     /**
      * Try to sync, off the FX thread, and hand the result back on it.
      *
@@ -208,6 +264,8 @@ public final class AppContext implements AutoCloseable {
 
     @Override
     public void close() {
+        connectivity.stop();
+        nudges.shutdownNow();
         worker.shutdownNow();
         database.close();
     }
